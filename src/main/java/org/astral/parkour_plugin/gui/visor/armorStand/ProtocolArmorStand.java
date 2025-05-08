@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.gui.visor;
+package org.astral.parkour_plugin.gui.visor.armorStand;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -13,6 +13,7 @@ import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.gui.Gui;
+import org.astral.parkour_plugin.gui.visor.Type;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -29,13 +30,13 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.*;
 
-public final class ProtocolHologram implements HologramApi {
+public final class ProtocolArmorStand implements ArmorStandApi {
 
     private final JavaPlugin plugin;
     private final ProtocolManager protocolManager;
     private final PacketAdapter adapter;
     private final Listener listener;
-    private final Map<String, List<PacketStructureClass>> protocolStands = new HashMap<>();
+    private final Map<String, List<PacketStructureArmorStand>> protocolStands = new HashMap<>();
     private final Map<Player, Set<Integer>> visibleEntities = new HashMap<>();
 
     private static final double RANGE = 144;
@@ -45,7 +46,7 @@ public final class ProtocolHologram implements HologramApi {
     private static final int second = version[1];
     private static final int three = version[2];
 
-    public ProtocolHologram(final JavaPlugin plugin) {
+    public ProtocolArmorStand(final JavaPlugin plugin) {
         this.plugin = plugin;
         this.protocolManager = ProtocolLibrary.getProtocolManager();
         adapter = new PacketAdapter(plugin, PacketType.Play.Client.USE_ENTITY) {
@@ -76,7 +77,7 @@ public final class ProtocolHologram implements HologramApi {
                         final int entityId = packet.getIntegers().read(0);
                         final String map = getMapOfPlayer(player);
                         if (map != null && protocolStands.containsKey(map)) {
-                            PacketStructureClass entityData = protocolStands.get(map).stream()
+                            PacketStructureArmorStand entityData = protocolStands.get(map).stream()
                                     .filter(e -> e.getEntityIdPacket() == entityId)
                                     .findFirst()
                                     .orElse(null);
@@ -97,14 +98,14 @@ public final class ProtocolHologram implements HologramApi {
                 final Player player = event.getPlayer();
                 final Location playerLocation = player.getLocation();
                 final Set<Integer> visible = visibleEntities.computeIfAbsent(player, k -> new HashSet<>());
-                for (final Map.Entry<String, List<PacketStructureClass>> entry : protocolStands.entrySet()) {
+                for (final Map.Entry<String, List<PacketStructureArmorStand>> entry : protocolStands.entrySet()) {
                     final String viewerId = entry.getKey();
-                    final List<PacketStructureClass> packetList = entry.getValue();
+                    final List<PacketStructureArmorStand> packetList = entry.getValue();
                     final Set<Player> viewers = playersViewingMap.get(viewerId);
                     if (viewers == null || viewers.isEmpty() || !viewers.contains(player)) {
                         continue;
                     }
-                    for (final PacketStructureClass packetStructure : packetList) {
+                    for (final PacketStructureArmorStand packetStructure : packetList) {
                         final Location packetLocation = packetStructure.getLocation();
                         final int entityId = packetStructure.getEntityIdPacket();
                         if (!playerLocation.getWorld().equals(packetLocation.getWorld())) continue;
@@ -155,23 +156,23 @@ public final class ProtocolHologram implements HologramApi {
     }
 
     @Override
-    public void showHolograms(final Player player, final String map) {
+    public void showHolograms(final Player player, final String map, final Type type) {
         final Set<Player> playersOnMap = playersViewingMap.computeIfAbsent(map, k -> new HashSet<>());
         if (!playersOnMap.contains(player)) {
             playersOnMap.add(player);
             if (protocolStands.containsKey(map)) {
-                final List<PacketStructureClass> packetsClass = protocolStands.get(map);
-                for (PacketStructureClass packetStructureClass : packetsClass) {
-                    final PacketContainer entity = packetStructureClass.getEntityPacket();
+                final List<PacketStructureArmorStand> packetsClass = protocolStands.get(map);
+                for (PacketStructureArmorStand packetStructureArmorStand : packetsClass) {
+                    final PacketContainer entity = packetStructureArmorStand.getEntityPacket();
                     protocolManager.sendServerPacket(player, entity);
-                    final PacketContainer metadata = packetStructureClass.getMetadataPacket();
+                    final PacketContainer metadata = packetStructureArmorStand.getMetadataPacket();
                     protocolManager.sendServerPacket(player, metadata);
                 }
-            } else addingHolograms(map);
+            } else addingHolograms(map, type);
         }
     }
 
-    private void addingHolograms(final String map) {
+    private void addingHolograms(final String map, final Type type) {
         final CheckpointConfig config = new CheckpointConfig(map);
         for (final String name : config.keys()) {
             try {
@@ -181,7 +182,7 @@ public final class ProtocolHologram implements HologramApi {
                 continue;
             }
             final Location location = config.getLocation();
-            addHologram(map, name, location);
+            addHologram(map, name, location, type);
         }
     }
 
@@ -267,7 +268,7 @@ public final class ProtocolHologram implements HologramApi {
             packet2.getDataValueCollectionModifier().write(0, wrappedDataValueList);
             protocolManager.sendServerPacket(player, packet2);
         }
-        protocolStands.computeIfAbsent(map, k -> new ArrayList<>()).add(new PacketStructureClass(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2));
+        protocolStands.computeIfAbsent(map, k -> new ArrayList<>()).add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2));
 
     }
 
@@ -285,9 +286,9 @@ public final class ProtocolHologram implements HologramApi {
     }
 
     @Override
-    public void hideHolograms(final Player player, final String map) {
+    public void hideHolograms(final Player player, final String map, final Type type) {
         final int[] ids = protocolStands.getOrDefault(map, new ArrayList<>()).stream()
-                .mapToInt(PacketStructureClass::getEntityIdPacket)
+                .mapToInt(PacketStructureArmorStand::getEntityIdPacket)
                 .toArray();
         final PacketContainer destroyPacket = destroyPacket(ids);
         protocolManager.sendServerPacket(player, destroyPacket);
@@ -300,10 +301,10 @@ public final class ProtocolHologram implements HologramApi {
         registerOrUnregisterListener();
     }
 
-    private void removeAllHolograms(final String map) {
+    private void removeAllHolograms(final String map, final Type type) {
         if (protocolStands.containsKey(map) && protocolStands.get(map) != null) {
             final int[] ids = protocolStands.get(map).stream()
-                    .mapToInt(PacketStructureClass::getEntityIdPacket)
+                    .mapToInt(PacketStructureArmorStand::getEntityIdPacket)
                     .toArray();
             final PacketContainer destroyPacket = destroyPacket(ids);
             for (Player player : playersViewingMap.getOrDefault(map, new HashSet<>())) {
@@ -314,7 +315,7 @@ public final class ProtocolHologram implements HologramApi {
     }
 
     @Override
-    public void addHologram(final String map, final String name, final @NotNull Location location) {
+    public void addHologram(final String map, final String name, final @NotNull Location location, final Type type) {
         if (first != 1) return;
         Kit.getRegionScheduler().execute(plugin, location, ()->{
             final Location localCtl = location.clone();
@@ -341,12 +342,12 @@ public final class ProtocolHologram implements HologramApi {
     }
 
     @Override
-    public void removeHologram(final String map, final String name) {
+    public void removeHologram(final String map, final String name, final Type type) {
         if (protocolStands.containsKey(map)) {
-            final List<PacketStructureClass> stands = protocolStands.get(map);
-            stands.removeIf(packetStructureClass -> {
-                if (Objects.equals(packetStructureClass.getName(), name)) {
-                    final PacketContainer destroyPacket = destroyPacket(new int[]{packetStructureClass.getEntityIdPacket()});
+            final List<PacketStructureArmorStand> stands = protocolStands.get(map);
+            stands.removeIf(packetStructureArmorStand -> {
+                if (Objects.equals(packetStructureArmorStand.getName(), name)) {
+                    final PacketContainer destroyPacket = destroyPacket(new int[]{packetStructureArmorStand.getEntityIdPacket()});
                     for (Player viewer : playersViewingMap.getOrDefault(map, new HashSet<>())) {
                         protocolManager.sendServerPacket(viewer, destroyPacket);
                     }
@@ -362,9 +363,9 @@ public final class ProtocolHologram implements HologramApi {
     }
 
     @Override
-    public void reorderArmorStandNames(final String map) {
-        removeAllHolograms(map);
-        addingHolograms(map);
+    public void reorderArmorStandNames(final String map, final Type type) {
+        removeAllHolograms(map, type);
+        addingHolograms(map, type);
         registerOrUnregisterListener();
     }
 }

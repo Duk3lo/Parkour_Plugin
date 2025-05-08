@@ -17,7 +17,8 @@ import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.gui.compatible.ModernGuiListener;
 import org.astral.parkour_plugin.gui.postSign.TextSignApi;
-import org.astral.parkour_plugin.gui.visor.HologramApi;
+import org.astral.parkour_plugin.gui.visor.armorStand.ArmorStandApi;
+import org.astral.parkour_plugin.gui.visor.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -74,7 +75,7 @@ public final class Gui {
 
     private static final Inventory menuOptions = Bukkit.createInventory(null, 9, "Opciones");
 
-    private static final HologramApi HOLOGRAM_API = HologramApi._view(plugin);
+    private static final ArmorStandApi HOLOGRAM_API = ArmorStandApi._view(plugin);
     private static final TextSignApi TEXT_SIGN_API = TextSignApi._text(plugin);
 
     private static final GuiListener GUI_LISTENER = new GuiListener();
@@ -157,7 +158,7 @@ public final class Gui {
             player.sendMessage("Esta ubicacion ya se marco como spawn");
             return;
         }else {
-            HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location);
+            HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
         }
     }
 
@@ -185,7 +186,7 @@ public final class Gui {
         checkpointConfig.setLocation(location);
         checkpointConfig.setMinFallY(CheckpointConfig.MIN_Y);
         checkpointConfig.setAllMaxFallY(CheckpointConfig.MAX_Y);
-        HOLOGRAM_API.addHologram(name_map, checkpoint, checkpointConfig.getLocation());
+        HOLOGRAM_API.addHologram(name_map, checkpoint, checkpointConfig.getLocation(), Type.CHECKPOINT);
         updateCheckpoints(name_map);
     }
 
@@ -200,7 +201,7 @@ public final class Gui {
             }
             if (checkpointConfig.isEqualsLocation(location)) {
                 checkpointConfig.deleteCheckpoint(key);
-                HOLOGRAM_API.removeHologram(name_map, key);
+                HOLOGRAM_API.removeHologram(name_map, key, Type.CHECKPOINT);
                 updateCheckpoints(name_map);
                 SoundApi.playSound(player, 0.3f, 1.0f, "ZOMBIE_WOOD", "ENTITY_ZOMBIE_ATTACK_DOOR_WOOD");
             }
@@ -211,7 +212,7 @@ public final class Gui {
         final String name_map = mapPlayer.get(player);
         CheckpointConfig checkpointConfig = new CheckpointConfig(name_map);
         checkpointConfig.reorderCheckpoints();
-        HOLOGRAM_API.reorderArmorStandNames(name_map);
+        HOLOGRAM_API.reorderArmorStandNames(name_map, Type.CHECKPOINT);
         updateCheckpoints(name_map);
     }
 
@@ -233,7 +234,7 @@ public final class Gui {
                 if (name.equals(name_map)){
                     final String inventory = player.getOpenInventory().getTitle();
                     if (inventory.equals(order)) player.closeInventory();
-                    HOLOGRAM_API.hideHolograms(player, name_map);
+                    HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
                     loadMainInventory(player);
                     SoundApi.playSound(player, 1.0f, 1.0f, "ITEM_BREAK", "ENTITY_ITEM_BREAK");
                 }
@@ -482,7 +483,7 @@ public final class Gui {
                 mapItemOrder.put(i, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map).get(i));
             }
             originalInventories.put(player, mapItemOrder);
-            HOLOGRAM_API.reorderArmorStandNames(name_map);
+            HOLOGRAM_API.reorderArmorStandNames(name_map, Type.CHECKPOINT);
             SoundApi.playSound(player, 1.0f, 2.0f, "BLOCK_ANVIL_USE", "ANVIL_USE");
         } else {
             player.sendMessage("Coloca todos los items que sostienes dentro de los slots.");
@@ -600,7 +601,7 @@ public final class Gui {
 
         switch (menu_player) {
             case checkpoint_Menu_Edit:
-                if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map);
+                if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
                 mapPlayer.remove(player);
                 loadMainInventory(player);
                 break;
@@ -702,7 +703,7 @@ public final class Gui {
             editingPlayers.remove(player);
             originalInventories.remove(player);
             final String name_map = mapPlayer.get(player);
-            if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map);
+            if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
             mapPlayer.remove(player);
             menu.remove(player);
             DynamicTools.getUniquePlayerItem().remove(player);

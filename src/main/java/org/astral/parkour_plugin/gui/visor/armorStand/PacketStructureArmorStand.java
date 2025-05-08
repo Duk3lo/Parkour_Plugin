@@ -1,16 +1,16 @@
-package org.astral.parkour_plugin.gui.visor;
+package org.astral.parkour_plugin.gui.visor.armorStand;
 
 import com.comphenix.protocol.events.PacketContainer;
 import org.bukkit.Location;
 
-public final class PacketStructureClass {
+public final class PacketStructureArmorStand {
     private final int entityIdPacket;
     private final String name;
     private final Location location;
     private final PacketContainer entityPacket;
     private final PacketContainer metadataPacket;
 
-    PacketStructureClass(final int entityIdPacket, final String name, final Location location ,final PacketContainer entityPacket, final PacketContainer metadata){
+    PacketStructureArmorStand(final int entityIdPacket, final String name, final Location location , final PacketContainer entityPacket, final PacketContainer metadata){
         this.entityIdPacket = entityIdPacket;
         this.name = name;
         this.location = location;

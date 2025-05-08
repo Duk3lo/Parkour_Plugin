@@ -1,10 +1,11 @@
-package org.astral.parkour_plugin.gui.visor;
+package org.astral.parkour_plugin.gui.visor.armorStand;
 
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
+import org.astral.parkour_plugin.gui.visor.Type;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -21,13 +22,13 @@ import java.io.IOException;
 import java.util.*;
 
 
-public final class Hologram implements HologramApi {
+public final class ArmorStandView implements ArmorStandApi {
     private final JavaPlugin plugin;
     private final Listener listener;
     private final static Map<String ,List<ArmorStand>> armorStands = new HashMap<>();
     private boolean isListenerRegistered = false;
 
-    public Hologram(final JavaPlugin plugin){
+    public ArmorStandView(final JavaPlugin plugin){
         this.plugin = plugin;
         listener = new Listener() {
             @EventHandler
@@ -74,15 +75,15 @@ public final class Hologram implements HologramApi {
     }
 
     @Override
-    public void showHolograms(final Player player, final String map) {
+    public void showHolograms(final Player player, final String map, final Type type) {
         final Set<Player> playersOnMap = playersViewingMap.computeIfAbsent(map, k -> new HashSet<>());
         if (!playersOnMap.contains(player)) {
             playersOnMap.add(player);
-            addingHolograms(map);
+            addingHolograms(map, type);
         }
     }
 
-    private void addingHolograms(final String map){
+    private void addingHolograms(final String map, final Type type){
         final CheckpointConfig config = new CheckpointConfig(map);
         for (final String name : config.keys()){
             try {
@@ -91,23 +92,23 @@ public final class Hologram implements HologramApi {
                 throw new RuntimeException(e);
             }
             final Location location = config.getLocation();
-            addHologram(map, name, location);
+            addHologram(map, name, location, type);
         }
     }
 
     @Override
-    public void hideHolograms(final Player player, final String map) {
+    public void hideHolograms(final Player player, final String map, final Type type) {
         if (playersViewingMap.containsKey(map) && playersViewingMap.get(map) != null) {
             playersViewingMap.get(map).remove(player);
             if (playersViewingMap.get(map).isEmpty()) {
-                removeAllHolograms(map);
+                removeAllHolograms(map, type);
                 playersViewingMap.remove(map);
             }
         }
         registerOrUnregisterListener();
     }
 
-    private void removeAllHolograms(final String map){
+    private void removeAllHolograms(final String map, final Type type){
         if (armorStands.containsKey(map) && armorStands.get(map) != null) {
             for (final ArmorStand armorStand : armorStands.get(map)) {
                 armorStand.remove();
@@ -118,7 +119,7 @@ public final class Hologram implements HologramApi {
     }
 
     @Override
-    public void addHologram(final String map, final String name, final @NotNull Location location) {
+    public void addHologram(final String map, final String name, final @NotNull Location location, final Type type) {
         Kit.getRegionScheduler().execute(plugin, location, () ->{
             final ArmorStand armorStand = location.getWorld().spawn(location, ArmorStand.class);
             armorStand.setCustomName(name);
@@ -132,7 +133,7 @@ public final class Hologram implements HologramApi {
     }
 
     @Override
-    public void removeHologram(final String map, final String name) {
+    public void removeHologram(final String map, final String name, final Type type) {
         if (armorStands.containsKey(map)) {
             final List<ArmorStand> stands = armorStands.get(map);
             stands.removeIf(armorStand -> {
@@ -152,9 +153,9 @@ public final class Hologram implements HologramApi {
     }
 
     @Override
-    public void reorderArmorStandNames(final String map) {
-        removeAllHolograms(map);
-        addingHolograms(map);
+    public void reorderArmorStandNames(final String map, final Type type) {
+        removeAllHolograms(map, type);
+        addingHolograms(map, type);
         registerOrUnregisterListener();
     }
 }
