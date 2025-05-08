@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "com.destroystokyo.paper:paper-api:1.12-R0.1-SNAPSHOT"
+    compileOnly 'com.destroystokyo.paper:paper-api:1.12-R0.1-SNAPSHOT'
     compileOnly 'org.jetbrains:annotations:24.0.1'
     compileOnly 'com.comphenix.protocol:ProtocolLib:5.1.0'
 }
