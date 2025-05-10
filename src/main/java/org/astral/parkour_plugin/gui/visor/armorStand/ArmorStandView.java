@@ -25,7 +25,7 @@ import java.util.*;
 public final class ArmorStandView implements ArmorStandApi {
     private final JavaPlugin plugin;
     private final Listener listener;
-    private final static Map<String ,List<ArmorStand>> armorStands = new HashMap<>();
+    private final static Map<String ,Map<Type, List<ArmorStand>>> armorStands = new HashMap<>();
     private boolean isListenerRegistered = false;
 
     public ArmorStandView(final JavaPlugin plugin){
@@ -58,7 +58,8 @@ public final class ArmorStandView implements ArmorStandApi {
         if (!plugin.isEnabled()) return;
 
         boolean hasAnyHologram = armorStands.values().stream()
-                .anyMatch(list -> !list.isEmpty());
+                .flatMap(map -> map.values().stream())
+                .allMatch(List::isEmpty);
 
         if (hasAnyHologram) {
             if (!isListenerRegistered) {
@@ -108,13 +109,17 @@ public final class ArmorStandView implements ArmorStandApi {
         registerOrUnregisterListener();
     }
 
-    private void removeAllHolograms(final String map, final Type type){
-        if (armorStands.containsKey(map) && armorStands.get(map) != null) {
-            for (final ArmorStand armorStand : armorStands.get(map)) {
+    private void removeAllHolograms(final String map, final Type type) {
+        final Map<Type, List<ArmorStand>> armorType = armorStands.get(map);
+        if (armorType != null && armorType.containsKey(type)) {
+            for (final ArmorStand armorStand : armorType.get(type)) {
                 armorStand.remove();
                 EntityCache.removeEntityFromCache(armorStand);
             }
-            armorStands.remove(map);
+            armorType.remove(type);
+            if (armorType.values().stream().allMatch(List::isEmpty)) {
+                armorStands.remove(map);
+            }
         }
     }
 
@@ -126,7 +131,11 @@ public final class ArmorStandView implements ArmorStandApi {
             armorStand.setCustomNameVisible(true);
             armorStand.setGravity(false);
             armorStand.setVisible(false);
-            armorStands.computeIfAbsent(map, k -> new ArrayList<>()).add(armorStand);
+
+            armorStands
+                    .computeIfAbsent(map, k -> new HashMap<>())
+                    .computeIfAbsent(type, k -> new ArrayList<>())
+                    .add(armorStand);
             EntityCache.addEntityToCache(armorStand);
             registerOrUnregisterListener();
         });
@@ -134,18 +143,24 @@ public final class ArmorStandView implements ArmorStandApi {
 
     @Override
     public void removeHologram(final String map, final String name, final Type type) {
-        if (armorStands.containsKey(map)) {
-            final List<ArmorStand> stands = armorStands.get(map);
-            stands.removeIf(armorStand -> {
-                if (Objects.equals(armorStand.getCustomName(), name)) {
-                    EntityCache.removeEntityFromCache(armorStand);
-                    armorStand.remove();
-                    return true;
-                }
-                return false;
-            });
+        final Map<Type, List<ArmorStand>> armorType = armorStands.get(map);
+        if (armorType != null) {
+            final List<ArmorStand> stands = armorType.get(type);
+            if (stands != null) {
+                stands.removeIf(armorStand -> {
+                    if (Objects.equals(armorStand.getCustomName(), name)) {
+                        EntityCache.removeEntityFromCache(armorStand);
+                        armorStand.remove();
+                        return true;
+                    }
+                    return false;
+                });
 
-            if (stands.isEmpty()) {
+                if (stands.isEmpty()) {
+                    armorType.remove(type);
+                }
+            }
+            if (armorType.isEmpty()) {
                 armorStands.remove(map);
             }
         }
