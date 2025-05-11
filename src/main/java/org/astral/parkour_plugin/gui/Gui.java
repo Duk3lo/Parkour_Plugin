@@ -134,6 +134,7 @@ public final class Gui {
         player.getInventory().setItem(7 , Tools.EDIT_FEATHER_ITEM.getItem());
         player.getInventory().setItem(8 , Tools.BACK_ITEM.getItem());
         player.getInventory().setItem(35, Tools.REMOVE_MAP.getItem());
+        HOLOGRAM_API.showHolograms(player, name_map, Type.CHECKPOINT);
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
@@ -158,7 +159,7 @@ public final class Gui {
             player.sendMessage("Esta ubicacion ya se marco como spawn");
             return;
         }else {
-            HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
+            //HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
         }
     }
 

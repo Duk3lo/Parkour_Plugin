@@ -35,6 +35,7 @@ public final class ArmorStandView implements ArmorStandApi {
             public void onPlayerInteractEntity(final @NotNull PlayerInteractAtEntityEvent event) {
                 final Player player = event.getPlayer();
                 final Entity entity = event.getRightClicked();
+                System.out.println("interact");
 
                 if (Gui.isEntityArmorStandOfGUI(entity.getUniqueId())) event.setCancelled(true);
 
@@ -58,8 +59,8 @@ public final class ArmorStandView implements ArmorStandApi {
         if (!plugin.isEnabled()) return;
 
         boolean hasAnyHologram = armorStands.values().stream()
-                .flatMap(map -> map.values().stream())
-                .allMatch(List::isEmpty);
+                .flatMap(typeMap -> typeMap.values().stream())
+                .anyMatch(list -> !list.isEmpty());
 
         if (hasAnyHologram) {
             if (!isListenerRegistered) {

@@ -5,9 +5,10 @@ import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.generator.Generator;
 import org.astral.parkour_plugin.parkour.Parkour;
 import org.astral.parkour_plugin.parkour.ParkourListener;
+
+import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.rankings.Score;
 import org.astral.parkour_plugin.rankings.ScoreListener;
-import org.astral.parkour_plugin.gui.Gui;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
