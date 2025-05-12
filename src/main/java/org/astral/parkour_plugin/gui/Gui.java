@@ -111,14 +111,19 @@ public final class Gui {
 
     //----------------------------------------------------------------------[SPAWN AND FINISH]
     //----------------------------------------------------------------------------------------
-    public static void loadSpawnMenu(final @NotNull Player player){
+    public static void loadSpawnAndEndMenu(final @NotNull Player player){
         menu.put(player, spawnAndFinishMenu);
         final String name_map = mapPlayer.getOrDefault(player, "");
         player.getInventory().clear();
         player.getInventory().setItem(0, Tools.MARK_SPAWN_ITEM.getItem());
         player.getInventory().setItem(1, Tools.MARK_FINISH_ITEM.getItem());
+        player.getInventory().setItem(7, Tools.BACK_ITEM.getItem());
         playerPages.put(player, 0);
         showPage(player, 0, DynamicTools.SPAWN_LOCATIONS.get(name_map), INDEX_SPAWN, ITEMS_PER_PAGE_SPAWN);
+    }
+
+    public static void loadSpawn(){
+
     }
 
     //----------------------------------------------------------------------------[CHECKPOINT]
@@ -157,9 +162,9 @@ public final class Gui {
         Rules rules = new Rules(name_map);
         if (rules.isEqualsLocation(location)){
             player.sendMessage("Esta ubicacion ya se marco como spawn");
-            return;
         }else {
-            //HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
+            HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
+            updateCheckpoints(name_map);
         }
     }
 
@@ -261,14 +266,6 @@ public final class Gui {
         mapPlayer.put(player, name_map);
     }
 
-    public static void Mark_Spawns(final @NotNull Player player){
-
-    }
-
-    public static void Mark_Finish(final @NotNull Player player){
-
-    }
-
     public static void openInventoryOptions(final @NotNull Player player){
         final int s1 = 0;
         final int s2 = 1;
@@ -312,7 +309,7 @@ public final class Gui {
         return mapPlayer.getOrDefault(player,"");
     }
 
-    public static void goToCheckpoint(final @NotNull Player player, final ItemStack item){
+    public static void goToCheckpoint(final @NotNull Player player, final ItemStack item) {
         final String name_map = mapPlayer.get(player);
         final String checkpoint = DynamicTools.getName(item);
         final CheckpointConfig config = new CheckpointConfig(name_map);
@@ -327,7 +324,6 @@ public final class Gui {
         } catch (IOException e) {
             player.sendMessage("Este checkpoint no es Accesible o no Existe");
         }
-
     }
 
     public static void loadEditInventoryMap(final @NotNull Player player){

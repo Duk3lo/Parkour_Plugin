@@ -71,8 +71,15 @@ public final class GuiListener implements Listener {
                     if (!ApiCompatibility.HAS_PROTOCOL() && !ApiCompatibility.HAS_OPEN_SIGN() && !Gui.tempBlock.containsKey(player)) return;
                     else Gui.addMap(player);
                 }
-                if (block != null && item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
-                    Gui.removeCheckpoint(player, block.getLocation());
+                if (block != null){
+
+                    if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
+                        Gui.addSpawnPoint(player, block.getLocation());
+                    }
+
+                    if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
+                        Gui.removeCheckpoint(player, block.getLocation());
+                    }
                 }
             }
 
@@ -123,7 +130,7 @@ public final class GuiListener implements Listener {
                 Gui.loadOneCheckpointMap(player);
 
             if (item.isSimilar(Tools.SPAWN_AND_FINISH_MENU.getItem()))
-                Gui.loadSpawnMenu(player);
+                Gui.loadSpawnAndEndMenu(player);
 
             if (isCustomTool(item) || isBooleanTool(item) || isDynamicToolMaps(item) || isDynamicToolCheckpoints(item, nameMap) || isStateTool(item))event.setCancelled(true);
 

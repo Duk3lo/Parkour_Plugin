@@ -79,7 +79,6 @@ public final class Rules {
     }
 
     public @NotNull String setSpawns(final @NotNull Location location) {
-        String val;
         final List<Location> positions = getSpawnsLocations();
         positions.add(location);
         ConfigurationSection spawnsSection = yamlConfiguration.getConfigurationSection(spawnPointsKey);
@@ -87,7 +86,7 @@ public final class Rules {
             spawnsSection = yamlConfiguration.createSection(spawnPointsKey);
 
         final int nextIndex = spawnsSection.getKeys(false).size();
-        val = "position_" + nextIndex;
+        final String val = "position_" + nextIndex;
         final ConfigurationSection section = spawnsSection.createSection(val);
         section.set("world", location.getWorld().getName());
         section.set("x", Math.floor(location.getX()) + 0.5);
@@ -98,14 +97,13 @@ public final class Rules {
     }
 
     public @NotNull String setEndPoints(final @NotNull Location location) {
-        String val;
         final List<Location> positions = getEndPoints();
         positions.add(location);
         ConfigurationSection finishSection = yamlConfiguration.getConfigurationSection(endPointsKey);
         if (finishSection == null)
             finishSection = yamlConfiguration.createSection(endPointsKey);
         final int nextIndex = finishSection.getKeys(false).size();
-        val = "position_" + nextIndex;
+        final String val = "position_" + nextIndex;
         final ConfigurationSection section = finishSection.createSection(val);
         section.set("world", location.getWorld().getName());
         section.set("x", Math.floor(location.getX()) + 0.5);
