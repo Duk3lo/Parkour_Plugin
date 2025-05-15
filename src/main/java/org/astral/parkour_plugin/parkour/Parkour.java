@@ -1,6 +1,6 @@
 package org.astral.parkour_plugin.parkour;
 
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
 import org.bukkit.Location;

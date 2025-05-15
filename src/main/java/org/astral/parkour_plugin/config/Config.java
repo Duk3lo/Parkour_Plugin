@@ -13,7 +13,7 @@ public final class Config {
     private static final Configuration configuration = plugin.getConfiguration();
 
     // Files
-    private static final String CONFIG = Configuration.CONFIG;
+    private static final String CONFIG = Configuration.CONFIG_YML;
 
 
     // Configuration

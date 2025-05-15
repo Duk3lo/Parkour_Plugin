@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.config.checkpoint;
+package org.astral.parkour_plugin.config.maps.checkpoint;
 
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
@@ -19,7 +19,7 @@ public class BaseCheckpoint {
     // FOLDERS & FILES
     private final String MAPS = Configuration.MAPS;
     private final String MAP_FOLDER;
-    protected static final String CHECKPOINT = Configuration.CHECKPOINT;
+    protected static final String CHECKPOINT_YML = Configuration.CHECKPOINT_YML;
 
     // Configuration
     protected YamlConfiguration yamlConfiguration;
@@ -31,7 +31,7 @@ public class BaseCheckpoint {
     protected BaseCheckpoint(final String MAP_FOLDER) {
         this.MAP_FOLDER = MAP_FOLDER;
         try {
-            yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER, CHECKPOINT);
+            yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER, CHECKPOINT_YML);
         } catch (FileNotFoundException e) {
             plugin.getLogger().warning("YAML file not found for " + this.MAP_FOLDER + ".");
         }
@@ -144,7 +144,7 @@ public class BaseCheckpoint {
 
     protected void saveConfiguration() {
         try {
-            configuration.saveConfiguration(yamlConfiguration, MAPS, MAP_FOLDER, CHECKPOINT);
+            configuration.saveConfiguration(yamlConfiguration, MAPS, MAP_FOLDER, CHECKPOINT_YML);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save configuration", e);
         }

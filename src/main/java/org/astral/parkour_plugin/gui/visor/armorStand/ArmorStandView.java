@@ -1,7 +1,7 @@
 package org.astral.parkour_plugin.gui.visor.armorStand;
 
 import org.astral.parkour_plugin.config.cache.EntityCache;
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;

@@ -73,9 +73,6 @@ public final class GuiListener implements Listener {
                 }
                 if (block != null){
 
-                    if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
-                        Gui.addSpawnPoint(player, block.getLocation());
-                    }
 
                     if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
                         Gui.removeCheckpoint(player, block.getLocation());
@@ -84,8 +81,13 @@ public final class GuiListener implements Listener {
             }
 
             if (event.getAction().name().contains("LEFT")){
-                if (block != null && item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
-                    Gui.addCheckpoint(player, block.getLocation());
+                if (block != null ){
+                    if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())){
+                        Gui.addSpawnPoint(player, block.getLocation());
+                    }
+                    if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
+                        Gui.addCheckpoint(player, block.getLocation());
+                    }
                 }
             }
 

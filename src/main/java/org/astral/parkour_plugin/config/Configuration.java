@@ -24,9 +24,9 @@ public final class Configuration {
 
 
     // File Names
-    public static final String CONFIG = "config.yml";
-    public static final String RULES = "Rules.yml";
-    public static final String CHECKPOINT = "Checkpoints.yml";
+    public static final String CONFIG_YML = "config.yml";
+    public static final String RULES_YML = "Rules.yml";
+    public static final String CHECKPOINT_YML = "Checkpoints.yml";
 
     //Extensions
     public static final String YML = ".yml";
@@ -34,14 +34,14 @@ public final class Configuration {
 
     // Files of Example
     public static final File FOLDER_PLUGIN = plugin.getDataFolder();
-    private static final File CONFIGURATION_FILE = new File(FOLDER_PLUGIN, CONFIG);
-    private static final File CHECKPOINT_FILE = new File(FOLDER_PLUGIN, MAPS + File.separator + MAP_FOLDER + File.separator + CHECKPOINT);
-    private static final File RULES_FILE = new File(FOLDER_PLUGIN, MAPS + File.separator + MAP_FOLDER + File.separator + RULES);
+    private static final File CONFIGURATION_FILE = new File(FOLDER_PLUGIN, CONFIG_YML);
+    private static final File CHECKPOINT_FILE = new File(FOLDER_PLUGIN, MAPS + File.separator + MAP_FOLDER + File.separator + CHECKPOINT_YML);
+    private static final File RULES_FILE = new File(FOLDER_PLUGIN, MAPS + File.separator + MAP_FOLDER + File.separator + RULES_YML);
 
     public Configuration(){
-        if (!CONFIGURATION_FILE.exists()) plugin.saveResource(CONFIG, false);
-        if (!CHECKPOINT_FILE.exists()) plugin.saveResource(MAPS + File.separator + MAP_FOLDER + File.separator + CHECKPOINT, false);
-        if (!RULES_FILE.exists()) plugin.saveResource(MAPS + File.separator + MAP_FOLDER + File.separator + RULES, false);
+        if (!CONFIGURATION_FILE.exists()) plugin.saveResource(CONFIG_YML, false);
+        if (!CHECKPOINT_FILE.exists()) plugin.saveResource(MAPS + File.separator + MAP_FOLDER + File.separator + CHECKPOINT_YML, false);
+        if (!RULES_FILE.exists()) plugin.saveResource(MAPS + File.separator + MAP_FOLDER + File.separator + RULES_YML, false);
     }
 
     public static void createMapFolder(final @NotNull String mapFolder) {
@@ -57,8 +57,8 @@ public final class Configuration {
             plugin.getLogger().severe("Error: The map name '" + mapFolder + "' contains invalid characters or is too short/long.");
             return;
         }
-        final File checkpointFile = new File(FOLDER_PLUGIN, MAPS + File.separator + mapFolder + File.separator + CHECKPOINT);
-        final File rulesFile = new File(FOLDER_PLUGIN, MAPS + File.separator + mapFolder + File.separator + RULES);
+        final File checkpointFile = new File(FOLDER_PLUGIN, MAPS + File.separator + mapFolder + File.separator + CHECKPOINT_YML);
+        final File rulesFile = new File(FOLDER_PLUGIN, MAPS + File.separator + mapFolder + File.separator + RULES_YML);
         try {
             File parentDir = checkpointFile.getParentFile();
             if (!parentDir.exists() && !parentDir.mkdirs()) {

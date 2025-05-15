@@ -1,7 +1,7 @@
 package org.astral.parkour_plugin.gui.tools;
 
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
-import org.astral.parkour_plugin.config.checkpoint.Rules;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -62,8 +62,7 @@ public final class DynamicTools {
     }
 
     public static void loadSpawnPoints(final String name) {
-        SPAWN_LOCATIONS.computeIfAbsent(name, k->new ArrayList<>());
-        SPAWN_LOCATIONS.clear();
+        SPAWN_LOCATIONS.computeIfAbsent(name, k->new ArrayList<>()).clear();
         final Rules rules = new Rules(name);
         for (final Location location : rules.getSpawnsLocations()){
             final ItemStack spawnLocationItem = new ItemStack(Material.TRIPWIRE_HOOK);
@@ -77,8 +76,7 @@ public final class DynamicTools {
     }
 
     public static void loadFinishPoints(final String name) {
-        FINISH_LOCATION.computeIfAbsent(name, k->new ArrayList<>());
-        FINISH_LOCATION.clear();
+        FINISH_LOCATION.computeIfAbsent(name, k->new ArrayList<>()).clear();
         final Rules rules = new Rules(name);
         for (final Location location : rules.getSpawnsLocations()){
             final ItemStack spawnLocationItem = new ItemStack(Material.TRIPWIRE_HOOK);
@@ -92,8 +90,7 @@ public final class DynamicTools {
     }
 
     public static void loadCheckpointsItems(final String name) {
-        CHECKPOINTS_MAPS_ITEMS.computeIfAbsent(name, k -> new ArrayList<>());
-        CHECKPOINTS_MAPS_ITEMS.get(name).clear();
+        CHECKPOINTS_MAPS_ITEMS.computeIfAbsent(name, k -> new ArrayList<>()).clear();
         final CheckpointConfig config = new CheckpointConfig(name);
         for (final String checkpoint : config.keys()) {
             try {

@@ -9,7 +9,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.*;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.EntityCache;
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.gui.Gui;
@@ -285,7 +285,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             //protocolManager.sendServerPacket(player, packet2);
         }
         protocolStands.computeIfAbsent(map, k -> new HashMap<>())
-                .computeIfAbsent(type, k->new ArrayList<>())
+                .computeIfAbsent(type, k -> new ArrayList<>())
                 .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2));
 
         for (Player viewer : playersViewingMap.getOrDefault(map, new HashSet<>())) {

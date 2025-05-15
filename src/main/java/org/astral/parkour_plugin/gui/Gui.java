@@ -6,8 +6,8 @@ import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.BlockCache;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.cache.InventoryCache;
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
-import org.astral.parkour_plugin.config.checkpoint.Rules;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.gui.tools.BooleanTools;
 import org.astral.parkour_plugin.gui.tools.DynamicTools;
@@ -52,8 +52,8 @@ public final class Gui {
     private static final byte ITEMS_PER_PAGE_CHECKPOINT = 3;
 
     //Spawn & Finish
-    private static final byte INDEX_SPAWN = 4;
-    private static final byte ITEMS_PER_PAGE_SPAWN = 1;
+    private static final byte INDEX_SPAWN_FINISH = 3;
+    private static final byte ITEMS_PER_PAGE_SPAWN_FINISH = 4;
 
     //----------------------------------------------------------------------------[Names Inventories]
     //-----------------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ public final class Gui {
     private static final String main_Menu = "Main_Menu";
     private static final String checkpoint_menu = "Checkpoint_Menu";
     private static final String checkpoint_Menu_Edit = "Checkpoint_Menu_Edit";
-    private static final String spawnAndFinishMenu = "Spawn_Menu";
+    private static final String spawnAndFinishMenu = "Spawn_End_Menu";
 
     private static final Map<Player, ItemStack[]> playerInventories = new HashMap<>();
     private static final Map<Player, Boolean> editingPlayers = new HashMap<>();
@@ -114,16 +114,18 @@ public final class Gui {
     public static void loadSpawnAndEndMenu(final @NotNull Player player){
         menu.put(player, spawnAndFinishMenu);
         final String name_map = mapPlayer.getOrDefault(player, "");
+        playerPages.put(player, 0);
+        DynamicTools.loadSpawnPoints(name_map);
+        DynamicTools.loadFinishPoints(name_map);
         player.getInventory().clear();
         player.getInventory().setItem(0, Tools.MARK_SPAWN_ITEM.getItem());
         player.getInventory().setItem(1, Tools.MARK_FINISH_ITEM.getItem());
-        player.getInventory().setItem(7, Tools.BACK_ITEM.getItem());
-        playerPages.put(player, 0);
-        showPage(player, 0, DynamicTools.SPAWN_LOCATIONS.get(name_map), INDEX_SPAWN, ITEMS_PER_PAGE_SPAWN);
-    }
-
-    public static void loadSpawn(){
-
+        player.getInventory().setItem(8, Tools.BACK_ITEM.getItem());
+        final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
+        all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
+        showPage(player, 0, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
+        HOLOGRAM_API.showHolograms(player, name_map, Type.SPAWN);
+        HOLOGRAM_API.showHolograms(player, name_map, Type.END_POINT);
     }
 
     //----------------------------------------------------------------------------[CHECKPOINT]
@@ -257,6 +259,13 @@ public final class Gui {
                     updateInventory(entry.getKey());
                 }
             }
+        });
+    }
+
+    private static void updateAllSpawnEnd(final String name_map){
+        Kit.getAsyncScheduler().runNow(plugin, t->{
+            DynamicTools.loadSpawnPoints(name_map);
+            DynamicTools.loadFinishPoints(name_map);
         });
     }
 
@@ -569,12 +578,13 @@ public final class Gui {
     public static void updateInventory(final Player player) {
         final String menu_player = menu.getOrDefault(player, "");
 
+        final String map_name = mapPlayer.get(player);
+
         switch (menu_player) {
             case main_Menu:
                 showPage(player, playerPages.getOrDefault(player, 0), DynamicTools.SELECTS_MAPS_ITEMS, INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
                 break;
             case checkpoint_menu:
-                final String map_name = mapPlayer.get(player);
                 if (map_name != null) {
                     showPage(player, playerPages.getOrDefault(player, 0), DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(map_name), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 }
@@ -583,6 +593,13 @@ public final class Gui {
                 final String inventory = player.getOpenInventory().getTitle();
                 if (inventory.equals(order)) {
                     player.closeInventory();
+                }
+                break;
+            case spawnAndFinishMenu:
+                if (map_name != null) {
+                    final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(map_name));
+                    all.addAll(DynamicTools.FINISH_LOCATION.get(map_name));
+                    showPage(player, playerPages.getOrDefault(player, 0), all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 }
                 break;
             default:
@@ -604,6 +621,9 @@ public final class Gui {
                 break;
             case checkpoint_menu:
                 if (name_map != null) loadEditInventoryMap(player);
+                break;
+            case spawnAndFinishMenu:
+                loadEditInventoryMap(player);
                 break;
             default:
                 player.sendMessage("Valor inesperado para menu_player: " + menu_player);

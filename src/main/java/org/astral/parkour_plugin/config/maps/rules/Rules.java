@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.config.checkpoint;
+package org.astral.parkour_plugin.config.maps.rules;
 
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
@@ -27,7 +27,7 @@ public final class Rules {
     private YamlConfiguration yamlConfiguration;
 
     // File Names
-    public static final String RULES = Configuration.RULES;
+    public static final String RULES_YML = Configuration.RULES_YML;
 
     // Reserved
     public static final String spawnPointsKey = "spawns_points";
@@ -36,7 +36,7 @@ public final class Rules {
     public Rules(final String MAP_FOLDER){
         this.MAP_FOLDER = MAP_FOLDER;
         try {
-            yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER);
+            yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER, RULES_YML);
         } catch (FileNotFoundException e) {
             plugin.getLogger().warning("YAML file not found for " + this.MAP_FOLDER + ".");
         }
@@ -195,7 +195,6 @@ public final class Rules {
         }
     }
 
-
     public boolean isEqualsLocation(final @NotNull Location location) {
         List<Location> allPoints = new ArrayList<>(getSpawnsLocations());
         allPoints.addAll(getEndPoints());
@@ -217,7 +216,7 @@ public final class Rules {
 
     private void saveConfiguration() {
         try {
-            configuration.saveConfiguration(yamlConfiguration, MAPS, MAP_FOLDER ,RULES);
+            configuration.saveConfiguration(yamlConfiguration, MAPS, MAP_FOLDER , RULES_YML);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save configuration", e);
         }

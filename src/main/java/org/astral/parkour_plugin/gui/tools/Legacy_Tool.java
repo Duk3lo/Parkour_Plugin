@@ -1,7 +1,7 @@
 package org.astral.parkour_plugin.gui.tools;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
-import org.astral.parkour_plugin.config.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.Configuration;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
