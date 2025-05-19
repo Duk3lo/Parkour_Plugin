@@ -166,7 +166,17 @@ public final class Gui {
             player.sendMessage("Esta ubicacion ya se marco como spawn");
         }else {
             HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
-            updateCheckpoints(name_map);
+            updateAllSpawnEnd(name_map);
+        }
+    }
+
+    public static void removeSpawnPointSpawn(final Player  player, final Location location){
+        final String name_map = mapPlayer.get(player);
+        Rules rules = new Rules(name_map);
+        if (rules.isEqualsLocation(location)){
+            HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.SPAWN);
+            rules.removePoint(location);
+            updateAllSpawnEnd(name_map);
         }
     }
 
@@ -255,8 +265,10 @@ public final class Gui {
         Kit.getAsyncScheduler().runNow(plugin, t ->{
             DynamicTools.loadCheckpointsItems(name_map);
             for (Map.Entry<Player, String> entry : mapPlayer.entrySet()) {
-                if (name_map.equals(entry.getValue())) {
-                    updateInventory(entry.getKey());
+                final String nameMap = entry.getValue();
+                final Player player = entry.getKey();
+                if (name_map.equals(nameMap)) {
+                    updateInventory(player);
                 }
             }
         });
@@ -266,11 +278,18 @@ public final class Gui {
         Kit.getAsyncScheduler().runNow(plugin, t->{
             DynamicTools.loadSpawnPoints(name_map);
             DynamicTools.loadFinishPoints(name_map);
+            for (Map.Entry<Player, String> entry : mapPlayer.entrySet()) {
+                final String nameMap = entry.getValue();
+                final Player player = entry.getKey();
+                if (name_map.equals(nameMap)) {
+                    updateInventory(player);
+                }
+            }
         });
     }
 
-    ////------------------------------------------------------------------------------------[Gui]
-    ////----------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------[Gui]
+    //----------------------------------------------------------------------------------------
     public static void setMapPlayer(final Player player, final String name_map){
         mapPlayer.put(player, name_map);
     }

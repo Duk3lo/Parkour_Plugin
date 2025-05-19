@@ -64,13 +64,14 @@ public final class DynamicTools {
     public static void loadSpawnPoints(final String name) {
         SPAWN_LOCATIONS.computeIfAbsent(name, k->new ArrayList<>()).clear();
         final Rules rules = new Rules(name);
-        for (final Location location : rules.getSpawnsLocations()){
+        for (final Location location : rules.getSpawnsPoints()){
             final ItemStack spawnLocationItem = new ItemStack(Material.TRIPWIRE_HOOK);
             final ItemMeta spawnMeta = spawnLocationItem.getItemMeta();
             if (spawnMeta != null) {
-                spawnMeta.setDisplayName(ChatColor.AQUA + "Punto de Aparicion Establecido" +location.getWorld());
+                spawnMeta.setDisplayName(ChatColor.AQUA + "Aparicion" +location.getWorld().getName());
                 spawnMeta.setLore(Collections.singletonList(ChatColor.GREEN + "x:"+ location.getX() + " y: " + location.getY() + " z: " + location.getZ()));
             }
+            spawnLocationItem.setItemMeta(spawnMeta);
             SPAWN_LOCATIONS.get(name).add(spawnLocationItem);
         }
     }
@@ -78,14 +79,15 @@ public final class DynamicTools {
     public static void loadFinishPoints(final String name) {
         FINISH_LOCATION.computeIfAbsent(name, k->new ArrayList<>()).clear();
         final Rules rules = new Rules(name);
-        for (final Location location : rules.getSpawnsLocations()){
-            final ItemStack spawnLocationItem = new ItemStack(Material.TRIPWIRE_HOOK);
-            final ItemMeta spawnMeta = spawnLocationItem.getItemMeta();
-            if (spawnMeta != null) {
-                spawnMeta.setDisplayName(ChatColor.AQUA + "Punto Final: " +location.getWorld());
-                spawnMeta.setLore(Collections.singletonList(ChatColor.GREEN + "x:"+ location.getX() + " y: " + location.getY() + " z: " + location.getZ()));
+        for (final Location location : rules.getEndPoints()){
+            final ItemStack finishItem = new ItemStack(Material.TRIPWIRE_HOOK);
+            final ItemMeta finishMeta = finishItem.getItemMeta();
+            if (finishMeta != null) {
+                finishMeta.setDisplayName(ChatColor.AQUA + "Punto Final: " +location.getWorld().getName());
+                finishMeta.setLore(Collections.singletonList(ChatColor.GREEN + "x:"+ location.getX() + " y: " + location.getY() + " z: " + location.getZ()));
             }
-            FINISH_LOCATION.get(name).add(spawnLocationItem);
+            finishItem.setItemMeta(finishMeta);
+            FINISH_LOCATION.get(name).add(finishItem);
         }
     }
 

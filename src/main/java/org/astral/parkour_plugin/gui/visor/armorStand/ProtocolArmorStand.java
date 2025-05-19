@@ -241,9 +241,6 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 packet1.getEntityTypeModifier().write(0, EntityType.ARMOR_STAND);
             }
         }
-        /*if (packet1 != null) {
-            protocolManager.sendServerPacket(player, packet1);
-        }*/
 
         //**Versión 1.8 - 1.21+** ->Metadata
         final PacketContainer packet2 = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);

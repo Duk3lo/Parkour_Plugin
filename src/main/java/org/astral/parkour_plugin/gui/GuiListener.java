@@ -72,7 +72,9 @@ public final class GuiListener implements Listener {
                     else Gui.addMap(player);
                 }
                 if (block != null){
-
+                    if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())){
+                        Gui.removeSpawnPointSpawn(player, block.getLocation());
+                    }
 
                     if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
                         Gui.removeCheckpoint(player, block.getLocation());
@@ -81,7 +83,7 @@ public final class GuiListener implements Listener {
             }
 
             if (event.getAction().name().contains("LEFT")){
-                if (block != null ){
+                if (block != null){
                     if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())){
                         Gui.addSpawnPoint(player, block.getLocation());
                     }

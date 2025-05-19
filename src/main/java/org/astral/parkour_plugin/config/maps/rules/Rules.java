@@ -8,6 +8,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,8 +31,11 @@ public final class Rules {
     public static final String RULES_YML = Configuration.RULES_YML;
 
     // Reserved
-    public static final String spawnPointsKey = "spawns_points";
-    public static final String endPointsKey = "end_points";
+    private static final String spawnPointsKey = "spawns_points";
+    private static final String endPointsKey = "end_points";
+
+    public static final String spawnP = "spawn_";
+    public static final String endP = "meta_";
 
     public Rules(final String MAP_FOLDER){
         this.MAP_FOLDER = MAP_FOLDER;
@@ -42,7 +46,7 @@ public final class Rules {
         }
     }
 
-    public @NotNull List<Location> getSpawnsLocations() {
+    public @NotNull List<Location> getSpawnsPoints() {
         final List<Location> positions = new ArrayList<>();
         final ConfigurationSection spawnsSection = yamlConfiguration.getConfigurationSection(spawnPointsKey);
         if (spawnsSection == null) return positions;
@@ -79,19 +83,22 @@ public final class Rules {
     }
 
     public @NotNull String setSpawns(final @NotNull Location location) {
-        final List<Location> positions = getSpawnsLocations();
+        final List<Location> positions = getSpawnsPoints();
         positions.add(location);
         ConfigurationSection spawnsSection = yamlConfiguration.getConfigurationSection(spawnPointsKey);
         if (spawnsSection == null)
             spawnsSection = yamlConfiguration.createSection(spawnPointsKey);
 
         final int nextIndex = spawnsSection.getKeys(false).size();
-        final String val = "position_" + nextIndex;
+        final String val = spawnP + nextIndex;
         final ConfigurationSection section = spawnsSection.createSection(val);
+        final double x = (int) location.getX() + 0.5;
+        final double y = location.getBlockY();
+        final double z = (int) location.getZ() + 0.5;
         section.set("world", location.getWorld().getName());
-        section.set("x", Math.floor(location.getX()) + 0.5);
-        section.set("y", Math.floor(location.getY()));
-        section.set("z", Math.floor(location.getZ()) + 0.5);
+        section.set("x", x);
+        section.set("y", y);
+        section.set("z", z);
         saveConfiguration();
         return val;
     }
@@ -103,7 +110,7 @@ public final class Rules {
         if (finishSection == null)
             finishSection = yamlConfiguration.createSection(endPointsKey);
         final int nextIndex = finishSection.getKeys(false).size();
-        final String val = "position_" + nextIndex;
+        final String val = endP + nextIndex;
         final ConfigurationSection section = finishSection.createSection(val);
         section.set("world", location.getWorld().getName());
         section.set("x", Math.floor(location.getX()) + 0.5);
@@ -113,33 +120,12 @@ public final class Rules {
         return val;
     }
 
-    private @NotNull String getNextPositionKey(@NotNull String sectionKey) {
-        ConfigurationSection section = yamlConfiguration.getConfigurationSection(sectionKey);
-        if (section == null) {
-            return "position_0";
-        }
-
-        int maxIndex = -1;
-        for (String key : section.getKeys(false)) {
-            if (key.startsWith("position_")) {
-                try {
-                    int index = Integer.parseInt(key.substring("position_".length()));
-                    if (index > maxIndex) {
-                        maxIndex = index;
-                    }
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-
-        return "position_" + (maxIndex + 1);
-    }
-
-    public void removePoint(@NotNull Location location) {
-        List<Location> spawns = getSpawnsLocations();
+    public void removePoint(final @NotNull Location location) {
+        List<Location> spawns = getSpawnsPoints();
         List<Location> ends = getEndPoints();
-        final double targetX = Math.floor(location.getX()) + 0.5;
+        final double targetX = (int) location.getX() + 0.5;
         final double targetY = location.getY();
-        final double targetZ = Math.floor(location.getZ()) + 0.5;
+        final double targetZ = (int) location.getZ() + 0.5;
         final World world = location.getWorld();
         boolean removed = false;
         Iterator<Location> it = spawns.iterator();
@@ -159,11 +145,11 @@ public final class Rules {
             ConfigurationSection spawnsSection = yamlConfiguration.createSection(spawnPointsKey);
             for (int i = 0; i < spawns.size(); i++) {
                 Location loc = spawns.get(i);
-                ConfigurationSection section = spawnsSection.createSection("position_" + i);
+                ConfigurationSection section = spawnsSection.createSection(spawnP + i);
                 section.set("world", loc.getWorld().getName());
-                section.set("x", Math.floor(loc.getX()) + 0.5);
-                section.set("y", Math.floor(loc.getY()));
-                section.set("z", Math.floor(loc.getZ()) + 0.5);
+                section.set("x", loc.getX());
+                section.set("y", loc.getY());
+                section.set("z", loc.getZ());
             }
             saveConfiguration();
             return;
@@ -185,33 +171,121 @@ public final class Rules {
             ConfigurationSection endSection = yamlConfiguration.createSection(endPointsKey);
             for (int i = 0; i < ends.size(); i++) {
                 Location loc = ends.get(i);
-                ConfigurationSection section = endSection.createSection("position_" + i);
+                ConfigurationSection section = endSection.createSection(endP + i);
                 section.set("world", loc.getWorld().getName());
-                section.set("x", Math.floor(loc.getX()) + 0.5);
-                section.set("y", Math.floor(loc.getY()));
-                section.set("z", Math.floor(loc.getZ()) + 0.5);
+                section.set("x", loc.getX());
+                section.set("y", loc.getY());
+                section.set("z", loc.getZ());
             }
             saveConfiguration();
         }
     }
 
+    public @Nullable Location getSpawnLocationFromKey(@NotNull String key) {
+        return getLocationFromKey(spawnPointsKey, key);
+    }
+
+    public @Nullable Location getEndPointLocationFromKey(@NotNull String key) {
+        return getLocationFromKey(endPointsKey, key);
+    }
+
+    private @Nullable Location getLocationFromKey(@NotNull String sectionKey, @NotNull String key) {
+        final ConfigurationSection section = yamlConfiguration.getConfigurationSection(sectionKey);
+        if (section == null) return null;
+
+        final ConfigurationSection posSection = section.getConfigurationSection(key);
+        if (posSection == null) return null;
+
+        final String worldName = posSection.getString("world");
+        final double x = posSection.getDouble("x");
+        final double y = posSection.getDouble("y");
+        final double z = posSection.getDouble("z");
+
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) return null;
+
+        return new Location(world, x, y, z);
+    }
+
+    public String getSpawnKeyFromLocation(final @NotNull Location location) {
+        return getKeyFromLocation(spawnPointsKey, location);
+    }
+
+    public String getEndPointKeyFromLocation(final @NotNull Location location) {
+        return getKeyFromLocation(endPointsKey, location);
+    }
+
+    private @Nullable String getKeyFromLocation(@NotNull String sectionKey, @NotNull Location location) {
+        final ConfigurationSection section = yamlConfiguration.getConfigurationSection(sectionKey);
+        if (section == null) return null;
+
+        final double targetX = (int) location.getX() + 0.5;
+        final double targetY = location.getBlockY();
+        final double targetZ = (int) location.getZ() + 0.5;
+        final String targetWorld = location.getWorld().getName();
+
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection posSection = section.getConfigurationSection(key);
+            if (posSection == null) continue;
+
+            String world = posSection.getString("world");
+            double x = posSection.getDouble("x");
+            double y = posSection.getDouble("y");
+            double z = posSection.getDouble("z");
+
+            if (world != null && world.equals(targetWorld)
+                    && x == targetX && y == targetY && z == targetZ) {
+                return key;
+            }
+        }
+        return null;
+    }
+
     public boolean isEqualsLocation(final @NotNull Location location) {
-        List<Location> allPoints = new ArrayList<>(getSpawnsLocations());
+        List<Location> allPoints = new ArrayList<>(getSpawnsPoints());
         allPoints.addAll(getEndPoints());
+
         final double adjustedX = (int) location.getX() + 0.5;
         final double adjustedZ = (int) location.getZ() + 0.5;
-        final double y = location.getY();
-        final World world = location.getWorld();
-
+        location.setX(adjustedX);
+        location.setZ(adjustedZ);
         for (Location end : allPoints) {
-            if (end.getWorld().equals(world) &&
-                    end.getX() == adjustedX &&
-                    end.getY() == y &&
-                    end.getZ() == adjustedZ) {
+            if (end.getWorld().equals(location.getWorld()) &&
+                    end.getX() == location.getX() &&
+                    end.getY() == location.getBlockY() &&
+                    end.getZ() == location.getZ()) {
+
                 return true;
             }
         }
         return false;
+    }
+
+
+    public @NotNull String @NotNull [] getSpawnKeys() {
+        final List<String> keys = new ArrayList<>();
+        ConfigurationSection spawnsSection = yamlConfiguration.getConfigurationSection(spawnPointsKey);
+        if (spawnsSection != null) {
+            for (String key : spawnsSection.getKeys(false)) {
+                if (key.startsWith(spawnP)) {
+                    keys.add(key);
+                }
+            }
+        }
+        return keys.toArray(new String[0]);
+    }
+
+    public @NotNull String @NotNull [] getEndKeys() {
+        final List<String> keys = new ArrayList<>();
+        ConfigurationSection endSection = yamlConfiguration.getConfigurationSection(endPointsKey);
+        if (endSection != null) {
+            for (String key : endSection.getKeys(false)) {
+                if (key.startsWith(endP)) {
+                    keys.add(key);
+                }
+            }
+        }
+        return keys.toArray(new String[0]);
     }
 
     private void saveConfiguration() {
