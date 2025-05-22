@@ -10,6 +10,7 @@ import com.comphenix.protocol.wrappers.*;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.gui.Gui;
@@ -188,17 +189,38 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     }
 
 
-    private void addingHolograms(final String map, final Type type) {
+    private void addingHolograms(final String map, final @NotNull Type type){
+        if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(type)) return;
+        final Rules rules = new Rules(map);
         final CheckpointConfig config = new CheckpointConfig(map);
-        for (final String name : config.keys()) {
-            try {
-                config.getCheckpoint(name);
-            } catch (IOException e) {
-                plugin.getLogger().severe("Failed to load checkpoint '" + name + "' for map '" + map + "': " + e.getMessage());
-                continue;
-            }
-            final Location location = config.getLocation();
-            addHologram(map, name, location, type);
+
+        switch (type) {
+            case CHECKPOINT:
+                for (final String name : config.keys()) {
+                    try {
+                        config.getCheckpoint(name);
+                    } catch (IOException e) {
+                        plugin.getLogger().severe("No se pudo cargar el checkpoint '" + name + "' en el mapa '" + map + "'");
+                        continue;
+                    }
+                    final Location location = config.getLocation();
+                    addHologram(map, name, location, type);
+                }
+                break;
+            case SPAWN:
+                for (final String key : rules.getSpawnKeys()) {
+                    final Location location = rules.getSpawnLocationFromKey(key);
+                    if (location == null) continue;
+                    addHologram(map, key, location, type);
+                }
+                break;
+            case END_POINT:
+                for (final String key : rules.getEndKeys()) {
+                    final Location location = rules.getSpawnLocationFromKey(key);
+                    if (location == null) continue;
+                    addHologram(map, key, location, type);
+                }
+                break;
         }
     }
 
