@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.gui.visor.armorStand;
 
 import com.comphenix.protocol.events.PacketContainer;
+import org.astral.parkour_plugin.gui.visor.Type;
 import org.bukkit.Location;
 
 public final class PacketStructureArmorStand {
@@ -9,13 +10,15 @@ public final class PacketStructureArmorStand {
     private final Location location;
     private final PacketContainer entityPacket;
     private final PacketContainer metadataPacket;
+    private final Type type;
 
-    PacketStructureArmorStand(final int entityIdPacket, final String name, final Location location , final PacketContainer entityPacket, final PacketContainer metadata){
+    PacketStructureArmorStand(final int entityIdPacket, final String name, final Location location , final PacketContainer entityPacket, final PacketContainer metadata, final Type type){
         this.entityIdPacket = entityIdPacket;
         this.name = name;
         this.location = location;
         this.entityPacket = entityPacket;
         this.metadataPacket = metadata;
+        this.type = type;
     }
 
     int getEntityIdPacket(){
@@ -32,6 +35,10 @@ public final class PacketStructureArmorStand {
 
     PacketContainer getEntityPacket(){
         return entityPacket;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     PacketContainer getMetadataPacket(){

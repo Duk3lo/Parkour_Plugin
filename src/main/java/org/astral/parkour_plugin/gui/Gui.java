@@ -175,7 +175,17 @@ public final class Gui {
         Rules rules = new Rules(name_map);
         if (rules.isEqualsLocation(location)){
             HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.SPAWN);
-            rules.removePoint(location);
+            rules.removeSpawnPoint(location);
+            updateAllSpawnEnd(name_map);
+        }
+    }
+
+    public static void removeEndPoint(final Player player, final Location location){
+        final String name_map = mapPlayer.get(player);
+        Rules rules = new Rules(name_map);
+        if (rules.isEqualsLocation(location)){
+            HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.SPAWN);
+            rules.removeEndPoint(location);
             updateAllSpawnEnd(name_map);
         }
     }

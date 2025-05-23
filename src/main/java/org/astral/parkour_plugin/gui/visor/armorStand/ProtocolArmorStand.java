@@ -40,6 +40,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     private final Map<String, Map<Type, List<PacketStructureArmorStand>>> protocolStands = new HashMap<>();
     //private final Map<String, List<PacketStructureArmorStand>> protocolStands = new HashMap<>();
     private final Map<Player, Set<Integer>> visibleEntities = new HashMap<>();
+    private final Map<Type, Player> playersViewingMapType = new HashMap<>();
 
     private static final double RANGE = 144;
 
@@ -62,7 +63,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                     final PacketContainer packet = event.getPacket();
                     if (second >= 8 && second <= 16) {
                         final EnumWrappers.EntityUseAction action = packet.getEntityUseActions().read(0);
-                        if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem()) && action.name().equals("INTERACT_AT")) {
+                        if (isItemInteraction(item) && action.name().equals("INTERACT_AT")) {
                             useArmor = true;
                         }
                     } else if (second >= 17) {
@@ -70,7 +71,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                         if (!actions.isEmpty()) {
                             WrappedEnumEntityUseAction actionWrapper = actions.get(0);
                             final EnumWrappers.EntityUseAction action = actionWrapper.getAction();
-                            if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem()) && action == EnumWrappers.EntityUseAction.INTERACT_AT) {
+                            if (isItemInteraction(item) && action == EnumWrappers.EntityUseAction.INTERACT_AT) {
                                 useArmor = true;
                             }
                         }
@@ -89,11 +90,34 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                                     .orElse(null);
                             if (entityData != null) {
                                 Location location = entityData.getLocation();
-                                Gui.removeCheckpoint(player, location);
+                                Type type = entityData.getType();
+                                Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
+                                if (typeMap != null) {
+                                    List<PacketStructureArmorStand> list = typeMap.get(type);
+                                    if (list != null) {
+                                        list.removeIf(e -> e.getEntityIdPacket() == entityId);
+                                    }
+                                }
+
+                                PacketContainer destroyPacket = destroyPacket(new int[]{entityId});
+                                protocolManager.sendServerPacket(player, destroyPacket);
+                                visibleEntities.getOrDefault(player, Collections.emptySet()).remove(entityId);
+
+                                // Remover del GUI según tipo
+                                switch (type) {
+                                    case CHECKPOINT:
+                                        Gui.removeCheckpoint(player, location);
+                                        break;
+                                    case SPAWN:
+                                        Gui.removeSpawnPointSpawn(player, location);
+                                        break;
+                                    case END_POINT:
+                                        Gui.removeEndPoint(player, location);
+                                        break;
+                                }
                             }
                         }
                     }
-
                 }
             }
         };
@@ -137,6 +161,10 @@ public final class ProtocolArmorStand implements ArmorStandApi {
 
             }
         };
+    }
+
+    public boolean isItemInteraction(final @NotNull ItemStack item){
+        return item.isSimilar(Tools.CHECKPOINT_MARKER.getItem()) || item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem()) || item.isSimilar(Tools.MARK_FINISH_ITEM.getItem());
     }
 
     private @Nullable String getMapOfPlayer(final Player player) {
@@ -190,12 +218,10 @@ public final class ProtocolArmorStand implements ArmorStandApi {
 
 
     private void addingHolograms(final String map, final @NotNull Type type){
-        if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(type)) return;
-        final Rules rules = new Rules(map);
-        final CheckpointConfig config = new CheckpointConfig(map);
-
         switch (type) {
             case CHECKPOINT:
+                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.CHECKPOINT)) break;
+                final CheckpointConfig config = new CheckpointConfig(map);
                 for (final String name : config.keys()) {
                     try {
                         config.getCheckpoint(name);
@@ -208,15 +234,19 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 }
                 break;
             case SPAWN:
-                for (final String key : rules.getSpawnKeys()) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.SPAWN)) break;
+                final Rules rulesCheckpoint = new Rules(map);
+                for (final String key : rulesCheckpoint.getSpawnKeys()) {
+                    final Location location = rulesCheckpoint.getSpawnLocationFromKey(key);
                     if (location == null) continue;
                     addHologram(map, key, location, type);
                 }
                 break;
             case END_POINT:
-                for (final String key : rules.getEndKeys()) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.END_POINT)) break;
+                final Rules rulesEndPoint = new Rules(map);
+                for (final String key : rulesEndPoint.getEndKeys()) {
+                    final Location location = rulesEndPoint.getSpawnLocationFromKey(key);
                     if (location == null) continue;
                     addHologram(map, key, location, type);
                 }
@@ -305,7 +335,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
         }
         protocolStands.computeIfAbsent(map, k -> new HashMap<>())
                 .computeIfAbsent(type, k -> new ArrayList<>())
-                .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2));
+                .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2, type));
 
         for (Player viewer : playersViewingMap.getOrDefault(map, new HashSet<>())) {
             protocolManager.sendServerPacket(viewer, packet1);

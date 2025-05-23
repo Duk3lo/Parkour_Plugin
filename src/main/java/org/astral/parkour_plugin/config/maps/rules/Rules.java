@@ -120,15 +120,15 @@ public final class Rules {
         return val;
     }
 
-    public void removePoint(final @NotNull Location location) {
+    public void removeSpawnPoint(@NotNull Location location) {
         List<Location> spawns = getSpawnsPoints();
-        List<Location> ends = getEndPoints();
         final double targetX = (int) location.getX() + 0.5;
         final double targetY = location.getY();
         final double targetZ = (int) location.getZ() + 0.5;
         final World world = location.getWorld();
-        boolean removed = false;
+
         Iterator<Location> it = spawns.iterator();
+        boolean removed = false;
         while (it.hasNext()) {
             Location loc = it.next();
             if (loc.getWorld().equals(world) &&
@@ -140,6 +140,7 @@ public final class Rules {
                 break;
             }
         }
+
         if (removed) {
             yamlConfiguration.set(spawnPointsKey, null);
             ConfigurationSection spawnsSection = yamlConfiguration.createSection(spawnPointsKey);
@@ -152,9 +153,18 @@ public final class Rules {
                 section.set("z", loc.getZ());
             }
             saveConfiguration();
-            return;
         }
-        it = ends.iterator();
+    }
+
+    public void removeEndPoint(@NotNull Location location) {
+        List<Location> ends = getEndPoints();
+        final double targetX = (int) location.getX() + 0.5;
+        final double targetY = location.getY();
+        final double targetZ = (int) location.getZ() + 0.5;
+        final World world = location.getWorld();
+
+        Iterator<Location> it = ends.iterator();
+        boolean removed = false;
         while (it.hasNext()) {
             Location loc = it.next();
             if (loc.getWorld().equals(world) &&
@@ -166,6 +176,7 @@ public final class Rules {
                 break;
             }
         }
+
         if (removed) {
             yamlConfiguration.set(endPointsKey, null);
             ConfigurationSection endSection = yamlConfiguration.createSection(endPointsKey);

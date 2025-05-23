@@ -84,31 +84,37 @@ public final class ArmorStandView implements ArmorStandApi {
     }
 
     private void addingHolograms(final String map, final @NotNull Type type){
-        if (armorStands.containsKey(map) && armorStands.get(map).containsKey(type)) return;
-        final Rules rules = new Rules(map);
-        final CheckpointConfig config = new CheckpointConfig(map);
+
+        
+
         switch (type) {
             case CHECKPOINT:
-                for (final String name : config.keys()) {
+                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.CHECKPOINT)) break;
+                final CheckpointConfig checkpoint = new CheckpointConfig(map);
+                for (final String name : checkpoint.keys()) {
                     try {
-                        config.getCheckpoint(name);
+                        checkpoint.getCheckpoint(name);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    final Location location = config.getLocation();
+                    final Location location = checkpoint.getLocation();
                     addHologram(map, name, location, type);
                 }
                 break;
             case SPAWN:
-                for (final String key : rules.getSpawnKeys()) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.SPAWN)) break;
+                final Rules rulesSpawn = new Rules(map);
+                for (final String key : rulesSpawn.getSpawnKeys()) {
+                    final Location location = rulesSpawn.getSpawnLocationFromKey(key);
                     if (location == null) continue;
                     addHologram(map, key, location, type);
                 }
                 break;
             case END_POINT:
-                for (final String key : rules.getEndKeys()) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.END_POINT)) break;
+                final Rules rulesEnd = new Rules(map);
+                for (final String key : rulesEnd.getEndKeys()) {
+                    final Location location = rulesEnd.getSpawnLocationFromKey(key);
                     if (location == null) continue;
                     addHologram(map, key, location, type);
                 }
