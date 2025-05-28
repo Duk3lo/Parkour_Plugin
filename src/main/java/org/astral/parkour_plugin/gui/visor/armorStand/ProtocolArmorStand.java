@@ -38,9 +38,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     private final PacketAdapter adapter;
     private final Listener listener;
     private final Map<String, Map<Type, List<PacketStructureArmorStand>>> protocolStands = new HashMap<>();
-    //private final Map<String, List<PacketStructureArmorStand>> protocolStands = new HashMap<>();
     private final Map<Player, Set<Integer>> visibleEntities = new HashMap<>();
-    private final Map<Type, Player> playersViewingMapType = new HashMap<>();
 
     private static final double RANGE = 144;
 
@@ -89,8 +87,20 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                                     .findFirst()
                                     .orElse(null);
                             if (entityData != null) {
-                                Location location = entityData.getLocation();
+                                final Location location = entityData.getLocation();
                                 Type type = entityData.getType();
+                                switch (type) {
+                                    case CHECKPOINT:
+                                        Gui.removeCheckpoint(player, location);
+                                        break;
+                                    case SPAWN:
+                                        Gui.removeSpawnPoint(player, location);
+                                        break;
+                                    case END_POINT:
+                                        Gui.removeEndPoint(player, location);
+                                        break;
+                                }
+
                                 Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
                                 if (typeMap != null) {
                                     List<PacketStructureArmorStand> list = typeMap.get(type);
@@ -98,23 +108,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                                         list.removeIf(e -> e.getEntityIdPacket() == entityId);
                                     }
                                 }
-
-                                PacketContainer destroyPacket = destroyPacket(new int[]{entityId});
-                                protocolManager.sendServerPacket(player, destroyPacket);
                                 visibleEntities.getOrDefault(player, Collections.emptySet()).remove(entityId);
-
-                                // Remover del GUI según tipo
-                                switch (type) {
-                                    case CHECKPOINT:
-                                        Gui.removeCheckpoint(player, location);
-                                        break;
-                                    case SPAWN:
-                                        Gui.removeSpawnPointSpawn(player, location);
-                                        break;
-                                    case END_POINT:
-                                        Gui.removeEndPoint(player, location);
-                                        break;
-                                }
                             }
                         }
                     }
@@ -130,17 +124,31 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 final Set<Integer> visible = visibleEntities.computeIfAbsent(player, k -> new HashSet<>());
                 for (final Map.Entry<String, Map<Type, List<PacketStructureArmorStand>>> entry : protocolStands.entrySet()) {
                     final String viewerId = entry.getKey();
-                    final Set<Player> viewers = playersViewingMap.get(viewerId);
-                    if (viewers == null || viewers.isEmpty() || !viewers.contains(player)) {
-                        continue;
+                    final Map<Type, Set<Player>> typeToViewers = playersViewingMap.get(viewerId);
+                    if (typeToViewers == null) continue;
+
+                    boolean isViewer = false;
+                    for (Set<Player> viewerSet : typeToViewers.values()) {
+                        if (viewerSet.contains(player)) {
+                            isViewer = true;
+                            break;
+                        }
                     }
+                    if (!isViewer) continue;
 
                     final Map<Type, List<PacketStructureArmorStand>> typeMap = entry.getValue();
-                    for (final List<PacketStructureArmorStand> packetList : typeMap.values()) {
+                    for (Map.Entry<Type, List<PacketStructureArmorStand>> typeEntry : typeMap.entrySet()) {
+                        final Type type = typeEntry.getKey();
+                        final List<PacketStructureArmorStand> packetList = typeEntry.getValue();
+
+                        Set<Player> viewers = typeToViewers.get(type);
+                        if (viewers == null || !viewers.contains(player)) continue;
+
                         for (final PacketStructureArmorStand packetStructure : packetList) {
                             final Location packetLocation = packetStructure.getLocation();
                             final int entityId = packetStructure.getEntityIdPacket();
                             if (!playerLocation.getWorld().equals(packetLocation.getWorld())) continue;
+
                             final double distanceSquared = playerLocation.distanceSquared(packetLocation);
                             if (distanceSquared <= RANGE * RANGE) {
                                 if (!visible.contains(entityId)) {
@@ -158,7 +166,6 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                         }
                     }
                 }
-
             }
         };
     }
@@ -168,9 +175,12 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     }
 
     private @Nullable String getMapOfPlayer(final Player player) {
-        for (Map.Entry<String, Set<Player>> entry : playersViewingMap.entrySet()) {
-            if (entry.getValue().contains(player)) {
-                return entry.getKey();
+        for (Map.Entry<String, Map<Type, Set<Player>>> entry : playersViewingMap.entrySet()) {
+            final Map<Type, Set<Player>> typeMap = entry.getValue();
+            for (Set<Player> players : typeMap.values()) {
+                if (players.contains(player)) {
+                    return entry.getKey();
+                }
             }
         }
         return null;
@@ -195,152 +205,178 @@ public final class ProtocolArmorStand implements ArmorStandApi {
 
     @Override
     public void showHolograms(final Player player, final String map, final Type type) {
-        final Set<Player> playersOnMap = playersViewingMap.computeIfAbsent(map, k -> new HashSet<>());
-        if (!playersOnMap.contains(player)) {
-            playersOnMap.add(player);
-            if (protocolStands.containsKey(map)) {
-                final Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
-                final List<PacketStructureArmorStand> packetsClass = typeMap.get(type);
-                if (packetsClass != null) {
-                    for (PacketStructureArmorStand packetStructureArmorStand : packetsClass) {
-                        System.out.println(packetStructureArmorStand.getEntityIdPacket());
-                        final PacketContainer entity = packetStructureArmorStand.getEntityPacket();
-                        protocolManager.sendServerPacket(player, entity);
-                        final PacketContainer metadata = packetStructureArmorStand.getMetadataPacket();
-                        protocolManager.sendServerPacket(player, metadata);
-                    }
-                }
-            } else {
-                addingHolograms(map, type);
+        playersViewingMap.computeIfAbsent(map, k -> new HashMap<>()).computeIfAbsent(type, k -> new HashSet<>()).add(player);
+
+        final Map<Type, List<PacketStructureArmorStand>> standTypeMap = protocolStands.get(map);
+        final List<PacketStructureArmorStand> stands = (standTypeMap != null) ? standTypeMap.get(type) : null;
+
+        if (stands != null) {
+            for (PacketStructureArmorStand packet : stands) {
+                protocolManager.sendServerPacket(player, packet.getEntityPacket());
+                protocolManager.sendServerPacket(player, packet.getMetadataPacket());
             }
+        } else {
+            addingHolograms(map, type);
         }
     }
 
-
-    private void addingHolograms(final String map, final @NotNull Type type){
+    private void addingHolograms(final String map, final @NotNull Type type) {
+        final Map<Type, List<PacketStructureArmorStand>> standMap = protocolStands.get(map);
+        if (standMap != null && standMap.containsKey(type)) return;
         switch (type) {
             case CHECKPOINT:
-                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.CHECKPOINT)) break;
                 final CheckpointConfig config = new CheckpointConfig(map);
                 for (final String name : config.keys()) {
                     try {
                         config.getCheckpoint(name);
+                        final Location location = config.getLocation();
+                        addHologram(map, name, location, type);
                     } catch (IOException e) {
                         plugin.getLogger().severe("No se pudo cargar el checkpoint '" + name + "' en el mapa '" + map + "'");
-                        continue;
                     }
-                    final Location location = config.getLocation();
-                    addHologram(map, name, location, type);
                 }
                 break;
             case SPAWN:
-                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.SPAWN)) break;
-                final Rules rulesCheckpoint = new Rules(map);
-                for (final String key : rulesCheckpoint.getSpawnKeys()) {
-                    final Location location = rulesCheckpoint.getSpawnLocationFromKey(key);
-                    if (location == null) continue;
-                    addHologram(map, key, location, type);
-                }
-                break;
-            case END_POINT:
-                if (protocolStands.containsKey(map) && protocolStands.get(map).containsKey(Type.END_POINT)) break;
-                final Rules rulesEndPoint = new Rules(map);
-                for (final String key : rulesEndPoint.getEndKeys()) {
-                    final Location location = rulesEndPoint.getSpawnLocationFromKey(key);
-                    if (location == null) continue;
-                    addHologram(map, key, location, type);
+
+                final Rules rules = new Rules(map);
+                final String[] keys = rules.getSpawnKeys();
+                for (final String key : keys) {
+                    final Location location = rules.getSpawnLocationFromKey(key);
+                    if (location != null) {
+                        addHologram(map, key, location, type);
+                    }
                 }
                 break;
         }
     }
 
+    @Override
+    public void addHologram(final String map, final String name, final @NotNull Location location, final Type type) {
+        if (first != 1) return;
+        Kit.getRegionScheduler().execute(plugin, location, ()->{
+            final Location localCtl = location.clone();
+            localCtl.setY(CheckpointConfig.MAX_Y);
+            ArmorStand armorStand = location.getWorld().spawn(localCtl, ArmorStand.class);
+            armorStand.setCustomName(name);
+            armorStand.setGravity(false);
+            armorStand.setVisible(false);
+            EntityCache.addEntityToCache(armorStand);
+            WrappedDataWatcher watcher = null;
+            if (second >= 8 && second <= 18) {
+                armorStand.setCustomNameVisible(true);
+                watcher = WrappedDataWatcher.getEntityWatcher(armorStand);
+            }else if (second >= 19){
+                watcher = WrappedDataWatcher.getEntityWatcher(armorStand).deepClone();
+            }
+            createArmorStandProtocol(location, map, name, watcher, type);
+            armorStand.remove();
+            EntityCache.removeEntityFromCache(armorStand);
+            registerOrUnregisterListener();
+        });
+    }
+
     private void createArmorStandProtocol(final @NotNull Location location, final String map, final String name, final WrappedDataWatcher watcher, final Type type) {
         if (first != 1) return;
-        PacketContainer packet1 = null;
         final int entityId = (int) (Math.random() * Integer.MAX_VALUE);
         final UUID uuid = UUID.randomUUID();
-        final double x = location.getX();
-        final double y = location.getY();
-        final double z = location.getZ();
-        @SuppressWarnings("deprecation") final int idArmor = EntityType.ARMOR_STAND.getTypeId();
-
-        //**Versión 1.8 - 1.12** -> SPAWN_ENTITY_LIVING
-        if (second >= 8 && second <= 12) {
-            //noinspection deprecation
-            packet1 = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
-            packet1.getIntegers().write(0, entityId).write(1, idArmor);
-
-            if (second == 8) {
-                packet1.getIntegers()
-                        .write(2, (int) (x * 32D))
-                        .write(3, (int) (y * 32D))
-                        .write(4, (int) (z * 32D));
-            } else {
-                packet1.getUUIDs().write(0, uuid);
-                packet1.getDoubles().write(0, x).write(1, y).write(2, z);
-            }
-        }
-        //**Versión 1.13 - 1.21+** -> SPAWN_ENTITY
-        else if (second >= 13) {
-            packet1 = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
-            packet1.getIntegers().write(0, entityId);
-            packet1.getUUIDs().write(0, uuid);
-            packet1.getDoubles().write(0, x).write(1, y).write(2, z);
-
-            if (second == 13) {
-                packet1.getIntegers().write(6, 78);
-            } else {
-                packet1.getEntityTypeModifier().write(0, EntityType.ARMOR_STAND);
-            }
-        }
-
-        //**Versión 1.8 - 1.21+** ->Metadata
-        final PacketContainer packet2 = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
-        packet2.getIntegers().write(0, entityId);
-        if (second >= 8 && second <= 18) {
-            packet2.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
-        } else if (second >= 19) {
-            final WrappedDataWatcher.Serializer chatSerializer = WrappedDataWatcher.Registry.getChatComponentSerializer(true);
-            if (chatSerializer == null)
-                throw new IllegalStateException("No se pudo obtener el serializador de componentes de chat.");
-            final WrappedDataWatcher.WrappedDataWatcherObject optChatFieldWatcher = new WrappedDataWatcher.WrappedDataWatcherObject(2, chatSerializer);
-            final Optional<Object> optChatField = Optional.of(WrappedChatComponent.fromChatMessage(name)[0].getHandle());
-            watcher.setObject(optChatFieldWatcher, optChatField);
-            if ((three >= 5 && three <= 6) || second >= 21) {
-                final WrappedDataWatcher.Serializer booleanSerializer = WrappedDataWatcher.Registry.get(Boolean.class);
-                if (booleanSerializer == null)
-                    throw new IllegalStateException("No se pudo obtener el serializador para Boolean.");
-                final WrappedDataWatcher.WrappedDataWatcherObject markerWatcher = new WrappedDataWatcher.WrappedDataWatcherObject(3, booleanSerializer);
-                watcher.setObject(markerWatcher, true);
-            } else if (three >= 0 && three <= 4) {
-                watcher.setObject(3, true);
-            }
-            final List<WrappedDataValue> wrappedDataValueList = new ArrayList<>();
-            for (final WrappedWatchableObject entry : watcher.getWatchableObjects()) {
-                if (entry == null) continue;
-                final WrappedDataWatcher.WrappedDataWatcherObject watcherObject = entry.getWatcherObject();
-                final WrappedDataWatcher.Serializer serializer = watcherObject.getSerializer();
-                if (serializer == null)
-                    throw new IllegalStateException("El serializador para el índice " + watcherObject.getIndex() + " es null.");
-                wrappedDataValueList.add(
-                        new WrappedDataValue(
-                                watcherObject.getIndex(),
-                                serializer,
-                                entry.getRawValue()
-                        )
-                );
-            }
-            packet2.getDataValueCollectionModifier().write(0, wrappedDataValueList);
-            //protocolManager.sendServerPacket(player, packet2);
-        }
+        final PacketContainer packet1 = createEntityPacket(entityId, uuid, location);
+        final PacketContainer packet2 = createMetadataPacket(entityId, watcher, name);
+        if (packet1 == null) return;
         protocolStands.computeIfAbsent(map, k -> new HashMap<>())
                 .computeIfAbsent(type, k -> new ArrayList<>())
                 .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2, type));
 
-        for (Player viewer : playersViewingMap.getOrDefault(map, new HashSet<>())) {
+
+
+        for (Player viewer : playersViewingMap.get(map).get(type)) {
             protocolManager.sendServerPacket(viewer, packet1);
             protocolManager.sendServerPacket(viewer, packet2);
         }
+    }
+
+    private @Nullable PacketContainer createEntityPacket(int entityId, UUID uuid, @NotNull Location location) {
+        double x = location.getX();
+        double y = location.getY();
+        double z = location.getZ();
+        @SuppressWarnings("deprecation") final int idArmor = EntityType.ARMOR_STAND.getTypeId();
+
+        //**Versión 1.8 - 1.12** → SPAWN_ENTITY_LIVING
+        if (second >= 8 && second <= 12) {
+            @SuppressWarnings("deprecation") PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
+            packet.getIntegers().write(0, entityId).write(1, idArmor);
+            if (second == 8) {
+                packet.getIntegers()
+                        .write(2, (int) (x * 32D))
+                        .write(3, (int) (y * 32D))
+                        .write(4, (int) (z * 32D));
+            } else {
+                packet.getUUIDs().write(0, uuid);
+                packet.getDoubles().write(0, x).write(1, y).write(2, z);
+            }
+            return packet;
+        }
+
+        //**Versión 1.13 - 1.21+** → SPAWN_ENTITY
+        else if (second >= 13) {
+            PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
+            packet.getIntegers().write(0, entityId);
+            packet.getUUIDs().write(0, uuid);
+            packet.getDoubles().write(0, x).write(1, y).write(2, z);
+            if (second == 13) {
+                packet.getIntegers().write(6, 78); // ArmorStand
+            } else {
+                packet.getEntityTypeModifier().write(0, EntityType.ARMOR_STAND);
+            }
+            return packet;
+        }
+        return null;
+    }
+
+    private @NotNull PacketContainer createMetadataPacket(int entityId, WrappedDataWatcher watcher, String name) {
+        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
+        packet.getIntegers().write(0, entityId);
+
+        //**Versión 1.8 - 1.18**
+        if (second >= 8 && second <= 18) {
+            packet.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+        }
+
+        //**Versión 1.19 - 1.21+**
+        else if (second >= 19) {
+            final WrappedDataWatcher.Serializer chatSerializer = WrappedDataWatcher.Registry.getChatComponentSerializer(true);
+            if (chatSerializer == null)
+                throw new IllegalStateException("No se pudo obtener el serializador de componentes de chat.");
+
+            final WrappedDataWatcher.WrappedDataWatcherObject optChatFieldWatcher =
+                    new WrappedDataWatcher.WrappedDataWatcherObject(2, chatSerializer);
+            final Optional<Object> optChatField = Optional.of(WrappedChatComponent.fromChatMessage(name)[0].getHandle());
+            watcher.setObject(optChatFieldWatcher, optChatField);
+
+            if ((three >= 5 && three <= 6) || second >= 21) {
+                final WrappedDataWatcher.Serializer booleanSerializer = WrappedDataWatcher.Registry.get(Boolean.class);
+                if (booleanSerializer == null)
+                    throw new IllegalStateException("No se pudo obtener el serializador para Boolean.");
+                final WrappedDataWatcher.WrappedDataWatcherObject markerWatcher =
+                        new WrappedDataWatcher.WrappedDataWatcherObject(3, booleanSerializer);
+                watcher.setObject(markerWatcher, true);
+            } else if (three >= 0 && three <= 4) {
+                watcher.setObject(3, true);
+            }
+
+            final List<WrappedDataValue> dataList = new ArrayList<>();
+            for (final WrappedWatchableObject entry : watcher.getWatchableObjects()) {
+                if (entry == null) continue;
+                final WrappedDataWatcher.WrappedDataWatcherObject obj = entry.getWatcherObject();
+                final WrappedDataWatcher.Serializer serializer = obj.getSerializer();
+                if (serializer == null)
+                    throw new IllegalStateException("El serializador para el índice " + obj.getIndex() + " es null.");
+                dataList.add(new WrappedDataValue(obj.getIndex(), serializer, entry.getRawValue()));
+            }
+
+            packet.getDataValueCollectionModifier().write(0, dataList);
+        }
+
+        return packet;
     }
 
     private PacketContainer destroyPacket(final int[] entityId) {
@@ -370,12 +406,21 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             }
         }
 
-        if (playersViewingMap.containsKey(map) && playersViewingMap.get(map) != null) {
-            playersViewingMap.get(map).remove(player);
-            if (playersViewingMap.get(map).isEmpty()) {
+        final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+        if (typeViewers != null) {
+            final Set<Player> playersForType = typeViewers.get(type);
+            if (playersForType != null) {
+                playersForType.remove(player);
+                if (playersForType.isEmpty()) {
+                    typeViewers.remove(type);
+                }
+            }
+
+            if (typeViewers.isEmpty()) {
                 playersViewingMap.remove(map);
             }
         }
+
         registerOrUnregisterListener();
     }
 
@@ -389,12 +434,16 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                     .toArray();
             final PacketContainer destroyPacket = destroyPacket(ids);
 
-            for (Player player : playersViewingMap.getOrDefault(map, new HashSet<>())) {
-                protocolManager.sendServerPacket(player, destroyPacket);
+            final Map<Type, Set<Player>> viewersByType = playersViewingMap.get(map);
+            if (viewersByType != null) {
+                final Set<Player> players = viewersByType.get(type);
+                if (players != null) {
+                    for (Player player : players) {
+                        protocolManager.sendServerPacket(player, destroyPacket);
+                    }
+                }
             }
-
             typeMap.remove(type);
-
             if (typeMap.isEmpty()) {
                 protocolStands.remove(map);
             }
@@ -402,48 +451,32 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     }
 
     @Override
-    public void addHologram(final String map, final String name, final @NotNull Location location, final Type type) {
-        if (first != 1) return;
-        Kit.getRegionScheduler().execute(plugin, location, ()->{
-            final Location localCtl = location.clone();
-            localCtl.setY(CheckpointConfig.MAX_Y);
-            ArmorStand armorStand = location.getWorld().spawn(localCtl, ArmorStand.class);
-            armorStand.setCustomName(name);
-            armorStand.setGravity(false);
-            armorStand.setVisible(false);
-            EntityCache.addEntityToCache(armorStand);
-            WrappedDataWatcher watcher = null;
-            if (second >= 8 && second <= 18) {
-                armorStand.setCustomNameVisible(true);
-                watcher = WrappedDataWatcher.getEntityWatcher(armorStand);
-            }else if (second >= 19){
-                watcher = WrappedDataWatcher.getEntityWatcher(armorStand).deepClone();
-            }
-            createArmorStandProtocol(location, map, name, watcher, type);
-
-            armorStand.remove();
-            EntityCache.removeEntityFromCache(armorStand);
-            registerOrUnregisterListener();
-        });
-    }
-
-    @Override
     public void removeHologram(final String map, final String name, final Type type) {
         final Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
         if (typeMap != null && typeMap.containsKey(type)) {
             final List<PacketStructureArmorStand> stands = typeMap.get(type);
-            stands.removeIf(packetStructureArmorStand -> {
-                if (Objects.equals(packetStructureArmorStand.getName(), name)) {
+            final Iterator<PacketStructureArmorStand> iterator = stands.iterator();
+
+            while (iterator.hasNext()) {
+                final PacketStructureArmorStand stand = iterator.next();
+                if (Objects.equals(stand.getName(), name)) {
                     final PacketContainer destroyPacket = destroyPacket(
-                            new int[]{packetStructureArmorStand.getEntityIdPacket()}
+                            new int[]{stand.getEntityIdPacket()}
                     );
-                    for (Player viewer : playersViewingMap.getOrDefault(map, new HashSet<>())) {
-                        protocolManager.sendServerPacket(viewer, destroyPacket);
+
+                    final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+                    if (typeViewers != null) {
+                        final Set<Player> viewers = typeViewers.get(type);
+                        if (viewers != null) {
+                            for (Player viewer : viewers) {
+                                protocolManager.sendServerPacket(viewer, destroyPacket);
+                            }
+                        }
                     }
-                    return true;
+                    iterator.remove();
+                    break;
                 }
-                return false;
-            });
+            }
             if (stands.isEmpty()) {
                 typeMap.remove(type);
             }

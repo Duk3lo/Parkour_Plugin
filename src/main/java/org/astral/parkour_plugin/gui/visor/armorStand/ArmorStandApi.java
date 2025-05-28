@@ -13,7 +13,7 @@ import java.util.Set;
 
 
 public interface ArmorStandApi {
-    Map<String, Set<Player>> playersViewingMap = new HashMap<>();
+    Map<String, Map<Type, Set<Player>>> playersViewingMap = new HashMap<>();
     void showHolograms(final Player player, final String map,final Type type);
     void hideHolograms(final Player player, final String map, final Type type);
     void addHologram(final String map, final String name , final Location location, final Type type);

@@ -36,7 +36,6 @@ public final class ArmorStandView implements ArmorStandApi {
             public void onPlayerInteractEntity(final @NotNull PlayerInteractAtEntityEvent event) {
                 final Player player = event.getPlayer();
                 final Entity entity = event.getRightClicked();
-                System.out.println("interact");
 
                 if (Gui.isEntityArmorStandOfGUI(entity.getUniqueId())) event.setCancelled(true);
 
@@ -79,55 +78,60 @@ public final class ArmorStandView implements ArmorStandApi {
 
     @Override
     public void showHolograms(final Player player, final String map, final Type type) {
-        playersViewingMap.computeIfAbsent(map, k -> new HashSet<>()).add(player);
+        final Map<Type, Set<Player>> typeViewers = playersViewingMap.computeIfAbsent(map, k -> new HashMap<>());
+        final Set<Player> playersForType = typeViewers.computeIfAbsent(type, k -> new HashSet<>());
+        playersForType.add(player);
         addingHolograms(map, type);
     }
 
-    private void addingHolograms(final String map, final @NotNull Type type){
-
-        
+    private void addingHolograms(final String map, final @NotNull Type type) {
+        if (armorStands.containsKey(map) && armorStands.get(map).containsKey(type)) {
+            return;
+        }
 
         switch (type) {
             case CHECKPOINT:
-                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.CHECKPOINT)) break;
                 final CheckpointConfig checkpoint = new CheckpointConfig(map);
                 for (final String name : checkpoint.keys()) {
                     try {
-                        checkpoint.getCheckpoint(name);
+                        checkpoint.getCheckpoint(name); // Validación
+                        final Location location = checkpoint.getLocation();
+                        addHologram(map, name, location, type);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        plugin.getLogger().severe("No se pudo cargar el checkpoint '" + name + "' en el mapa '" + map + "'");
                     }
-                    final Location location = checkpoint.getLocation();
-                    addHologram(map, name, location, type);
                 }
                 break;
+
             case SPAWN:
-                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.SPAWN)) break;
-                final Rules rulesSpawn = new Rules(map);
-                for (final String key : rulesSpawn.getSpawnKeys()) {
-                    final Location location = rulesSpawn.getSpawnLocationFromKey(key);
-                    if (location == null) continue;
-                    addHologram(map, key, location, type);
-                }
-                break;
             case END_POINT:
-                if (armorStands.containsKey(map) && armorStands.get(map).containsKey(Type.END_POINT)) break;
-                final Rules rulesEnd = new Rules(map);
-                for (final String key : rulesEnd.getEndKeys()) {
-                    final Location location = rulesEnd.getSpawnLocationFromKey(key);
-                    if (location == null) continue;
-                    addHologram(map, key, location, type);
+                final Rules rules = new Rules(map);
+                final String[] keys = (type == Type.SPAWN) ? rules.getSpawnKeys() : rules.getEndKeys();
+
+                for (final String key : keys) {
+                    final Location location = rules.getSpawnLocationFromKey(key);
+                    if (location != null) {
+                        addHologram(map, key, location, type);
+                    }
                 }
                 break;
         }
     }
 
+
     @Override
     public void hideHolograms(final Player player, final String map, final Type type) {
-        if (playersViewingMap.containsKey(map) && playersViewingMap.get(map) != null) {
-            playersViewingMap.get(map).remove(player);
-            if (playersViewingMap.get(map).isEmpty()) {
-                removeAllHolograms(map, type);
+        final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+        if (typeViewers != null) {
+            final Set<Player> playersForType = typeViewers.get(type);
+            if (playersForType != null) {
+                playersForType.remove(player);
+                if (playersForType.isEmpty()) {
+                    removeAllHolograms(map, type);
+                    typeViewers.remove(type);
+                }
+            }
+            if (typeViewers.isEmpty()) {
                 playersViewingMap.remove(map);
             }
         }

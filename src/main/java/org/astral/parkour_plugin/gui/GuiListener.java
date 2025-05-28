@@ -73,7 +73,7 @@ public final class GuiListener implements Listener {
                 }
                 if (block != null){
                     if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())){
-                        Gui.removeSpawnPointSpawn(player, block.getLocation());
+                        Gui.removeSpawnPoint(player, block.getLocation());
                     }
 
                     if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
