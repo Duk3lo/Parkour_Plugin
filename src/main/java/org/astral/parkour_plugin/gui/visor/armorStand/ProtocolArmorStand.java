@@ -242,7 +242,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 final boolean isSpawn = type == Type.SPAWN;
                 final String[] keys = isSpawn ? rules.getSpawnKeys() : rules.getEndKeys();
                 for (final String key : keys) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                    final Location location = isSpawn? rules.getSpawnLocationFromKey(key) : rules.getEndPointLocationFromKey(key);
                     if (location != null) {
                         addHologram(map, key, location, type);
                     }
