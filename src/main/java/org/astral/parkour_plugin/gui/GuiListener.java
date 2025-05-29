@@ -76,6 +76,10 @@ public final class GuiListener implements Listener {
                         Gui.removeSpawnPoint(player, block.getLocation());
                     }
 
+                    if (item.isSimilar(Tools.MARK_FINISH_ITEM.getItem())){
+                        Gui.removeEndPoint(player, block.getLocation());
+                    }
+
                     if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
                         Gui.removeCheckpoint(player, block.getLocation());
                     }
@@ -87,6 +91,11 @@ public final class GuiListener implements Listener {
                     if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())){
                         Gui.addSpawnPoint(player, block.getLocation());
                     }
+
+                    if (item.isSimilar(Tools.MARK_FINISH_ITEM.getItem())){
+                        Gui.addEndPoint(player, block.getLocation());
+                    }
+
                     if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())){
                         Gui.addCheckpoint(player, block.getLocation());
                     }
@@ -97,10 +106,17 @@ public final class GuiListener implements Listener {
                 Gui.removeMap(player);
             }
 
-
             final String nameMap = Gui.getMapPlayer(player);
             if (isDynamicToolCheckpoints(item, nameMap)) {
                 Gui.goToCheckpoint(player, item);
+            }
+
+            if (isDynamicToolSpawnPoints(item, nameMap)){
+                Gui.gotoSpawnPoint(player, item);
+            }
+
+            if (isDynamicToolEndPoint(item, nameMap)){
+                Gui.gotoEndPoint(player, item);
             }
 
             if (item.isSimilar(Tools.REORDER_CHECKPOINTS.getItem()))
@@ -136,7 +152,7 @@ public final class GuiListener implements Listener {
             if (item.isSimilar(Tools.SPAWN_AND_FINISH_MENU.getItem()))
                 Gui.loadSpawnAndEndMenu(player);
 
-            if (isCustomTool(item) || isBooleanTool(item) || isDynamicToolMaps(item) || isDynamicToolCheckpoints(item, nameMap) || isStateTool(item))event.setCancelled(true);
+            if (isCustomTool(item) || isBooleanTool(item) || isDynamicToolMaps(item) || isDynamicToolCheckpoints(item, nameMap) || isStateTool(item) || isDynamicToolSpawnPoints(item, nameMap) || isDynamicToolEndPoint(item, nameMap))event.setCancelled(true);
 
 
             player.updateInventory();
@@ -336,9 +352,20 @@ public final class GuiListener implements Listener {
     public static boolean isDynamicToolCheckpoints(final ItemStack item, final String name){
         final List<ItemStack> checkpointItems = DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name);
         if (checkpointItems == null) return false;
-
         return checkpointItems.stream()
                 .anyMatch(checkpointItem -> checkpointItem.isSimilar(item));
+    }
+
+    public static boolean isDynamicToolSpawnPoints(final ItemStack item, final String name) {
+        final List<ItemStack> spawnItems = DynamicTools.SPAWN_LOCATIONS.get(name);
+        if (spawnItems == null) return false;
+        return spawnItems.stream().anyMatch(spawnItem -> spawnItem.isSimilar(item));
+    }
+
+    public static boolean isDynamicToolEndPoint(final ItemStack item, final String name) {
+        final List<ItemStack> finishItems = DynamicTools.FINISH_LOCATION.get(name);
+        if (finishItems == null) return false;
+        return finishItems.stream().anyMatch(finishItem -> finishItem.isSimilar(item));
     }
 
     public static boolean isStateTool(final ItemStack item){

@@ -170,6 +170,17 @@ public final class Gui {
         }
     }
 
+    public static void addEndPoint(final Player player, final Location location) {
+        final String name_map = mapPlayer.get(player);
+        Rules rules = new Rules(name_map);
+        if (rules.isEqualsLocation(location)){
+            player.sendMessage("Esta ubicacion ya se marco como Punto final");
+        }else {
+            HOLOGRAM_API.addHologram(name_map, rules.setEndPoints(location), location, Type.END_POINT);
+            updateAllSpawnEnd(name_map);
+        }
+    }
+
     public static void removeSpawnPoint(final Player  player, final Location location){
         final String name_map = mapPlayer.get(player);
         Rules rules = new Rules(name_map);
@@ -177,6 +188,7 @@ public final class Gui {
             HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.SPAWN);
             rules.removeSpawnPoint(location);
             updateAllSpawnEnd(name_map);
+            HOLOGRAM_API.reorderArmorStandNames(name_map, Type.SPAWN);
         }
     }
 
@@ -184,9 +196,10 @@ public final class Gui {
         final String name_map = mapPlayer.get(player);
         Rules rules = new Rules(name_map);
         if (rules.isEqualsLocation(location)){
-            HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.END_POINT);
+            HOLOGRAM_API.removeHologram(name_map, rules.getEndPointKeyFromLocation(location), Type.END_POINT);
             rules.removeEndPoint(location);
             updateAllSpawnEnd(name_map);
+            HOLOGRAM_API.reorderArmorStandNames(name_map, Type.END_POINT);
         }
     }
 
@@ -362,6 +375,30 @@ public final class Gui {
         } catch (IOException e) {
             player.sendMessage("Este checkpoint no es Accesible o no Existe");
         }
+    }
+
+    public static void gotoSpawnPoint(final @NotNull Player player, final ItemStack item){
+        final String name_map = mapPlayer.get(player);
+        final String key = DynamicTools.getName(item);
+        final Rules rules = new Rules(name_map);
+        final Location location = rules.getSpawnLocationFromKey(key);
+        if (location == null) return;
+        location.add(0,1,0);
+        location.setPitch(player.getLocation().getPitch());
+        location.setYaw(player.getLocation().getYaw());
+        TeleportingApi.teleport(player, location);
+    }
+
+    public static void gotoEndPoint(final @NotNull Player player, final ItemStack item) {
+        final String name_map = mapPlayer.get(player);
+        final String key = DynamicTools.getName(item);
+        final Rules rules = new Rules(name_map);
+        final Location location = rules.getEndPointLocationFromKey(key);
+        if (location == null) return;
+        location.add(0,1,0);
+        location.setPitch(player.getLocation().getPitch());
+        location.setYaw(player.getLocation().getYaw());
+        TeleportingApi.teleport(player, location);
     }
 
     public static void loadEditInventoryMap(final @NotNull Player player){
@@ -541,6 +578,11 @@ public final class Gui {
             case checkpoint_menu:
                 nextPage(player, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 break;
+            case spawnAndFinishMenu:
+                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
+                all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
+                nextPage(player, all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
                 break;
@@ -558,6 +600,11 @@ public final class Gui {
                 break;
             case checkpoint_menu:
                 previousPage(player, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                break;
+            case spawnAndFinishMenu:
+                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
+                all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
+                previousPage(player, all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);

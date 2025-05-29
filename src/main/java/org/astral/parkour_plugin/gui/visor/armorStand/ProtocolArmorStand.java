@@ -237,9 +237,10 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 }
                 break;
             case SPAWN:
-
+            case END_POINT:
                 final Rules rules = new Rules(map);
-                final String[] keys = rules.getSpawnKeys();
+                final boolean isSpawn = type == Type.SPAWN;
+                final String[] keys = isSpawn ? rules.getSpawnKeys() : rules.getEndKeys();
                 for (final String key : keys) {
                     final Location location = rules.getSpawnLocationFromKey(key);
                     if (location != null) {
