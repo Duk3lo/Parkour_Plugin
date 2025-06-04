@@ -3,7 +3,7 @@ package org.astral.parkour_plugin;
 import org.astral.parkour_plugin.config.cache.BlockCache;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.cache.InventoryCache;
-import org.astral.parkour_plugin.gui.Gui;
+import org.astral.parkour_plugin.editor.Gui;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;

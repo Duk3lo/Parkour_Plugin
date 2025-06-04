@@ -1,5 +1,6 @@
 package org.astral.parkour_plugin.config.maps.rules;
 
+import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
 import org.bukkit.Bukkit;
@@ -43,6 +44,30 @@ public final class Rules {
             yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER, RULES_YML);
         } catch (FileNotFoundException e) {
             plugin.getLogger().warning("YAML file not found for " + this.MAP_FOLDER + ".");
+        }
+    }
+
+    public double getMinY(@NotNull World world) {
+        switch (world.getEnvironment()) {
+            case NETHER:
+                return yamlConfiguration.getDouble("min_y_nether", LimitsWorldApi.getMinY(world));
+            case THE_END:
+                return yamlConfiguration.getDouble("min_y_end", LimitsWorldApi.getMinY(world));
+            case NORMAL:
+            default:
+                return yamlConfiguration.getDouble("min_y_overworld", LimitsWorldApi.getMinY(world));
+        }
+    }
+
+    public double getMaxY(@NotNull World world) {
+        switch (world.getEnvironment()) {
+            case NETHER:
+                return yamlConfiguration.getDouble("max_y_nether", LimitsWorldApi.getMaxY(world));
+            case THE_END:
+                return yamlConfiguration.getDouble("max_y_end", LimitsWorldApi.getMaxY(world));
+            case NORMAL:
+            default:
+                return yamlConfiguration.getDouble("max_y_overworld", LimitsWorldApi.getMaxY(world));
         }
     }
 

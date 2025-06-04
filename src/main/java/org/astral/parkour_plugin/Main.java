@@ -1,14 +1,14 @@
 package org.astral.parkour_plugin;
 
-import org.astral.parkour_plugin.command.GameCommandExecutor;
+import org.astral.parkour_plugin.commands.GameCommandExecutor;
 import org.astral.parkour_plugin.config.Configuration;
-import org.astral.parkour_plugin.generator.Generator;
-import org.astral.parkour_plugin.parkour.Parkour;
-import org.astral.parkour_plugin.parkour.ParkourListener;
+import org.astral.parkour_plugin.editor.generator.Generator;
+import org.astral.parkour_plugin.parkour.common.Parkour;
+import org.astral.parkour_plugin.parkour.common.ParkourListener;
 
-import org.astral.parkour_plugin.gui.Gui;
-import org.astral.parkour_plugin.rankings.Score;
-import org.astral.parkour_plugin.rankings.ScoreListener;
+import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.parkour.rankings.Score;
+import org.astral.parkour_plugin.parkour.rankings.ScoreListener;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;

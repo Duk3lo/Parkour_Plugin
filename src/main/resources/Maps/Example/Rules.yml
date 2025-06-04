@@ -1,3 +1,17 @@
+# Límites de altura personalizados por mundo
+
+# Mundo normal (Overworld)
+min_y_overworld: 5.0
+max_y_overworld: 250.0
+
+# Nether
+min_y_nether: 10.0
+max_y_nether: 120.0
+
+# End
+min_y_end: 0.0
+max_y_end: 200.0
+
 spawns_points:
   []
 end_points:
