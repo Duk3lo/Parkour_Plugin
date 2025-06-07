@@ -16,17 +16,15 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class GameCommandExecutor implements CommandExecutor, TabCompleter {
 
     // ------------------------------------------ [ Star Parkour ]
-    private static final String go = "go";
-
+    private static final String start = "start_parkour";
+    private static final String exit = "exit";
+    private static final String start_here = "start_here";
 
     // ------------------------------------------- [ Editable ]
     // ------------------------------------------- [ 0 ]
@@ -36,7 +34,6 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
 
     private static final String command4 = "edit_mode";
     private static final String command5 = "Exit-Edit-Mode";
-    private static final String command6 = "start_parkour";
 
     // ------------------------------------------- [ 1 ]
     private static final String generation_item = "block_generate";
@@ -89,14 +86,13 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args[0].equalsIgnoreCase(command2)){
                 if (args.length == 2){
                     if (args[1].equalsIgnoreCase(generation_item)){
-
+                        //return true;
                     }
                 }
                 return true;
             }
 
             if (args[0].equalsIgnoreCase(command3)){
-                int sometime = 0;
                 return true;
             }
 
@@ -109,7 +105,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 Gui.exitEditMode(player);
                 return true;
             }
-            if (args[0].equalsIgnoreCase(command6)){
+            if (args[0].equalsIgnoreCase(start) || args[0].equalsIgnoreCase(start_here)){
                 if (args.length >= 2){
                     if (args.length == 3)player = Bukkit.getPlayer(args[2]);
                     if (player == null) {
@@ -118,13 +114,35 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                     }
                     if (Configuration.getMaps().contains(args[1])){
                         if (Gui.isInEditMode(player)) Gui.exitEditMode(player);
-                        ParkourManager.gotoParkourPlayer(player, args[1]);
-                        return true;
+                        if (args[0].equalsIgnoreCase(start)) {
+                            ParkourManager.gotoParkour(player, args[1]);
+                        }else {
+                            ParkourManager.starParkourHere(player, args[1]);
+                        }
                     }else {
                         sender.sendMessage("No existe el mapa: "+ args[1]);
+                    }
+                    return true;
+                }
+                return true;
+            }
+
+
+            if (args[0].equalsIgnoreCase(exit)) {
+                if (args.length == 2) {
+                    player = Bukkit.getPlayer(args[1]);
+                    if (player == null) {
+                        sender.sendMessage("§cNo existe el jugador: §f" + args[1]);
                         return true;
                     }
                 }
+                String map = ParkourManager.getMapIfInParkour(player).orElse(null);
+                if (map == null) {
+                    sender.sendMessage("§e" + player.getName() + " no está dentro de ningún mapa de parkour.");
+                    return true;
+                }
+                ParkourManager.exitParkour(player);
+                sender.sendMessage("§a" + player.getName() + " ha salido del parkour §b" + map + "§a.");
                 return true;
             }
 
@@ -139,7 +157,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 final Player player = ((Player) sender).getPlayer();
                 commandOpen = !Gui.isInEditMode(player)? command4 : command5;
             }
-            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, command6));
+            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit));
 
         }
 
@@ -161,9 +179,19 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args.length == 3) return filterByPrefix(args[1], Configuration.getMaps());
          }
 
-        if (args[0].equalsIgnoreCase(command6)){
+        if (args[0].equalsIgnoreCase(start) || args[0].equalsIgnoreCase(start_here)){
             if (args.length == 2) return Configuration.getMaps();
             if (args.length == 3) return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+        }
+
+        if (args[0].equalsIgnoreCase(exit)) {
+            if (args.length == 2) {
+                return filterByPrefix(args[1],
+                        ParkourManager.playersMaps.keySet().stream()
+                                .map(Player::getName)
+                                .collect(Collectors.toList())
+                );
+            }
         }
 
         return Collections.emptyList();

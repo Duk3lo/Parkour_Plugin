@@ -15,8 +15,8 @@ public final class CheckpointBase {
 
     private final static Main plugin = Main.getInstance();
 
-    public static final Map<String, Set<Checkpoint>> checkpointMap = new HashMap<>();
-    public static final Map<Player, Checkpoint> actualCheckpoint = new HashMap<>();
+    private static final Map<String, Set<Checkpoint>> checkpointMap = new HashMap<>();
+    private static final Map<Player, Checkpoint> actualCheckpoint = new HashMap<>();
 
     public static void loadMap(final String map){
         final CheckpointConfig checkpointConfig = new CheckpointConfig(map);

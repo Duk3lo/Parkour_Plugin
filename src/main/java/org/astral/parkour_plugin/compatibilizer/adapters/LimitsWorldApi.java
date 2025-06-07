@@ -1,7 +1,6 @@
 package org.astral.parkour_plugin.compatibilizer.adapters;
 
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.jetbrains.annotations.NotNull;
@@ -48,13 +47,6 @@ public final class LimitsWorldApi {
             }
         }
         return getDefaultMaxY(world.getEnvironment());
-    }
-
-    public static boolean isWithinBuildHeight(@NotNull Location location) {
-        final World world = location.getWorld();
-        if (world == null) return false;
-        final double y = location.getY();
-        return y >= getMinY(world) && y < getMaxY(world);
     }
 
     private static int getDefaultMinY(@NotNull Environment env) {

@@ -3,6 +3,7 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.titles.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public final class Rules {
     // Instances
@@ -45,6 +47,35 @@ public final class Rules {
         } catch (FileNotFoundException e) {
             plugin.getLogger().warning("YAML file not found for " + this.MAP_FOLDER + ".");
         }
+    }
+
+    public Optional<Title> getStartTitle() {
+        ConfigurationSection titleSection = yamlConfiguration.getConfigurationSection("title");
+        if (titleSection != null) {
+            String main = titleSection.getString("main", "§a¡Parkour iniciado!");
+            String subtitle = titleSection.getString("subtitle", "§fMapa: §b" + MAP_FOLDER)
+                    .replace("{map}", MAP_FOLDER);
+            int fadeIn = titleSection.getInt("fadeIn", 10);
+            int stay = titleSection.getInt("stay", 40);
+            int fadeOut = titleSection.getInt("fadeOut", 10);
+
+            return Optional.of(new Title(main, subtitle, fadeIn, stay, fadeOut));
+        }
+        return Optional.empty();
+    }
+
+    public Optional<String> getMessage(final String key, final String player) {
+        ConfigurationSection section = yamlConfiguration.getConfigurationSection("messages");
+        if (section == null) return Optional.empty();
+
+        String value = section.getString(key);
+        if (value == null || value.trim().isEmpty()) return Optional.empty();
+
+        value = value
+                .replace("{player}", player)
+                .replace("{map}", MAP_FOLDER);
+
+        return Optional.of(value);
     }
 
     public double getMinY(@NotNull World world) {

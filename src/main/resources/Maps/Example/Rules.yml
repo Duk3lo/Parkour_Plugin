@@ -1,14 +1,20 @@
-# Límites de altura personalizados por mundo
+title:
+  main: "§a¡Parkour iniciado!"
+  subtitle: "§fMapa: §bExample"
+  fadeIn: 10
+  stay: 40
+  fadeOut: 10
 
-# Mundo normal (Overworld)
+messages:
+  start: "§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!"
+  end: "§e¡{player} ha completado el parkour! Tiempo: §f{time}s"
+  checkpoint: "§6{player}, has alcanzado un punto de control."
+  fall: ""
+
 min_y_overworld: 5.0
 max_y_overworld: 250.0
-
-# Nether
 min_y_nether: 10.0
 max_y_nether: 120.0
-
-# End
 min_y_end: 0.0
 max_y_end: 200.0
 

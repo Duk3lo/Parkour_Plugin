@@ -4,9 +4,7 @@ import org.astral.parkour_plugin.Main;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -74,6 +72,33 @@ public final class Configuration {
             if (!rulesFile.exists()) {
                 if (rulesFile.createNewFile()) {
                     plugin.getLogger().info("Created file: " + rulesFile.getAbsolutePath());
+                    String defaultRules = "title:\n" +
+                            "  main: \"§a¡Parkour iniciado!\"\n" +
+                            "  subtitle: \"§fMapa: §b" + mapFolder + "\"\n" +
+                            "  fadeIn: 10\n" +
+                            "  stay: 40\n" +
+                            "  fadeOut: 10\n" +
+                            "\n" +
+                            "messages:\n" +
+                            "  start: \"§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!\"\n" +
+                            "  end: \"§e¡{player} ha completado el parkour! Tiempo: §f{time}s\"\n" +
+                            "  checkpoint: \"§6{player}, has alcanzado un punto de control.\"\n" +
+                            "  fall: \"\"\n" +
+                            "\n" +
+                            "min_y_overworld: 5.0\n" +
+                            "max_y_overworld: 250.0\n" +
+                            "min_y_nether: 10.0\n" +
+                            "max_y_nether: 120.0\n" +
+                            "min_y_end: 0.0\n" +
+                            "max_y_end: 200.0\n" +
+                            "\n" +
+                            "spawns_points: []\n" +
+                            "end_points: []\n";
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(rulesFile))) {
+                        writer.write(defaultRules);
+                    } catch (IOException e) {
+                        plugin.getLogger().severe("Error writing default rules to " + rulesFile.getName() + ": " + e.getMessage());
+                    }
                 } else {
                     throw new IOException("Failed to create file: " + rulesFile.getAbsolutePath());
                 }

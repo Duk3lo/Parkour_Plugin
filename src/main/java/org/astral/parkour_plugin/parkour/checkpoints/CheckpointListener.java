@@ -1,7 +1,6 @@
 package org.astral.parkour_plugin.parkour.checkpoints;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
-import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.ParkourManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -12,9 +11,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 
 public final class CheckpointListener implements Listener {
@@ -42,19 +39,20 @@ public final class CheckpointListener implements Listener {
 
     public void saveCheckpointIfReached(final Player player, final String name_map, final Location location){
         final Set<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(name_map);
+        if (checkpoints == null || checkpoints.isEmpty()) return;
         for (final Checkpoint checkpoint : checkpoints){
             final Location chekLoc = checkpoint.getLocation();
             if (CheckpointBase.isEqualLocation(chekLoc, location)){
                 if (checkpoint.getPlayers().contains(player)) continue;
                 checkpoint.getPlayers().add(player);
-                CheckpointBase.actualCheckpoint.put(player, checkpoint);
+                CheckpointBase.addPlayerLastCheckpoint(player, checkpoint);
             }
         }
     }
 
     public void teleportIf(final Player player, final String name_map, final @NotNull Location location) {
         final double currentY = location.getY();
-        final Checkpoint checkpoint = CheckpointBase.actualCheckpoint.get(player);
+        final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
         if (checkpoint != null && currentY < checkpoint.getMinY()) {
             TeleportingApi.teleport(player, checkpoint.getLocation());
             return;
@@ -66,9 +64,9 @@ public final class CheckpointListener implements Listener {
             TeleportingApi.teleport(player, checkpoint.getLocation());
             return;
         }
-        final Optional<Location> optionalSpawn = ParkourManager.getRandomSpawn(name_map);
-        if (optionalSpawn.isPresent()) {
-            TeleportingApi.teleport(player, optionalSpawn.get());
+        final Location spawn = ParkourManager.getSpawnPlayer(player);
+        if (spawn != null) {
+            TeleportingApi.teleport(player, spawn);
         } else {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + name_map + "§c.");
         }
