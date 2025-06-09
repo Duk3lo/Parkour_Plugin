@@ -4,7 +4,6 @@ import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
-import org.astral.parkour_plugin.parkour.checkpoints.CheckpointListener;
 import org.astral.parkour_plugin.titles.Title;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -22,17 +21,17 @@ public final class ParkourManager {
     public static final Map<Player, String> playersMaps = new HashMap<>();
     private static final Map<Player, Location> spawnPlayer = new HashMap<>();
 
-    private static final Listener listener = new CheckpointListener();
+    private static final Listener parkourListener = new ParkourListener();
+
     private static boolean active = false;
 
     public static void registerOrUnregisterListener() {
         boolean hasPlayers = !playersMaps.isEmpty();
-
         if (hasPlayers && !active) {
-            plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+            plugin.getServer().getPluginManager().registerEvents(parkourListener, plugin);
             active = true;
         } else if (!hasPlayers && active) {
-            HandlerList.unregisterAll(listener);
+            HandlerList.unregisterAll(parkourListener);
             active = false;
         }
     }
@@ -45,6 +44,9 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
+        player.sendActionBar("uffas");
+        player.sendActionBar('a',"");
+
     }
 
     public static void gotoParkour(final Player player, final String map) {
@@ -60,6 +62,11 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
+        player.sendActionBar("uffas");
+    }
+
+    public static void loadTimer(final Rules rules){
+
     }
 
     public static void addAndSave(final Player player, final Location location, final String map){
@@ -91,5 +98,10 @@ public final class ParkourManager {
 
     public static Location getSpawnPlayer(final Player player){
         return spawnPlayer.get(player);
+    }
+
+    public static boolean isAutoReconnect(final String map){
+        final Rules rules = new Rules(map);
+        return rules.isAutoReconnectEnabled();
     }
 }

@@ -49,6 +49,31 @@ public final class Rules {
         }
     }
 
+    public boolean isAutoReconnectEnabled() {
+        return yamlConfiguration.getBoolean("auto_reconnect", true);
+    }
+
+    //Timer
+    public boolean isTimerEnabled() {
+        return yamlConfiguration.getBoolean("timer.enabled", true);
+    }
+
+    public boolean isActionBarTimerEnabled() {
+        return yamlConfiguration.getBoolean("timer.display_actionbar", true);
+    }
+
+    public @NotNull String getTimerFormat() {
+        return yamlConfiguration.getString("timer.format", "§fTiempo: §b{minutes}m {seconds}s");
+    }
+
+    public String getTimerMode() {
+        return yamlConfiguration.getString("timer.mode", "countup");
+    }
+
+    public int getTimeLimit() {
+        return yamlConfiguration.getInt("timer.time_limit", -1);
+    }
+
     public Optional<Title> getStartTitle() {
         ConfigurationSection titleSection = yamlConfiguration.getConfigurationSection("title");
         if (titleSection != null) {

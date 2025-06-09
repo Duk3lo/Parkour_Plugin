@@ -1,3 +1,13 @@
+auto_reconnect: true
+
+timer:
+  enabled: true
+  display_actionbar: true
+  format: "{minutes}:{seconds}:{millis}"
+  # countup - countdown
+  mode: "countdown"
+  time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+
 title:
   main: "§a¡Parkour iniciado!"
   subtitle: "§fMapa: §bExample"
