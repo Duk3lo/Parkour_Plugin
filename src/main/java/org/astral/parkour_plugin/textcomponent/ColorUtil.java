@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.titles;
+package org.astral.parkour_plugin.textcomponent;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

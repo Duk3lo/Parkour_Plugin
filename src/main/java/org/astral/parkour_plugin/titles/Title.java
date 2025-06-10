@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.titles;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TitleApi;
+import org.astral.parkour_plugin.textcomponent.ColorUtil;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

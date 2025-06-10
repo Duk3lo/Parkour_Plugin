@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
@@ -45,8 +46,8 @@ public final class ParkourManager {
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         player.sendActionBar("uffas");
-        player.sendActionBar('a',"");
-
+        ActionBar actionBar = new ActionBar("uffas");
+        actionBar.send(player);
     }
 
     public static void gotoParkour(final Player player, final String map) {
@@ -62,7 +63,6 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        player.sendActionBar("uffas");
     }
 
     public static void loadTimer(final Rules rules){
