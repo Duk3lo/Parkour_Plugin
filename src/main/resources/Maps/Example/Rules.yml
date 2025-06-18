@@ -4,9 +4,9 @@ timer:
   enabled: true
   display_actionbar: true
   format: "{minutes}:{seconds}:{millis}"
-  # countup - countdown
-  mode: "countdown"
+  countdown: false
   time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+  mode: "global" # "individual" or "global"
 
 title:
   main: "§a¡Parkour iniciado!"

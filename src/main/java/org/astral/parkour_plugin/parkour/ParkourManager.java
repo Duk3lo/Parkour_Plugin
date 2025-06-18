@@ -1,11 +1,10 @@
 package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.Main;
-import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
-import org.astral.parkour_plugin.titles.Title;
+import org.astral.parkour_plugin.title.Title;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -18,22 +17,19 @@ public final class ParkourManager {
 
     private static final Main plugin = Main.getInstance();
 
-
-    public static final Map<Player, String> playersMaps = new HashMap<>();
+    public static final Map<Player, String> playersMapsInParkour = new HashMap<>();
     private static final Map<Player, Location> spawnPlayer = new HashMap<>();
-
     private static final Listener parkourListener = new ParkourListener();
-
-    private static boolean active = false;
+    private static boolean activeListener = false;
 
     public static void registerOrUnregisterListener() {
-        boolean hasPlayers = !playersMaps.isEmpty();
-        if (hasPlayers && !active) {
+        boolean hasPlayers = !playersMapsInParkour.isEmpty();
+        if (hasPlayers && !activeListener) {
             plugin.getServer().getPluginManager().registerEvents(parkourListener, plugin);
-            active = true;
-        } else if (!hasPlayers && active) {
+            activeListener = true;
+        } else if (!hasPlayers && activeListener) {
             HandlerList.unregisterAll(parkourListener);
-            active = false;
+            activeListener = false;
         }
     }
 
@@ -45,9 +41,7 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        player.sendActionBar("uffas");
-        ActionBar actionBar = new ActionBar("uffas");
-        actionBar.send(player);
+        TimerActionBar.starIndividualTimer(rules, player);
     }
 
     public static void gotoParkour(final Player player, final String map) {
@@ -63,20 +57,20 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
+        TimerActionBar.starIndividualTimer(rules, player);
     }
 
-    public static void loadTimer(final Rules rules){
-
+    public static void finish(final Player player) {
     }
 
     public static void addAndSave(final Player player, final Location location, final String map){
-        playersMaps.put(player, map);
+        playersMapsInParkour.put(player, map);
         spawnPlayer.put(player, location);
         registerOrUnregisterListener();
     }
 
     public static void exitParkour(final Player player) {
-        playersMaps.remove(player);
+        playersMapsInParkour.remove(player);
         spawnPlayer.remove(player);
         registerOrUnregisterListener();
     }
@@ -93,7 +87,7 @@ public final class ParkourManager {
     }
 
     public static @NotNull Optional<String> getMapIfInParkour(final Player player) {
-        return Optional.ofNullable(playersMaps.get(player));
+        return Optional.ofNullable(playersMapsInParkour.get(player));
     }
 
     public static Location getSpawnPlayer(final Player player){

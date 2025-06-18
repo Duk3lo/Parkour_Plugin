@@ -10,7 +10,11 @@ public final class ActionBar {
     private final String message;
 
     public ActionBar(@NotNull String message) {
-        this.message = ColorUtil.compileColors(message);
+        this(message, '§');
+    }
+
+    public ActionBar(@NotNull String message, char alternateChar) {
+        this.message = ColorUtil.compileColors(message.replace(alternateChar, '§'));
     }
 
     public void send(@NotNull Player player) {

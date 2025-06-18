@@ -1,8 +1,10 @@
 package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
+import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,6 +33,9 @@ public final class ParkourListener implements Listener {
                 final Location spawn = ParkourManager.getSpawnPlayer(player);
                 teleportToSpawnOrWarn(player, name_map, spawn);
             }
+            final Rules rules = new Rules(name_map);
+            IndividualTimerManager.resume(player, rules.isCountdownEnabled(), rules.getTimeLimit());
+            TimerActionBar.starIndividualTimer(rules, player);
         }
     }
 

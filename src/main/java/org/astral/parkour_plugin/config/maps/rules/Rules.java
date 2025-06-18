@@ -3,7 +3,7 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
-import org.astral.parkour_plugin.titles.Title;
+import org.astral.parkour_plugin.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -49,6 +49,10 @@ public final class Rules {
         }
     }
 
+    public String getMapName(){
+        return MAP_FOLDER;
+    }
+
     public boolean isAutoReconnectEnabled() {
         return yamlConfiguration.getBoolean("auto_reconnect", true);
     }
@@ -58,7 +62,7 @@ public final class Rules {
         return yamlConfiguration.getBoolean("timer.enabled", true);
     }
 
-    public boolean isActionBarTimerEnabled() {
+    public boolean isActionBarTimerDisplayEnabled() {
         return yamlConfiguration.getBoolean("timer.display_actionbar", true);
     }
 
@@ -66,8 +70,13 @@ public final class Rules {
         return yamlConfiguration.getString("timer.format", "§fTiempo: §b{minutes}m {seconds}s");
     }
 
-    public String getTimerMode() {
-        return yamlConfiguration.getString("timer.mode", "countup");
+    public boolean isGlobalMode() {
+        final String mode = yamlConfiguration.getString("timer.mode", "individual");
+        return mode.equalsIgnoreCase("global");
+    }
+
+    public boolean isCountdownEnabled() {
+        return yamlConfiguration.getBoolean("timer.countdown", false);
     }
 
     public int getTimeLimit() {

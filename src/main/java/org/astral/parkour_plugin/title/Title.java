@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.titles;
+package org.astral.parkour_plugin.title;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TitleApi;
 import org.astral.parkour_plugin.textcomponent.ColorUtil;
