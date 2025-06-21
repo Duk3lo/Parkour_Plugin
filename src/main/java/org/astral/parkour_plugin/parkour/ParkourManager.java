@@ -1,9 +1,13 @@
 package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
+import org.astral.parkour_plugin.timer.GlobalTimerManager;
+import org.astral.parkour_plugin.timer.IndividualTimerManager;
+import org.astral.parkour_plugin.timer.Timer;
 import org.astral.parkour_plugin.title.Title;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -41,7 +45,14 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        TimerActionBar.starIndividualTimer(rules, player);
+        if (rules.isTimerEnabled()){
+            if (rules.isGlobalModeTime()){
+                TimerActionBar.starIndividualTimer(rules, player);
+            }else {
+                TimerActionBar.startGlobalTimer(rules, player);
+            }
+        }
+
     }
 
     public static void gotoParkour(final Player player, final String map) {
@@ -57,21 +68,54 @@ public final class ParkourManager {
         Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        TimerActionBar.starIndividualTimer(rules, player);
+        if (rules.isTimerEnabled()){
+            if (rules.isGlobalModeTime()){
+                TimerActionBar.starIndividualTimer(rules, player);
+            }else {
+                TimerActionBar.startGlobalTimer(rules, player);
+            }
+        }
     }
 
     public static void finish(final Player player) {
+        final String map = playersMapsInParkour.get(player);
+        if (map == null) {
+            return;
+        }
+        Timer timer = null;
+        if (IndividualTimerManager.isRunning(player)) {
+            timer = IndividualTimerManager.get(player);
+        } else if (GlobalTimerManager.isRunning(map)) {
+            timer = GlobalTimerManager.get(map);
+        }
+        boolean hasValidTime = timer != null;
+        String formattedTime = hasValidTime ? timer.getFormattedTime() : "";
+        String msg = "§a¡Buen trabajo! Completaste el parkour §b" + map +
+                (hasValidTime ? " §aen §e" + formattedTime + "§a." : "§a.");
+        player.sendMessage(msg);
+        if (hasValidTime) {
+            new ActionBar(formattedTime).send(player);
+        }
+
+        removePlayerParkour(player);
+    }
+
+    public static void removePlayerParkour(final Player player) {
+        playersMapsInParkour.remove(player);
+        spawnPlayer.remove(player);
+        IndividualTimerManager.stop(player);
+        GlobalTimerManager.removeViewer(player);
+        GlobalTimerManager.getViewingMap(player).ifPresent(map -> {
+            if (GlobalTimerManager.getViewersOf(map).isEmpty()) {
+                GlobalTimerManager.stop(map);
+            }
+        });
+        registerOrUnregisterListener();
     }
 
     public static void addAndSave(final Player player, final Location location, final String map){
         playersMapsInParkour.put(player, map);
         spawnPlayer.put(player, location);
-        registerOrUnregisterListener();
-    }
-
-    public static void exitParkour(final Player player) {
-        playersMapsInParkour.remove(player);
-        spawnPlayer.remove(player);
         registerOrUnregisterListener();
     }
 

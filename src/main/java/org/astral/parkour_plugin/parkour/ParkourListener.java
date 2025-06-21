@@ -101,7 +101,7 @@ public final class ParkourListener implements Listener {
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (!ParkourManager.isAutoReconnect(name_map)) {
-            ParkourManager.exitParkour(player);
+            ParkourManager.removePlayerParkour(player);
         }
     }
 

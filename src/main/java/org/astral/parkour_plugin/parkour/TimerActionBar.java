@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class TimerActionBar {
+public final class TimerActionBar {
 
     private static final Main plugin = Main.getInstance();
 
@@ -55,7 +55,6 @@ public class TimerActionBar {
     }
 
     public static void starIndividualTimer(final @NotNull Rules rules, final Player player) {
-        if (!rules.isTimerEnabled()) return;
 
         int timeLimit = rules.getTimeLimit();
         boolean isCountdown = rules.isCountdownEnabled();
@@ -106,9 +105,7 @@ public class TimerActionBar {
         }
     }
 
-    public static void startGlobalTimer(final @NotNull Rules rules) {
-        if (!rules.isTimerEnabled()) return;
-
+    public static void startGlobalTimer(final @NotNull Rules rules, final Player player) {
         int timeLimit = rules.getTimeLimit();
         boolean isCountdown = rules.isCountdownEnabled();
         String mapName = rules.getMapName();
@@ -116,6 +113,8 @@ public class TimerActionBar {
         if (!GlobalTimerManager.isRunning(mapName)) {
             GlobalTimerManager.start(mapName, isCountdown, timeLimit);
         }
+
+        GlobalTimerManager.addViewer(player, mapName);
 
         if (rules.isActionBarTimerDisplayEnabled()) {
             if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
@@ -127,26 +126,24 @@ public class TimerActionBar {
                     }
 
                     for (String map : GlobalTimerManager.getActiveMaps()) {
-                        Timer timer = GlobalTimerManager.get(map);
+                        final Timer timer = GlobalTimerManager.get(map);
                         boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
                                 (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
 
                         double progress = getProgress(timeLimit, isCountdown, timer);
                         String hexColor = getDynamicColor(progress);
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
-                        for (Map.Entry<Player, String> entry : ParkourManager.playersMapsInParkour.entrySet()) {
-                            Player player = entry.getKey();
-                            String playerMap = entry.getValue();
-                            if (player.isOnline() && playerMap.equals(map)) {
-                                new ActionBar(formatted).send(player);
+
+                        for (Player p : GlobalTimerManager.getViewersOf(map)) {
+                            if (p.isOnline()) {
+                                new ActionBar(formatted).send(p);
                             }
                         }
+
                         if (timeFinished) {
-                            for (Map.Entry<Player, String> entry : ParkourManager.playersMapsInParkour.entrySet()) {
-                                Player player = entry.getKey();
-                                String playerMap = entry.getValue();
-                                if (player.isOnline() && playerMap.equals(map)) {
-                                    player.sendMessage("§c¡Se acabó el tiempo global!");
+                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
+                                if (p.isOnline()) {
+                                    p.sendMessage("§c¡Se acabó el tiempo global!");
                                 }
                             }
                             GlobalTimerManager.stop(map);

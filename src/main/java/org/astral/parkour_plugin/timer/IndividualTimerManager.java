@@ -5,21 +5,20 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
-public class IndividualTimerManager {
+public final class IndividualTimerManager {
 
     private static final Map<Player, Timer> timers = new HashMap<>();
-    private static final Map<UUID, Long> persistedStartTimes = new HashMap<>();
+    private static final Map<Player, Long> persistedStartTimes = new HashMap<>();
 
-    public static void start(@NotNull Player player, boolean countdownMode, int timeLimitSeconds) {
+    public static void start(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
         long now = System.currentTimeMillis();
-        persistedStartTimes.put(player.getUniqueId(), now);
+        persistedStartTimes.put(player, now);
         timers.put(player, new Timer(countdownMode, timeLimitSeconds));
     }
 
-    public static void resume(@NotNull Player player, boolean countdownMode, int timeLimitSeconds) {
-        Long persistedTime = persistedStartTimes.get(player.getUniqueId());
+    public static void resume(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
+        Long persistedTime = persistedStartTimes.get(player);
         if (persistedTime == null) return;
 
         Timer timer = new Timer(countdownMode, timeLimitSeconds) {
@@ -31,17 +30,16 @@ public class IndividualTimerManager {
         timers.put(player, timer);
     }
 
-    public static String stop(Player player) {
-        Timer timer = timers.remove(player);
-        persistedStartTimes.remove(player.getUniqueId());
-        return timer != null ? timer.getFormattedTime() : "00:00.000";
+    public static void stop(final Player player) {
+        timers.remove(player);
+        persistedStartTimes.remove(player);
     }
 
-    public static Timer get(Player player) {
+    public static Timer get(final Player player) {
         return timers.get(player);
     }
 
-    public static boolean isRunning(Player player) {
+    public static boolean isRunning(final Player player) {
         return timers.containsKey(player);
     }
 

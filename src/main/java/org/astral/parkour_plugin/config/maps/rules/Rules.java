@@ -70,7 +70,7 @@ public final class Rules {
         return yamlConfiguration.getString("timer.format", "§fTiempo: §b{minutes}m {seconds}s");
     }
 
-    public boolean isGlobalMode() {
+    public boolean isGlobalModeTime() {
         final String mode = yamlConfiguration.getString("timer.mode", "individual");
         return mode.equalsIgnoreCase("global");
     }

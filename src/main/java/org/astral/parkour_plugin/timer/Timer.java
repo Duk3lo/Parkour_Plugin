@@ -41,14 +41,14 @@ public class Timer {
         return (int) (time % 1000);
     }
 
-    public String getFormattedTime() {
+    public @NotNull String getFormattedTime() {
         return format
                 .replace("{minutes}", String.format("%02d", getMinutes()))
                 .replace("{seconds}", String.format("%02d", getSeconds()))
                 .replace("{millis}", String.format("%03d", getMilliseconds()));
     }
 
-    public void setFormat(@NotNull String format) {
+    public void setFormat(final @NotNull String format) {
         this.format = format;
     }
 }

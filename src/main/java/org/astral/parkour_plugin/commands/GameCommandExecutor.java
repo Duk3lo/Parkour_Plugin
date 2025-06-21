@@ -21,10 +21,11 @@ import java.util.stream.Collectors;
 
 public final class GameCommandExecutor implements CommandExecutor, TabCompleter {
 
-    // ------------------------------------------ [ Star Parkour ]
+    // ------------------------------------------ [ Parkour ]
     private static final String start = "start_parkour";
     private static final String exit = "exit";
     private static final String start_here = "start_here";
+    private static final String finish = "finish";
 
     // ------------------------------------------- [ Editable ]
     // ------------------------------------------- [ 0 ]
@@ -136,13 +137,23 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                         return true;
                     }
                 }
-                String map = ParkourManager.getMapIfInParkour(player).orElse(null);
+                final String map = ParkourManager.getMapIfInParkour(player).orElse(null);
                 if (map == null) {
                     sender.sendMessage("§e" + player.getName() + " no está dentro de ningún mapa de parkour.");
                     return true;
                 }
-                ParkourManager.exitParkour(player);
+                ParkourManager.removePlayerParkour(player);
                 sender.sendMessage("§a" + player.getName() + " ha salido del parkour §b" + map + "§a.");
+                return true;
+            }
+
+            if (args[0].equalsIgnoreCase(finish)){
+                final String map = ParkourManager.getMapIfInParkour(player).orElse(null);
+                if (map == null) {
+                    sender.sendMessage("§e" + player.getName() + " no está dentro de ningún mapa de parkour.");
+                    return true;
+                }
+                ParkourManager.finish(player);
                 return true;
             }
 
@@ -157,7 +168,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 final Player player = ((Player) sender).getPlayer();
                 commandOpen = !Gui.isInEditMode(player)? command4 : command5;
             }
-            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit));
+            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit, finish));
 
         }
 
