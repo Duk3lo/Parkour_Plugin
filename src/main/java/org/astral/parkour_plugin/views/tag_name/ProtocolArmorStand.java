@@ -158,7 +158,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                                 }
                             } else {
                                 if (visible.contains(entityId)) {
-                                    PacketContainer destroyPacket = destroyPacket(new int[]{entityId});
+                                    PacketContainer destroyPacket = destroyEntity(new int[]{entityId});
                                     protocolManager.sendServerPacket(player, destroyPacket);
                                     visible.remove(entityId);
                                 }
@@ -205,15 +205,22 @@ public final class ProtocolArmorStand implements ArmorStandApi {
 
     @Override
     public void showHolograms(final Player player, final String map, final Type type) {
-        playersViewingMap.computeIfAbsent(map, k -> new HashMap<>()).computeIfAbsent(type, k -> new HashSet<>()).add(player);
+        playersViewingMap.computeIfAbsent(map, k -> new HashMap<>())
+                .computeIfAbsent(type, k -> new HashSet<>())
+                .add(player);
 
         final Map<Type, List<PacketStructureArmorStand>> standTypeMap = protocolStands.get(map);
-        final List<PacketStructureArmorStand> stands = (standTypeMap != null) ? standTypeMap.get(type) : null;
 
-        if (stands != null) {
-            for (PacketStructureArmorStand packet : stands) {
-                protocolManager.sendServerPacket(player, packet.getEntityPacket());
-                protocolManager.sendServerPacket(player, packet.getMetadataPacket());
+        if (standTypeMap != null) {
+            final List<PacketStructureArmorStand> stands = standTypeMap.get(type);
+
+            if (stands != null) {
+                for (PacketStructureArmorStand packet : stands) {
+                    protocolManager.sendServerPacket(player, packet.getEntityPacket());
+                    protocolManager.sendServerPacket(player, packet.getMetadataPacket());
+                }
+            } else {
+                addingHolograms(map, type);
             }
         } else {
             addingHolograms(map, type);
@@ -286,7 +293,6 @@ public final class ProtocolArmorStand implements ArmorStandApi {
         protocolStands.computeIfAbsent(map, k -> new HashMap<>())
                 .computeIfAbsent(type, k -> new ArrayList<>())
                 .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2, type));
-
 
 
         for (Player viewer : playersViewingMap.get(map).get(type)) {
@@ -380,7 +386,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
         return packet;
     }
 
-    private PacketContainer destroyPacket(final int[] entityId) {
+    private PacketContainer destroyEntity(final int[] entityId) {
         PacketContainer destroyPacket = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
         if (first != 1) return destroyPacket;
         if (second >= 8 && second <= 16) {
@@ -396,13 +402,35 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     @Override
     public void hideHolograms(final Player player, final String map, final Type type) {
         final Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
+
+        if (typeMap != null) {
+            System.out.println("§b[DEBUG] Contenido de protocolStands para el mapa: " + map);
+
+            for (Map.Entry<Type, List<PacketStructureArmorStand>> entry : typeMap.entrySet()) {
+                Type d = entry.getKey();
+                List<PacketStructureArmorStand> packets = entry.getValue();
+
+                System.out.println("  §6Tipo: " + d + " §7(con " + packets.size() + " hologramas)");
+
+                for (int i = 0; i < packets.size(); i++) {
+                    PacketStructureArmorStand packet = packets.get(i);
+                    System.out.println("    §eHolograma #" + i);
+                    System.out.println("      Nombre: " + packet.getName());
+                    System.out.println("      Entity ID: " + packet.getEntityIdPacket());
+                }
+            }
+        } else {
+            System.out.println("§c[DEBUG] No se encontró ningún tipo para el mapa: " + map);
+        }
+
         if (typeMap != null) {
             final List<PacketStructureArmorStand> packetList = typeMap.get(type);
+
             if (packetList != null) {
                 final int[] ids = packetList.stream()
                         .mapToInt(PacketStructureArmorStand::getEntityIdPacket)
                         .toArray();
-                final PacketContainer destroyPacket = destroyPacket(ids);
+                final PacketContainer destroyPacket = destroyEntity(ids);
                 protocolManager.sendServerPacket(player, destroyPacket);
             }
         }
@@ -433,7 +461,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             final int[] ids = packets.stream()
                     .mapToInt(PacketStructureArmorStand::getEntityIdPacket)
                     .toArray();
-            final PacketContainer destroyPacket = destroyPacket(ids);
+            final PacketContainer destroyPacket = destroyEntity(ids);
 
             final Map<Type, Set<Player>> viewersByType = playersViewingMap.get(map);
             if (viewersByType != null) {
@@ -461,7 +489,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             while (iterator.hasNext()) {
                 final PacketStructureArmorStand stand = iterator.next();
                 if (Objects.equals(stand.getName(), name)) {
-                    final PacketContainer destroyPacket = destroyPacket(
+                    final PacketContainer destroyPacket = destroyEntity(
                             new int[]{stand.getEntityIdPacket()}
                     );
 

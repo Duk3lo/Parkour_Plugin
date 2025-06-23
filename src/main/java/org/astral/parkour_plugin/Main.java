@@ -3,12 +3,7 @@ package org.astral.parkour_plugin;
 import org.astral.parkour_plugin.commands.GameCommandExecutor;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.editor.generator.Generator;
-import org.astral.parkour_plugin.parkour.common.Parkour;
-import org.astral.parkour_plugin.parkour.common.ParkourListener;
-
 import org.astral.parkour_plugin.editor.Gui;
-import org.astral.parkour_plugin.parkour.rankings.Score;
-import org.astral.parkour_plugin.parkour.rankings.ScoreListener;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,8 +15,7 @@ public final class Main extends JavaPlugin {
 
     private static Main instance;
     private Configuration configuration;
-    private Parkour parkour;
-    private Score score;
+
     private Generator generator;
 
     @Override
@@ -34,21 +28,12 @@ public final class Main extends JavaPlugin {
 
         //Instances
         configuration = new Configuration();
-        parkour = new Parkour();
-        score = new Score();
         generator = new Generator();
-
-        //Loaders
-        parkour.loadCheckpoints();
 
         //Commands
         final PluginCommand command = instance.getCommand("parkour");
         Objects.requireNonNull(command).setAliases(Collections.singletonList("pk"));
         command.setExecutor(new GameCommandExecutor());
-
-        //Events Registers
-        instance.getServer().getPluginManager().registerEvents(new ParkourListener(), instance);
-        instance.getServer().getPluginManager().registerEvents(new ScoreListener(), instance);
     }
 
     @Override
@@ -59,8 +44,6 @@ public final class Main extends JavaPlugin {
 
     public static Main getInstance(){ return instance; }
     public Configuration getConfiguration(){ return configuration; }
-    public Parkour getParkour(){ return parkour; }
-    public Score getScore(){ return score; }
     public Generator getGenerator(){ return generator; }
 
 

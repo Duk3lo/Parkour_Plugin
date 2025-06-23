@@ -15,7 +15,7 @@ public final class CheckpointBase {
 
     private final static Main plugin = Main.getInstance();
 
-    private static final Map<String, Set<Checkpoint>> checkpointMap = new HashMap<>();
+    private static final Map<String, List<Checkpoint>> checkpointMap = new HashMap<>();
     private static final Map<Player, Checkpoint> actualCheckpoint = new HashMap<>();
 
     public static void loadMap(final String map){
@@ -27,7 +27,7 @@ public final class CheckpointBase {
                 plugin.getLogger().warning("No se pudo encontrar el checkpoint: "+ key);
             }
             final Checkpoint checkpoint = createCheckpoint(checkpointConfig);
-            checkpointMap.computeIfAbsent(map, k -> new HashSet<>()).add(checkpoint);
+            checkpointMap.computeIfAbsent(map, k -> new ArrayList<>()).add(checkpoint);
         }
     }
 
@@ -47,7 +47,7 @@ public final class CheckpointBase {
         return actualCheckpoint.get(player);
     }
 
-    public static Set<Checkpoint> getCheckpoints(final String key){
+    public static List<Checkpoint> getCheckpoints(final String key){
         return checkpointMap.get(key);
     }
 

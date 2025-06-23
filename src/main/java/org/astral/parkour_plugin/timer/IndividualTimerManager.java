@@ -2,45 +2,64 @@ package org.astral.parkour_plugin.timer;
 
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public final class IndividualTimerManager {
 
-    private static final Map<Player, Timer> timers = new HashMap<>();
-    private static final Map<Player, Long> persistedStartTimes = new HashMap<>();
+    private static final Map<Player, TimerData> timerDataMap = new HashMap<>();
 
     public static void start(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
         long now = System.currentTimeMillis();
-        persistedStartTimes.put(player, now);
-        timers.put(player, new Timer(countdownMode, timeLimitSeconds));
+        Timer timer = new Timer(countdownMode, timeLimitSeconds);
+        timerDataMap.put(player, new TimerData(timer, now));
     }
 
     public static void resume(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
-        Long persistedTime = persistedStartTimes.get(player);
-        if (persistedTime == null) return;
+        TimerData oldData = timerDataMap.get(player);
+        if (oldData == null) return;
 
-        Timer timer = new Timer(countdownMode, timeLimitSeconds) {
+        long persistedTime = oldData.getStartTime();
+        Timer resumedTimer = new Timer(countdownMode, timeLimitSeconds) {
             @Override
             public long getElapsedMillis() {
                 return System.currentTimeMillis() - persistedTime;
             }
         };
-        timers.put(player, timer);
+        timerDataMap.put(player, new TimerData(resumedTimer, persistedTime));
     }
 
     public static void stop(final Player player) {
-        timers.remove(player);
-        persistedStartTimes.remove(player);
+        timerDataMap.remove(player);
     }
 
-    public static Timer get(final Player player) {
-        return timers.get(player);
+    public static @Nullable Timer get(final Player player) {
+        TimerData data = timerDataMap.get(player);
+        return data != null ? data.getTimer() : null;
     }
 
     public static boolean isRunning(final Player player) {
-        return timers.containsKey(player);
+        return timerDataMap.containsKey(player);
     }
 
+
+    private static class TimerData {
+        private final Timer timer;
+        private final long startTime;
+
+        public TimerData(Timer timer, long startTime) {
+            this.timer = timer;
+            this.startTime = startTime;
+        }
+
+        public Timer getTimer() {
+            return timer;
+        }
+
+        public long getStartTime() {
+            return startTime;
+        }
+    }
 }

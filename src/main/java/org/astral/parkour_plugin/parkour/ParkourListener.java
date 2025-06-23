@@ -2,8 +2,11 @@ package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
+import org.astral.parkour_plugin.parkour.action.TimerActionBar;
 import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
+import org.astral.parkour_plugin.parkour.progress.ProgressTracker;
+import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -14,8 +17,8 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public final class ParkourListener implements Listener {
 
@@ -35,7 +38,7 @@ public final class ParkourListener implements Listener {
             }
             final Rules rules = new Rules(name_map);
             IndividualTimerManager.resume(player, rules.isCountdownEnabled(), rules.getTimeLimit());
-            TimerActionBar.starIndividualTimer(rules, player);
+            TimerActionBar.starIndividualTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
         }
     }
 
@@ -46,19 +49,29 @@ public final class ParkourListener implements Listener {
         if (!playerInMap.isPresent()) return;
         final Location location = player.getLocation();
         final String name_map = playerInMap.get();
+        double percent = ProgressTrackerManager.getNearestEndPointProgress(ParkourManager.getSpawnPlayer(player), ParkourManager.getFinishPoints(name_map), location);
+        System.out.println(ProgressTrackerManager.get(name_map).getSortedByProgress(CheckpointBase.getCheckpoints(name_map)));
+        System.out.println(percent);
         saveCheckpointIfReached(player, name_map, location);
         teleportIf(player, name_map, location);
     }
 
     public void saveCheckpointIfReached(final Player player, final String name_map, final Location location){
-        final Set<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(name_map);
+        final List<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(name_map);
         if (checkpoints == null || checkpoints.isEmpty()) return;
-        for (final Checkpoint checkpoint : checkpoints){
+
+        for (int i = 0; i < checkpoints.size(); i++) {
+            final Checkpoint checkpoint = checkpoints.get(i);
             final Location chekLoc = checkpoint.getLocation();
-            if (CheckpointBase.isEqualLocation(chekLoc, location)){
-                if (checkpoint.getPlayers().contains(player)) continue;
+            if (CheckpointBase.isEqualLocation(chekLoc, location)) {
+                if (checkpoint.getPlayers().contains(player)) return;
                 checkpoint.getPlayers().add(player);
                 CheckpointBase.addPlayerLastCheckpoint(player, checkpoint);
+                ProgressTracker tracker = ProgressTrackerManager.get(name_map);
+                tracker.updateCheckpoint(player, i);
+                double progress = tracker.getProgress(player, checkpoints);
+                player.sendActionBar("§bProgreso: §a" + String.format("%.2f", progress) + "§f%");
+                return;
             }
         }
     }
@@ -92,7 +105,6 @@ public final class ParkourListener implements Listener {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + nameMap + "§c.");
         }
     }
-
 
     @EventHandler
     public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {

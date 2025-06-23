@@ -32,16 +32,6 @@ public final class CheckpointConfig extends BaseCheckpoint {
         return yamlConfiguration.getKeys(false);
     }
 
-    public boolean isArea(){
-        validateConfigurationSection();
-        return configurationSection.getKeys(false).contains("position_");
-    }
-
-    public int get_radius(){
-        validateConfigurationSection();
-        return configurationSection.getInt("radius");
-    }
-
     public double getMinFallY(){
         validateConfigurationSection();
         return configurationSection.getDouble("min_fall_y",MIN_Y);
@@ -82,12 +72,6 @@ public final class CheckpointConfig extends BaseCheckpoint {
     }
 
     // SETTERS
-    public void setRadius(final int radius){
-        validateConfigurationSection();
-        configurationSection.set("radius", radius);
-        saveConfiguration();
-    }
-
     public void setMinFallY(final double min_fall_y) {
         validateConfigurationSection();
         if (min_fall_y > getMaxFallY()) {

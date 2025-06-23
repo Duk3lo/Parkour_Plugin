@@ -112,7 +112,7 @@ public class BaseCheckpoint {
     }
 
 
-    // GETTERS
+    /*// GETTERS
     public boolean Fall_Damage(){
         validateConfigurationSection();
         return configurationSection.getBoolean("fall_damage",false);
@@ -133,7 +133,7 @@ public class BaseCheckpoint {
     public void Set_Damage_Fire(final boolean damage_fire){
         validateConfigurationSection();
         configurationSection.set("damage_fire", damage_fire);
-    }
+    }**/
 
     // PROTECTED
     protected void validateConfigurationSection(){

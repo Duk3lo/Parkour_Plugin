@@ -1,10 +1,11 @@
-package org.astral.parkour_plugin.parkour;
+package org.astral.parkour_plugin.parkour.action;
 
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
+import org.astral.parkour_plugin.parkour.ParkourManager;
 import org.astral.parkour_plugin.textcomponent.ColorUtil;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.Timer;
@@ -54,7 +55,7 @@ public final class TimerActionBar {
         }
     }
 
-    public static void starIndividualTimer(final @NotNull Rules rules, final Player player) {
+    public static void starIndividualTimer(final @NotNull Rules rules, final Player player, final boolean show) {
 
         int timeLimit = rules.getTimeLimit();
         boolean isCountdown = rules.isCountdownEnabled();
@@ -83,6 +84,7 @@ public final class TimerActionBar {
                         }
 
                         Timer timer = IndividualTimerManager.get(p);
+                        if (timer == null) return;
                         boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
                                 (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
 
@@ -98,6 +100,7 @@ public final class TimerActionBar {
                             p.sendMessage("§c¡Se acabó el tiempo!");
                             IndividualTimerManager.stop(p);
                             iterator.remove();
+                            ParkourManager.removePlayerParkour(player);
                         }
                     }
                 }, 0L, 2L, TimeUnit.MILLISECONDS);
@@ -105,7 +108,7 @@ public final class TimerActionBar {
         }
     }
 
-    public static void startGlobalTimer(final @NotNull Rules rules, final Player player) {
+    public static void startGlobalTimer(final @NotNull Rules rules, final Player player, final boolean show) {
         int timeLimit = rules.getTimeLimit();
         boolean isCountdown = rules.isCountdownEnabled();
         String mapName = rules.getMapName();
@@ -143,6 +146,7 @@ public final class TimerActionBar {
                         if (timeFinished) {
                             for (Player p : GlobalTimerManager.getViewersOf(map)) {
                                 if (p.isOnline()) {
+                                    ParkourManager.removePlayerParkour(p);
                                     p.sendMessage("§c¡Se acabó el tiempo global!");
                                 }
                             }

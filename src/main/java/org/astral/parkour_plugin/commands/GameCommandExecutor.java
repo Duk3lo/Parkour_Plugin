@@ -197,11 +197,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
 
         if (args[0].equalsIgnoreCase(exit)) {
             if (args.length == 2) {
-                return filterByPrefix(args[1],
-                        ParkourManager.playersMapsInParkour.keySet().stream()
-                                .map(Player::getName)
-                                .collect(Collectors.toList())
-                );
+                return filterByPrefix(args[1], ParkourManager.getAllPlayerNamesInParkour());
             }
         }
 
