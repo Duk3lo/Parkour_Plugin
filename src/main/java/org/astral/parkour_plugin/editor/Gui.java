@@ -73,6 +73,7 @@ public final class Gui {
     private static final Map<Player, String> mapPlayer = new HashMap<>();
     private static final Map<Player, Map<Integer, ItemStack>> originalInventories = new HashMap<>();
 
+
     private static final Inventory menuOptions = Bukkit.createInventory(null, 9, "Opciones");
 
     private static final ArmorStandApi HOLOGRAM_API = ArmorStandApi._view(plugin);
@@ -275,7 +276,9 @@ public final class Gui {
                 if (name.equals(name_map)){
                     final String inventory = player.getOpenInventory().getTitle();
                     if (inventory.equals(order)) player.closeInventory();
-                    HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
+                    for (Type type : Type.values()){
+                        HOLOGRAM_API.hideHolograms(player, name_map, type);
+                    }
                     loadMainInventory(player);
                     SoundApi.playSound(player, 1.0f, 1.0f, "ITEM_BREAK", "ENTITY_ITEM_BREAK");
                 }
@@ -692,13 +695,17 @@ public final class Gui {
         switch (menu_player) {
             case checkpoint_Menu_Edit:
                 if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
-                mapPlayer.remove(player);
                 loadMainInventory(player);
                 break;
             case checkpoint_menu:
                 if (name_map != null) loadEditInventoryMap(player);
+                mapPlayer.remove(player);
                 break;
             case spawnAndFinishMenu:
+                if (name_map != null){
+                    HOLOGRAM_API.hideHolograms(player, name_map, Type.SPAWN);
+                    HOLOGRAM_API.hideHolograms(player, name_map, Type.END_POINT);
+                }
                 loadEditInventoryMap(player);
                 break;
             default:

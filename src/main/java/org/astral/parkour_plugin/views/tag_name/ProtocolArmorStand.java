@@ -402,30 +402,8 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     @Override
     public void hideHolograms(final Player player, final String map, final Type type) {
         final Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
-
-        if (typeMap != null) {
-            System.out.println("§b[DEBUG] Contenido de protocolStands para el mapa: " + map);
-
-            for (Map.Entry<Type, List<PacketStructureArmorStand>> entry : typeMap.entrySet()) {
-                Type d = entry.getKey();
-                List<PacketStructureArmorStand> packets = entry.getValue();
-
-                System.out.println("  §6Tipo: " + d + " §7(con " + packets.size() + " hologramas)");
-
-                for (int i = 0; i < packets.size(); i++) {
-                    PacketStructureArmorStand packet = packets.get(i);
-                    System.out.println("    §eHolograma #" + i);
-                    System.out.println("      Nombre: " + packet.getName());
-                    System.out.println("      Entity ID: " + packet.getEntityIdPacket());
-                }
-            }
-        } else {
-            System.out.println("§c[DEBUG] No se encontró ningún tipo para el mapa: " + map);
-        }
-
         if (typeMap != null) {
             final List<PacketStructureArmorStand> packetList = typeMap.get(type);
-
             if (packetList != null) {
                 final int[] ids = packetList.stream()
                         .mapToInt(PacketStructureArmorStand::getEntityIdPacket)

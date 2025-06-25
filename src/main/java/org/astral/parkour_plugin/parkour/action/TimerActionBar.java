@@ -94,7 +94,7 @@ public final class TimerActionBar {
                         timer.setFormat(formatForDisplay);
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
-                        new ActionBar(formatted).send(p);
+                        if (show) new ActionBar(formatted).send(p);
 
                         if (timeFinished) {
                             p.sendMessage("§c¡Se acabó el tiempo!");
@@ -137,9 +137,11 @@ public final class TimerActionBar {
                         String hexColor = getDynamicColor(progress);
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
-                        for (Player p : GlobalTimerManager.getViewersOf(map)) {
-                            if (p.isOnline()) {
-                                new ActionBar(formatted).send(p);
+                        if (show) {
+                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
+                                if (p.isOnline()) {
+                                    new ActionBar(formatted).send(p);
+                                }
                             }
                         }
 

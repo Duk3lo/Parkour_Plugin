@@ -52,7 +52,7 @@ public final class ParkourManager {
         CheckpointBase.loadMap(map);
         addAndSave(player, blockLocation, map);
         final Rules rules = new Rules(map);
-        Optional<Title> optionalTitle = rules.getStartTitle();
+        final Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
@@ -74,7 +74,7 @@ public final class ParkourManager {
         addAndSave(player, spawn.get(), map);
         TeleportingApi.teleport(player, spawn.get());
         final Rules rules = new Rules(map);
-        Optional<Title> optionalTitle = rules.getStartTitle();
+        final Optional<Title> optionalTitle = rules.getStartTitle();
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
