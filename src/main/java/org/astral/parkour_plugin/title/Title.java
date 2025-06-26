@@ -40,4 +40,16 @@ public final class Title {
         }
     }
 
+    public int getFadeIn() {
+        return fadeIn;
+    }
+
+    public int getStay() {
+        return stay;
+    }
+
+    public int getFadeOut() {
+        return fadeOut;
+    }
+
 }

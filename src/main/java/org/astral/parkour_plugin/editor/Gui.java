@@ -76,7 +76,7 @@ public final class Gui {
 
     private static final Inventory menuOptions = Bukkit.createInventory(null, 9, "Opciones");
 
-    private static final ArmorStandApi HOLOGRAM_API = ArmorStandApi._view(plugin);
+    private static final ArmorStandApi HOLOGRAM_API = plugin.getArmorStandApi();
     private static final TextSignApi TEXT_SIGN_API = TextSignApi._text(plugin);
 
     private static final GuiListener GUI_LISTENER = new GuiListener();

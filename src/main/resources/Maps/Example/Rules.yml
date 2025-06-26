@@ -9,11 +9,36 @@ timer:
   mode: "global" # "individual" or "global"
 
 title:
-  main: "§a¡Parkour iniciado!"
-  subtitle: "§fMapa: §bExample"
-  fadeIn: 10
-  stay: 40
-  fadeOut: 10
+  common:
+    start:
+      title: "§a¡Parkour iniciado!"
+      subtitle: "§fMapa: §bExample"
+      fadeIn: 10
+      stay: 40
+      fadeOut: 10
+
+  animated:
+    wait_players:
+      repeat: true
+      update-delay_seconds: 1
+      texts:
+        - title: "§eEsperando jugadores."
+          subtitle: "§7Mapa: §f{map}"
+        - title: "§eEsperando jugadores.."
+          subtitle: "§7Mapa: §f{map}"
+        - title: "§eEsperando jugadores..."
+          subtitle: "§7Mapa: §f{map}"
+    star_countdown:
+      repeat: false
+      update-delay_seconds: 1
+      texts:
+        - title: "§aComenzando en §f3"
+          subtitle: "§7Prepárate"
+        - title: "§aComenzando en §f2"
+          subtitle: "§7Prepárate"
+        - title: "§aComenzando en §f1"
+          subtitle: "§7Prepárate"
+
 
 messages:
   start: "§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!"

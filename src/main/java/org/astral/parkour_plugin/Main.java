@@ -4,6 +4,7 @@ import org.astral.parkour_plugin.commands.GameCommandExecutor;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.editor.generator.Generator;
 import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,8 +16,8 @@ public final class Main extends JavaPlugin {
 
     private static Main instance;
     private Configuration configuration;
-
     private Generator generator;
+    private ArmorStandApi armorStandApi;
 
     @Override
     public void onEnable() {
@@ -29,6 +30,7 @@ public final class Main extends JavaPlugin {
         //Instances
         configuration = new Configuration();
         generator = new Generator();
+        armorStandApi = ArmorStandApi._view(instance);
 
         //Commands
         final PluginCommand command = instance.getCommand("parkour");
@@ -45,6 +47,7 @@ public final class Main extends JavaPlugin {
     public static Main getInstance(){ return instance; }
     public Configuration getConfiguration(){ return configuration; }
     public Generator getGenerator(){ return generator; }
+    public ArmorStandApi getArmorStandApi(){ return armorStandApi; }
 
 
 

@@ -3,6 +3,7 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.title.AnimatedTitle;
 import org.astral.parkour_plugin.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -14,10 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public final class Rules {
     // Instances
@@ -83,19 +81,51 @@ public final class Rules {
         return yamlConfiguration.getInt("timer.time_limit", -1);
     }
 
-    public Optional<Title> getStartTitle() {
-        ConfigurationSection titleSection = yamlConfiguration.getConfigurationSection("title");
-        if (titleSection != null) {
-            String main = titleSection.getString("main", "§a¡Parkour iniciado!");
-            String subtitle = titleSection.getString("subtitle", "§fMapa: §b" + MAP_FOLDER)
-                    .replace("{map}", MAP_FOLDER);
-            int fadeIn = titleSection.getInt("fadeIn", 10);
-            int stay = titleSection.getInt("stay", 40);
-            int fadeOut = titleSection.getInt("fadeOut", 10);
+    public Optional<Title> getTitle(final String sectionKey) {
+        ConfigurationSection section = yamlConfiguration.getConfigurationSection("title.common." + sectionKey);
+        if (section == null || section.contains("texts")) return Optional.empty(); // Es una animación
 
-            return Optional.of(new Title(main, subtitle, fadeIn, stay, fadeOut));
+        String rawMain = section.getString("title", "§a¡Parkour iniciado!");
+        String rawSubtitle = section.getString("subtitle", "§fMapa: §b{map}");
+
+        String main = rawMain.replace("{map}", MAP_FOLDER);
+        String subtitle = rawSubtitle.replace("{map}", MAP_FOLDER);
+
+        int fadeIn = section.getInt("fadeIn", 10);
+        int stay = section.getInt("stay", 40);
+        int fadeOut = section.getInt("fadeOut", 10);
+
+        return Optional.of(new Title(main, subtitle, fadeIn, stay, fadeOut));
+    }
+
+    public Optional<AnimatedTitle> getAnimatedTitle(final String sectionKey) {
+        ConfigurationSection section = yamlConfiguration.getConfigurationSection("title.animated." + sectionKey);
+        if (section == null) return Optional.empty();
+
+        int delay = section.getInt("update-delay_seconds", 1);
+        boolean repeat = section.getBoolean("repeat", false);
+
+        List<Map<?, ?>> rawTextList = section.getMapList("texts");
+        List<Title> frames = new ArrayList<>();
+
+        for (Map<?, ?> rawMap : rawTextList) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) rawMap;
+
+            String title = String.valueOf(map.getOrDefault("title", ""));
+            String subtitle = String.valueOf(map.getOrDefault("subtitle", ""));
+
+            int fadeIn = map.containsKey("fadeIn") ? ((Number) map.get("fadeIn")).intValue() : 3;
+            int stay = map.containsKey("stay") ? ((Number) map.get("stay")).intValue() : 20;
+            int fadeOut = map.containsKey("fadeOut") ? ((Number) map.get("fadeOut")).intValue() : 10;
+
+            title = title.replace("{map}", MAP_FOLDER);
+            subtitle = subtitle.replace("{map}", MAP_FOLDER);
+
+            frames.add(new Title(title, subtitle, fadeIn, stay, fadeOut));
         }
-        return Optional.empty();
+
+        return Optional.of(new AnimatedTitle(frames, repeat, delay));
     }
 
     public Optional<String> getMessage(final String key, final String player) {

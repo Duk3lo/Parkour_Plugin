@@ -148,8 +148,8 @@ public final class TimerActionBar {
                         if (timeFinished) {
                             for (Player p : GlobalTimerManager.getViewersOf(map)) {
                                 if (p.isOnline()) {
-                                    ParkourManager.removePlayerParkour(p);
                                     p.sendMessage("§c¡Se acabó el tiempo global!");
+                                    ParkourManager.removePlayerParkour(p);
                                 }
                             }
                             GlobalTimerManager.stop(map);

@@ -11,7 +11,10 @@ import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.astral.parkour_plugin.timer.Timer;
+import org.astral.parkour_plugin.title.AnimatedTitle;
 import org.astral.parkour_plugin.title.Title;
+import org.astral.parkour_plugin.views.Type;
+import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -29,6 +32,7 @@ public final class ParkourManager {
     private static final Map<Player, ParkourPlayerData> playersInParkour = new HashMap<>();
     private static final Listener parkourListener = new ParkourListener();
     private static boolean activeListener = false;
+    private static final ArmorStandApi hologram = plugin.getArmorStandApi();
 
     public static void registerOrUnregisterListener() {
         boolean hasPlayers = !playersInParkour.isEmpty();
@@ -52,7 +56,9 @@ public final class ParkourManager {
         CheckpointBase.loadMap(map);
         addAndSave(player, blockLocation, map);
         final Rules rules = new Rules(map);
-        final Optional<Title> optionalTitle = rules.getStartTitle();
+        /*final Optional<Title> optionalTitle = rules.getTitle("start");
+        optionalTitle.ifPresent(title -> title.send(player));*/
+        final Optional<AnimatedTitle> optionalTitle = rules.getAnimatedTitle("star_countdown");
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
@@ -62,6 +68,7 @@ public final class ParkourManager {
                 TimerActionBar.startGlobalTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
             }
         }
+        showMap(player, map);
     }
 
     public static void gotoParkour(final Player player, final String map) {
@@ -74,7 +81,9 @@ public final class ParkourManager {
         addAndSave(player, spawn.get(), map);
         TeleportingApi.teleport(player, spawn.get());
         final Rules rules = new Rules(map);
-        final Optional<Title> optionalTitle = rules.getStartTitle();
+        /*final Optional<Title> optionalTitle = rules.getTitle("start");
+        optionalTitle.ifPresent(title -> title.send(player));*/
+        final Optional<AnimatedTitle> optionalTitle = rules.getAnimatedTitle("star_countdown");
         optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
@@ -83,6 +92,19 @@ public final class ParkourManager {
             }else {
                 TimerActionBar.startGlobalTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
             }
+        }
+        showMap(player, map);
+    }
+
+    public static void showMap(final Player player, final String map){
+        for (Type type : Type.values()){
+            hologram.showHolograms(player, map, type);
+        }
+    }
+
+    public static void hideMap(final Player player, final String map){
+        for (Type type : Type.values()){
+            hologram.hideHolograms(player, map, type);
         }
     }
 
@@ -124,6 +146,7 @@ public final class ParkourManager {
         final ParkourPlayerData data = playersInParkour.remove(player);
         if (data == null) return;
         final String map = data.getMapName();
+        hideMap(player, map);
         final ProgressTracker tracker = ProgressTrackerManager.get(map);
         tracker.removePlayer(player);
         if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
