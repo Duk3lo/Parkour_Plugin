@@ -3,8 +3,8 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
-import org.astral.parkour_plugin.title.AnimatedTitle;
-import org.astral.parkour_plugin.title.Title;
+import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
+import org.astral.parkour_plugin.config.maps.title.RichText;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -81,7 +81,7 @@ public final class Rules {
         return yamlConfiguration.getInt("timer.time_limit", -1);
     }
 
-    public Optional<Title> getTitle(final String sectionKey) {
+    public Optional<RichText> getTitle(final String sectionKey) {
         ConfigurationSection section = yamlConfiguration.getConfigurationSection("title.common." + sectionKey);
         if (section == null || section.contains("texts")) return Optional.empty(); // Es una animación
 
@@ -95,10 +95,10 @@ public final class Rules {
         int stay = section.getInt("stay", 40);
         int fadeOut = section.getInt("fadeOut", 10);
 
-        return Optional.of(new Title(main, subtitle, fadeIn, stay, fadeOut));
+        return Optional.of(new RichText(main, subtitle, fadeIn, stay, fadeOut));
     }
 
-    public Optional<AnimatedTitle> getAnimatedTitle(final String sectionKey) {
+    public Optional<AnimatedRichText> getAnimatedTitle(final String sectionKey) {
         ConfigurationSection section = yamlConfiguration.getConfigurationSection("title.animated." + sectionKey);
         if (section == null) return Optional.empty();
 
@@ -106,7 +106,7 @@ public final class Rules {
         boolean repeat = section.getBoolean("repeat", false);
 
         List<Map<?, ?>> rawTextList = section.getMapList("texts");
-        List<Title> frames = new ArrayList<>();
+        List<RichText> frames = new ArrayList<>();
 
         for (Map<?, ?> rawMap : rawTextList) {
             @SuppressWarnings("unchecked")
@@ -122,10 +122,10 @@ public final class Rules {
             title = title.replace("{map}", MAP_FOLDER);
             subtitle = subtitle.replace("{map}", MAP_FOLDER);
 
-            frames.add(new Title(title, subtitle, fadeIn, stay, fadeOut));
+            frames.add(new RichText(title, subtitle, fadeIn, stay, fadeOut));
         }
 
-        return Optional.of(new AnimatedTitle(frames, repeat, delay));
+        return Optional.of(new AnimatedRichText(frames, repeat, delay));
     }
 
     public Optional<String> getMessage(final String key, final String player) {

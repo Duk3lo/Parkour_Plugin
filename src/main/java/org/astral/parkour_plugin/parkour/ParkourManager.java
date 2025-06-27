@@ -11,8 +11,6 @@ import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.astral.parkour_plugin.timer.Timer;
-import org.astral.parkour_plugin.title.AnimatedTitle;
-import org.astral.parkour_plugin.title.Title;
 import org.astral.parkour_plugin.views.Type;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Location;
@@ -58,8 +56,7 @@ public final class ParkourManager {
         final Rules rules = new Rules(map);
         /*final Optional<Title> optionalTitle = rules.getTitle("start");
         optionalTitle.ifPresent(title -> title.send(player));*/
-        final Optional<AnimatedTitle> optionalTitle = rules.getAnimatedTitle("star_countdown");
-        optionalTitle.ifPresent(title -> title.send(player));
+
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
             if (rules.isGlobalModeTime()){
@@ -83,8 +80,6 @@ public final class ParkourManager {
         final Rules rules = new Rules(map);
         /*final Optional<Title> optionalTitle = rules.getTitle("start");
         optionalTitle.ifPresent(title -> title.send(player));*/
-        final Optional<AnimatedTitle> optionalTitle = rules.getAnimatedTitle("star_countdown");
-        optionalTitle.ifPresent(title -> title.send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isTimerEnabled()){
             if (rules.isGlobalModeTime()){
