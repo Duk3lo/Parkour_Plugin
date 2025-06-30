@@ -25,10 +25,12 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerJoin(final @NotNull PlayerJoinEvent event) {
         final Player player = event.getPlayer();
+        System.out.println(player);
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (ParkourManager.isAutoReconnect(name_map)) {
+            player.sendMessage("CONTINUE");
             final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
             if (checkpoint != null) {
                 teleportToCheckpoint(player, checkpoint);
@@ -36,9 +38,9 @@ public final class ParkourListener implements Listener {
                 final Location spawn = ParkourManager.getSpawnPlayer(player);
                 teleportToSpawnOrWarn(player, name_map, spawn);
             }
-            final Rules rules = new Rules(name_map);
-            IndividualTimerManager.resume(player, rules.isCountdownEnabled(), rules.getTimeLimit());
-            TimerActionBar.starIndividualTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
+            //final Rules rules = new Rules(name_map);
+            //IndividualTimerManager.resume(player, rules.isIndividualCountdownEnabled(), rules.getIndividualTimeLimit());
+            //TimerActionBar.starIndividualTimer(rules, player, rules.isIndividualTimerEnabled());
         }
     }
 
@@ -50,8 +52,8 @@ public final class ParkourListener implements Listener {
         final Location location = player.getLocation();
         final String name_map = playerInMap.get();
         double percent = ProgressTrackerManager.getNearestEndPointProgress(ParkourManager.getSpawnPlayer(player), ParkourManager.getFinishPoints(name_map), location);
-        System.out.println(ProgressTrackerManager.get(name_map).getSortedByProgress(CheckpointBase.getCheckpoints(name_map)));
-        System.out.println(percent);
+        //System.out.println(ProgressTrackerManager.get(name_map).getSortedByProgress(CheckpointBase.getCheckpoints(name_map)));
+        //System.out.println(percent);
         saveCheckpointIfReached(player, name_map, location);
         teleportIf(player, name_map, location);
     }

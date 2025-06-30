@@ -57,12 +57,12 @@ public final class TimerActionBar {
 
     public static void starIndividualTimer(final @NotNull Rules rules, final Player player, final boolean show) {
 
-        int timeLimit = rules.getTimeLimit();
-        boolean isCountdown = rules.isCountdownEnabled();
+        int timeLimit = rules.getIndividualTimeLimit();
+        boolean isCountdown = rules.isIndividualCountdownEnabled();
         IndividualTimerManager.start(player, isCountdown, timeLimit);
 
-        if (rules.isActionBarTimerDisplayEnabled()) {
-            activeActionBars.put(player.getUniqueId(), rules.getTimerFormat());
+        if (rules.isIndividualActionBarTimerDisplayEnabled()) {
+            activeActionBars.put(player.getUniqueId(), rules.getIndividualTimerFormat());
 
             if (individualActionBarTask == null || individualActionBarTask.isCancelled()) {
                 individualActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
@@ -109,8 +109,8 @@ public final class TimerActionBar {
     }
 
     public static void startGlobalTimer(final @NotNull Rules rules, final Player player, final boolean show) {
-        int timeLimit = rules.getTimeLimit();
-        boolean isCountdown = rules.isCountdownEnabled();
+        int timeLimit = rules.getGlobalTimeLimit();
+        boolean isCountdown = rules.isGlobalCountdownEnabled();
         String mapName = rules.getMapName();
 
         if (!GlobalTimerManager.isRunning(mapName)) {
@@ -119,7 +119,7 @@ public final class TimerActionBar {
 
         GlobalTimerManager.addViewer(player, mapName);
 
-        if (rules.isActionBarTimerDisplayEnabled()) {
+        if (rules.isGlobalActionBarTimerDisplayEnabled()) {
             if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
                 globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
                     if (!GlobalTimerManager.hasAnyTimerRunning()) {
@@ -135,6 +135,11 @@ public final class TimerActionBar {
 
                         double progress = getProgress(timeLimit, isCountdown, timer);
                         String hexColor = getDynamicColor(progress);
+
+                        String format = rules.getGlobalTimerFormat();
+                        String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
+                        timer.setFormat(formatForDisplay);
+
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
                         if (show) {

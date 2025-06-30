@@ -1,9 +1,12 @@
 package org.astral.parkour_plugin.parkour;
 
+import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
+import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
+import org.astral.parkour_plugin.config.maps.title.RichText;
 import org.astral.parkour_plugin.parkour.action.TimerActionBar;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
 import org.astral.parkour_plugin.parkour.progress.ProgressTracker;
@@ -11,6 +14,7 @@ import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.astral.parkour_plugin.timer.Timer;
+import org.astral.parkour_plugin.title.Title;
 import org.astral.parkour_plugin.views.Type;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Location;
@@ -21,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public final class ParkourManager {
@@ -28,9 +34,13 @@ public final class ParkourManager {
     private static final Main plugin = Main.getInstance();
 
     private static final Map<Player, ParkourPlayerData> playersInParkour = new HashMap<>();
+    private static final Map<String, WaitingLobbyState> activeWaitingLobbies = new ConcurrentHashMap<>();
+    private static final Map<String, Boolean> isRunning = new HashMap<>();
+    private static ScheduledTask waitingTask;
     private static final Listener parkourListener = new ParkourListener();
     private static boolean activeListener = false;
     private static final ArmorStandApi hologram = plugin.getArmorStandApi();
+
 
     public static void registerOrUnregisterListener() {
         boolean hasPlayers = !playersInParkour.isEmpty();
@@ -54,21 +64,18 @@ public final class ParkourManager {
         CheckpointBase.loadMap(map);
         addAndSave(player, blockLocation, map);
         final Rules rules = new Rules(map);
-        /*final Optional<Title> optionalTitle = rules.getTitle("start");
-        optionalTitle.ifPresent(title -> title.send(player));*/
-
+        final Optional<RichText> optionalTitle = rules.getTitle("start");
+        optionalTitle.ifPresent(title ->
+                new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        if (rules.isTimerEnabled()){
-            if (rules.isGlobalModeTime()){
-                TimerActionBar.starIndividualTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
-            }else {
-                TimerActionBar.startGlobalTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
-            }
+        if (rules.isIndividualTimerEnabled()){
+            TimerActionBar.starIndividualTimer(rules, player, rules.isIndividualActionBarTimerDisplayEnabled());
         }
-        showMap(player, map);
+        showAllObjectsInMap(player, map);
     }
 
     public static void gotoParkour(final Player player, final String map) {
+
         final Optional<Location> spawn = getRandomSpawn(map);
         if (!spawn.isPresent()) {
             player.sendMessage("§cNo existe ningún lugar de aparición definido para el mapa §b" + map + "§c.");
@@ -78,20 +85,75 @@ public final class ParkourManager {
         addAndSave(player, spawn.get(), map);
         TeleportingApi.teleport(player, spawn.get());
         final Rules rules = new Rules(map);
-        /*final Optional<Title> optionalTitle = rules.getTitle("start");
-        optionalTitle.ifPresent(title -> title.send(player));*/
+        final Optional<RichText> optionalTitle = rules.getTitle("start");
+        optionalTitle.ifPresent(title -> new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
-        if (rules.isTimerEnabled()){
-            if (rules.isGlobalModeTime()){
-                TimerActionBar.starIndividualTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
-            }else {
-                TimerActionBar.startGlobalTimer(rules, player, rules.isActionBarTimerDisplayEnabled());
-            }
+        showAllObjectsInMap(player, map);
+        if (rules.isWaitingLobbyEnabled()) {
+            activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
+            startWaitingSchedulerIfNeeded();
         }
-        showMap(player, map);
     }
 
-    public static void showMap(final Player player, final String map){
+
+    private static void startWaitingSchedulerIfNeeded() {
+        if (waitingTask != null && !waitingTask.isCancelled()) return;
+        waitingTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, t -> {
+            if (activeWaitingLobbies.isEmpty()) {
+                t.cancel();
+                waitingTask = null;
+                return;
+            }
+
+            Iterator<Map.Entry<String, WaitingLobbyState>> iterator = activeWaitingLobbies.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, WaitingLobbyState> entry = iterator.next();
+                String map = entry.getKey();
+                WaitingLobbyState state = entry.getValue();
+                Rules rules = state.getRules();
+
+                int current = countPlayersInMap(map);
+                int min = rules.getWaitingLobbyMinPlayers();
+                int maxTime = rules.getWaitingLobbyMaxWaitTimeSeconds();
+
+                if (maxTime > -1 && state.incrementTimer() >= maxTime) {
+                    iterator.remove();
+                    isRunning.put(map, true);
+                    continue;
+                }
+
+                if (current >= min) {
+                    iterator.remove();
+                    isRunning.put(map, true);
+                    continue;
+                }
+                if (rules.isWaitingLobbyActionBarEnabled()) {
+                    String format = rules.getWaitingLobbyFormat()
+                            .replace("{current}", String.valueOf(current))
+                            .replace("{required}", String.valueOf(min))
+                            .replace("{dots}", state.getAnimatedDots());
+                    getOnlinePlayersInMap(map).forEach(p -> new ActionBar(format).send(p));
+                }
+            }
+        }, 0L, 1L, TimeUnit.SECONDS);
+    }
+
+
+    public static int countPlayersInMap(final String mapName) {
+        return (int) playersInParkour.entrySet().stream()
+                .filter(entry -> entry.getValue().getMapName().equalsIgnoreCase(mapName))
+                .count();
+    }
+
+    public static Set<Player> getOnlinePlayersInMap(final String mapName) {
+        return playersInParkour.entrySet().stream()
+                .filter(entry -> entry.getValue().getMapName().equalsIgnoreCase(mapName))
+                .map(Map.Entry::getKey)
+                .filter(Player::isOnline)
+                .collect(Collectors.toSet());
+    }
+
+    public static void showAllObjectsInMap(final Player player, final String map){
         for (Type type : Type.values()){
             hologram.showHolograms(player, map, type);
         }

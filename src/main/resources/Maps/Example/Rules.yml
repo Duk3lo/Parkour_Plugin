@@ -1,12 +1,33 @@
 auto_reconnect: true
 
-timer:
+waiting_lobby:
   enabled: true
+  require_min_players: true
+  min_players: 2
+  max_wait_time: 10
+  allow_movement: false
   display_actionbar: true
-  format: "{minutes}:{seconds}:{millis}"
-  countdown: false
-  time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
-  mode: "global" # "individual" or "global"
+  format:
+    - "§eEsperando jugadores. (§f{current}§e/§f{required}§e)"
+    - "§eEsperando jugadores.. (§f{current}§e/§f{required}§e)"
+    - "§eEsperando jugadores... (§f{current}§e/§f{required}§e)"
+
+
+timer:
+  global:
+    enabled: true
+    display_actionbar: true
+    format: "{minutes}:{seconds}:{millis}"
+    countdown: false
+    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+  individual:
+    enabled: true
+    display_actionbar: true
+    format: "{minutes}:{seconds}:{millis}"
+    countdown: false
+    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+
+
 
 title:
   common:
@@ -16,20 +37,8 @@ title:
       fadeIn: 10
       stay: 40
       fadeOut: 10
-
   animated:
-    wait_players:
-      repeat: true
-      update-delay_seconds: 1
-      texts:
-        - title: "§eEsperando jugadores."
-          subtitle: "§7Mapa: §f{map}"
-        - title: "§eEsperando jugadores.."
-          subtitle: "§7Mapa: §f{map}"
-        - title: "§eEsperando jugadores..."
-          subtitle: "§7Mapa: §f{map}"
     star_countdown:
-      repeat: false
       update-delay_seconds: 1
       texts:
         - title: "§aComenzando en §f3"

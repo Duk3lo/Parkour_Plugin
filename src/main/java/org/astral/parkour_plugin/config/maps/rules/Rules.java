@@ -51,34 +51,84 @@ public final class Rules {
         return MAP_FOLDER;
     }
 
+    // Auto Reconnect
+
     public boolean isAutoReconnectEnabled() {
         return yamlConfiguration.getBoolean("auto_reconnect", true);
     }
 
-    //Timer
-    public boolean isTimerEnabled() {
-        return yamlConfiguration.getBoolean("timer.enabled", true);
+    // Waiting Lobby
+
+    public boolean isWaitingLobbyEnabled() {
+        return yamlConfiguration.getBoolean("waiting_lobby.enabled", true);
     }
 
-    public boolean isActionBarTimerDisplayEnabled() {
-        return yamlConfiguration.getBoolean("timer.display_actionbar", true);
+    public boolean isWaitingLobbyRequireMinPlayers() {
+        return yamlConfiguration.getBoolean("waiting_lobby.require_min_players", true);
     }
 
-    public @NotNull String getTimerFormat() {
-        return yamlConfiguration.getString("timer.format", "§fTiempo: §b{minutes}m {seconds}s");
+    public int getWaitingLobbyMinPlayers() {
+        return yamlConfiguration.getInt("waiting_lobby.min_players", 2);
     }
 
-    public boolean isGlobalModeTime() {
-        final String mode = yamlConfiguration.getString("timer.mode", "individual");
-        return mode.equalsIgnoreCase("global");
+    public int getWaitingLobbyMaxWaitTimeSeconds() {
+        return yamlConfiguration.getInt("waiting_lobby.max_wait_time", 30);
     }
 
-    public boolean isCountdownEnabled() {
-        return yamlConfiguration.getBoolean("timer.countdown", false);
+    public boolean isWaitingLobbyMovementAllowed() {
+        return yamlConfiguration.getBoolean("waiting_lobby.allow_movement", false);
     }
 
-    public int getTimeLimit() {
-        return yamlConfiguration.getInt("timer.time_limit", -1);
+    public boolean isWaitingLobbyActionBarEnabled() {
+        return yamlConfiguration.getBoolean("waiting_lobby.display_actionbar", true);
+    }
+
+    public @NotNull String getWaitingLobbyFormat() {
+        return yamlConfiguration.getString("waiting_lobby.format", "§eEsperando jugadores... ({current}/{required})");
+    }
+
+    // Timer - GLOBAL
+
+    public boolean isGlobalTimerEnabled() {
+        return yamlConfiguration.getBoolean("timer.global.enabled", true);
+    }
+
+    public boolean isGlobalActionBarTimerDisplayEnabled() {
+        return yamlConfiguration.getBoolean("timer.global.display_actionbar", true);
+    }
+
+    public @NotNull String getGlobalTimerFormat() {
+        return yamlConfiguration.getString("timer.global.format", "§fTiempo: §b{minutes}m {seconds}s");
+    }
+
+    public boolean isGlobalCountdownEnabled() {
+        return yamlConfiguration.getBoolean("timer.global.countdown", false);
+    }
+
+    public int getGlobalTimeLimit() {
+        return yamlConfiguration.getInt("timer.global.time_limit", -1);
+    }
+
+// Timer - INDIVIDUAL
+
+    public boolean isIndividualTimerEnabled() {
+        return yamlConfiguration.getBoolean("timer.individual.enabled", true);
+    }
+
+    public boolean isIndividualActionBarTimerDisplayEnabled() {
+        return yamlConfiguration.getBoolean("timer.individual.display_actionbar", true);
+    }
+
+    public @NotNull String getIndividualTimerFormat() {
+        return yamlConfiguration.getString("timer.individual.format", "§fTiempo: §b{minutes}m {seconds}s");
+    }
+
+    public boolean isIndividualCountdownEnabled() {
+        return yamlConfiguration.getBoolean("timer.individual.countdown", false);
+    }
+
+    public int getIndividualTimeLimit() {
+        return yamlConfiguration.getInt("timer.individual.time_limit", -1);
     }
 
     public Optional<RichText> getTitle(final String sectionKey) {
@@ -103,7 +153,7 @@ public final class Rules {
         if (section == null) return Optional.empty();
 
         int delay = section.getInt("update-delay_seconds", 1);
-        boolean repeat = section.getBoolean("repeat", false);
+
 
         List<Map<?, ?>> rawTextList = section.getMapList("texts");
         List<RichText> frames = new ArrayList<>();
@@ -124,8 +174,7 @@ public final class Rules {
 
             frames.add(new RichText(title, subtitle, fadeIn, stay, fadeOut));
         }
-
-        return Optional.of(new AnimatedRichText(frames, repeat, delay));
+        return Optional.of(new AnimatedRichText(frames, delay));
     }
 
     public Optional<String> getMessage(final String key, final String player) {
