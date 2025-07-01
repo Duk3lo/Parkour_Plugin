@@ -25,8 +25,9 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerJoin(final @NotNull PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        System.out.println(player);
+
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
+        System.out.println(playerInMap.isPresent());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (ParkourManager.isAutoReconnect(name_map)) {

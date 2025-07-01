@@ -17,6 +17,7 @@ import org.astral.parkour_plugin.timer.Timer;
 import org.astral.parkour_plugin.title.Title;
 import org.astral.parkour_plugin.views.Type;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -33,7 +34,7 @@ public final class ParkourManager {
 
     private static final Main plugin = Main.getInstance();
 
-    private static final Map<Player, ParkourPlayerData> playersInParkour = new HashMap<>();
+    private static final Map<UUID, ParkourPlayerData> playersInParkour = new HashMap<>();
     private static final Map<String, WaitingLobbyState> activeWaitingLobbies = new ConcurrentHashMap<>();
     private static final Map<String, Boolean> isRunning = new HashMap<>();
     private static ScheduledTask waitingTask;
@@ -55,6 +56,8 @@ public final class ParkourManager {
 
     public static List<String> getAllPlayerNamesInParkour() {
         return playersInParkour.keySet().stream()
+                .map(Bukkit::getPlayer)
+                .filter(Objects::nonNull)
                 .map(Player::getName)
                 .collect(Collectors.toList());
     }
@@ -62,7 +65,7 @@ public final class ParkourManager {
     public static void starParkourHere(final @NotNull Player player, final String map) {
         final Location blockLocation = player.getLocation().clone().subtract(0, 1, 0).getBlock().getLocation();
         CheckpointBase.loadMap(map);
-        addAndSave(player, blockLocation, map);
+        addAndSave(player.getUniqueId(), blockLocation, map);
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("start");
         optionalTitle.ifPresent(title ->
@@ -82,7 +85,7 @@ public final class ParkourManager {
             return;
         }
         CheckpointBase.loadMap(map);
-        addAndSave(player, spawn.get(), map);
+        addAndSave(player.getUniqueId(), spawn.get(), map);
         TeleportingApi.teleport(player, spawn.get());
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("start");
@@ -148,8 +151,8 @@ public final class ParkourManager {
     public static Set<Player> getOnlinePlayersInMap(final String mapName) {
         return playersInParkour.entrySet().stream()
                 .filter(entry -> entry.getValue().getMapName().equalsIgnoreCase(mapName))
-                .map(Map.Entry::getKey)
-                .filter(Player::isOnline)
+                .map(entry -> Bukkit.getPlayer(entry.getKey()))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
@@ -165,8 +168,8 @@ public final class ParkourManager {
         }
     }
 
-    public static void finish(final Player player) {
-        ParkourPlayerData data = playersInParkour.get(player);
+    public static void finish(final @NotNull Player player) {
+        ParkourPlayerData data = playersInParkour.get(player.getUniqueId());
         if (data == null) return;
 
         String map = data.getMapName();
@@ -184,8 +187,8 @@ public final class ParkourManager {
         removePlayerParkour(player);
     }
 
-    public static @Nullable Timer getTimer(final Player player) {
-        ParkourPlayerData data = playersInParkour.get(player);
+    public static @Nullable Timer getTimer(final @NotNull Player player) {
+        ParkourPlayerData data = playersInParkour.get(player.getUniqueId());
         if (data == null) return null;
 
         String map = data.getMapName();
@@ -199,8 +202,8 @@ public final class ParkourManager {
         return null;
     }
 
-    public static void removePlayerParkour(final Player player) {
-        final ParkourPlayerData data = playersInParkour.remove(player);
+    public static void removePlayerParkour(final @NotNull Player player) {
+        final ParkourPlayerData data = playersInParkour.remove(player.getUniqueId());
         if (data == null) return;
         final String map = data.getMapName();
         hideMap(player, map);
@@ -219,8 +222,8 @@ public final class ParkourManager {
         registerOrUnregisterListener();
     }
 
-    public static void addAndSave(final Player player, final Location location, final String map){
-        playersInParkour.put(player, new ParkourPlayerData(map, location));
+    public static void addAndSave(final UUID uuid, final Location location, final String map){
+        playersInParkour.put(uuid, new ParkourPlayerData(map, location));
         registerOrUnregisterListener();
     }
 
@@ -239,17 +242,15 @@ public final class ParkourManager {
         return Optional.of(random);
     }
 
-    public static Optional<String> getMapIfInParkour(final Player player) {
-        ParkourPlayerData data = playersInParkour.get(player);
+    public static Optional<String> getMapIfInParkour(final @NotNull Player player) {
+        ParkourPlayerData data = playersInParkour.get(player.getUniqueId());
         return data != null ? Optional.of(data.getMapName()) : Optional.empty();
     }
 
-    public static @Nullable Location getSpawnPlayer(final Player player){
-        ParkourPlayerData data = playersInParkour.get(player);
+    public static @Nullable Location getSpawnPlayer(final @NotNull Player player){
+        ParkourPlayerData data = playersInParkour.get(player.getUniqueId());
         return data != null ? data.getSpawnLocation() : null;
     }
-
-
 
     public static boolean isAutoReconnect(final String map){
         final Rules rules = new Rules(map);
