@@ -3,6 +3,7 @@ package org.astral.parkour_plugin.parkour;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.actiobar.ActionBar;
+import org.astral.parkour_plugin.compatibilizer.adapters.SoundApi;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
@@ -36,7 +37,7 @@ public final class ParkourManager {
 
     private static final Map<UUID, ParkourPlayerData> playersInParkour = new HashMap<>();
     private static final Map<String, WaitingLobbyState> activeWaitingLobbies = new ConcurrentHashMap<>();
-    private static final Map<String, Boolean> isRunning = new HashMap<>();
+
     private static ScheduledTask waitingTask;
     private static final Listener parkourListener = new ParkourListener();
     private static boolean activeListener = false;
@@ -120,14 +121,11 @@ public final class ParkourManager {
                 int maxTime = rules.getWaitingLobbyMaxWaitTimeSeconds();
 
                 if (maxTime > -1 && state.incrementTimer() >= maxTime) {
-                    iterator.remove();
-                    isRunning.put(map, true);
+                    loadFramesIfNeedAndRemove(state, iterator, rules);
                     continue;
                 }
-
                 if (current >= min) {
-                    iterator.remove();
-                    isRunning.put(map, true);
+                    loadFramesIfNeedAndRemove(state, iterator, rules);
                     continue;
                 }
                 if (rules.isWaitingLobbyActionBarEnabled()) {
@@ -139,6 +137,41 @@ public final class ParkourManager {
                 }
             }
         }, 0L, 1L, TimeUnit.SECONDS);
+    }
+
+    private static void loadFramesIfNeedAndRemove(@NotNull WaitingLobbyState state, Iterator<Map.Entry<String, WaitingLobbyState>> iterator, Rules rules){
+        if (state.getCountDownTask() == null) {
+            int delay = state.getAnimatedTimerPreStar();
+            if (delay == 0) {
+                iterator.remove();
+            } else {
+                ScheduledTask countDown = Kit.getAsyncScheduler().runAtFixedRate(plugin, s -> rules.getAnimatedTitle("star_countdown").ifPresent(animatedRichText -> {
+                    int index = state.getStart();
+                    if (index >= animatedRichText.getFrames().size()) {
+                        s.cancel();
+                        state.setCountDownTask(null);
+                        return;
+                    }
+
+                    RichText richText = animatedRichText.getFrames().get(index);
+                    Set<Player> players = getOnlinePlayersInMap(rules.getMapName());
+                    for (Player player : players) {
+                        SoundApi.playSound(player, 1.0f, 1.0f, "NOTE_PLING", "BLOCK_NOTE_BLOCK_PLING");
+                        new Title(
+                                richText.getTitle(),
+                                richText.getSubtitle(),
+                                richText.getFadeIn(),
+                                richText.getStay(),
+                                richText.getFadeOut()
+                        ).send(player);
+                    }
+
+                    state.incrementStart();
+                }), 0, delay, TimeUnit.SECONDS);
+
+                state.setCountDownTask(countDown);
+            }
+        }
     }
 
 
