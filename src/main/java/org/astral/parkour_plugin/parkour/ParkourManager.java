@@ -36,13 +36,13 @@ public final class ParkourManager {
     private static final Main plugin = Main.getInstance();
 
     private static final Map<UUID, ParkourPlayerData> playersInParkour = new HashMap<>();
+    private static final Map<String, ParkourMapState> parkourMapStates = new ConcurrentHashMap<>();
     private static final Map<String, WaitingLobbyState> activeWaitingLobbies = new ConcurrentHashMap<>();
 
     private static ScheduledTask waitingTask;
     private static final Listener parkourListener = new ParkourListener();
     private static boolean activeListener = false;
     private static final ArmorStandApi hologram = plugin.getArmorStandApi();
-
 
     public static void registerOrUnregisterListener() {
         boolean hasPlayers = !playersInParkour.isEmpty();
@@ -92,13 +92,15 @@ public final class ParkourManager {
         final Optional<RichText> optionalTitle = rules.getTitle("start");
         optionalTitle.ifPresent(title -> new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
+
         showAllObjectsInMap(player, map);
         if (rules.isWaitingLobbyEnabled()) {
-            activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
+            parkourMapStates.put(map, new ParkourMapState());
+            parkourMapStates.get(map).setCanMove(rules.isWaitingLobbyMovementAllowed());
+            //activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
             startWaitingSchedulerIfNeeded();
         }
     }
-
 
     private static void startWaitingSchedulerIfNeeded() {
         if (waitingTask != null && !waitingTask.isCancelled()) return;
@@ -141,22 +143,38 @@ public final class ParkourManager {
 
     private static void loadFramesIfNeedAndRemove(@NotNull WaitingLobbyState state, Iterator<Map.Entry<String, WaitingLobbyState>> iterator, Rules rules){
         if (state.getCountDownTask() == null) {
+            String map = rules.getMapName();
+            Set<Player> players = getOnlinePlayersInMap(map);
+            parkourMapStates.get(map).setInGame(true);
+
+            for (Player player : players){
+                Location location = playersInParkour.get(player.getUniqueId()).getSpawnLocation();
+                TeleportingApi.teleport(player, location);
+            }
+
             int delay = state.getAnimatedTimerPreStar();
             if (delay == 0) {
                 iterator.remove();
             } else {
                 ScheduledTask countDown = Kit.getAsyncScheduler().runAtFixedRate(plugin, s -> rules.getAnimatedTitle("star_countdown").ifPresent(animatedRichText -> {
                     int index = state.getStart();
-                    if (index >= animatedRichText.getFrames().size()) {
-                        s.cancel();
+                    int framesSize = animatedRichText.getFrames().size();
+                    if (index >= framesSize) {
                         state.setCountDownTask(null);
+                        parkourMapStates.get(map).setCanMove(true);
+                        s.cancel();
                         return;
                     }
 
                     RichText richText = animatedRichText.getFrames().get(index);
-                    Set<Player> players = getOnlinePlayersInMap(rules.getMapName());
+
+                    boolean isLastFrame = index == framesSize - 1;
                     for (Player player : players) {
-                        SoundApi.playSound(player, 1.0f, 1.0f, "NOTE_PLING", "BLOCK_NOTE_BLOCK_PLING");
+                        if (isLastFrame) {
+                            SoundApi.playSound(player, 1.0f, 1.0f, "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
+                        } else {
+                            SoundApi.playSound(player, 1.0f, 1.0f, "NOTE_PLING", "BLOCK_NOTE_BLOCK_PLING");
+                        }
                         new Title(
                                 richText.getTitle(),
                                 richText.getSubtitle(),
@@ -165,7 +183,6 @@ public final class ParkourManager {
                                 richText.getFadeOut()
                         ).send(player);
                     }
-
                     state.incrementStart();
                 }), 0, delay, TimeUnit.SECONDS);
 
@@ -174,14 +191,17 @@ public final class ParkourManager {
         }
     }
 
-
-    public static int countPlayersInMap(final String mapName) {
+    private static int countPlayersInMap(final String mapName) {
         return (int) playersInParkour.entrySet().stream()
                 .filter(entry -> entry.getValue().getMapName().equalsIgnoreCase(mapName))
                 .count();
     }
 
-    public static Set<Player> getOnlinePlayersInMap(final String mapName) {
+    static boolean isInGame(final String map){
+        return parkourMapStates.get(map).isInGame();
+    }
+
+    private static Set<Player> getOnlinePlayersInMap(final String mapName) {
         return playersInParkour.entrySet().stream()
                 .filter(entry -> entry.getValue().getMapName().equalsIgnoreCase(mapName))
                 .map(entry -> Bukkit.getPlayer(entry.getKey()))
@@ -288,5 +308,9 @@ public final class ParkourManager {
     public static boolean isAutoReconnect(final String map){
         final Rules rules = new Rules(map);
         return rules.isAutoReconnectEnabled();
+    }
+
+    public static boolean canMove(final String map){
+        return parkourMapStates.get(map).canMove();
     }
 }

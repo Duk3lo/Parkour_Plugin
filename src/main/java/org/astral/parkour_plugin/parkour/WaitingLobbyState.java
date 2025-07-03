@@ -5,6 +5,7 @@ import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 
 public class WaitingLobbyState {
+
     private int dotFrame = 0;
     private final Rules rules;
     private int timer = 0;

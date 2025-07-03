@@ -47,10 +47,12 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerMove(final @NotNull PlayerMoveEvent event){
         final Player player = event.getPlayer();
+
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
         final Location location = player.getLocation();
         final String name_map = playerInMap.get();
+        if (ParkourManager.canMove(name_map)) event.setCancelled(true);
         double percent = ProgressTrackerManager.getNearestEndPointProgress(ParkourManager.getSpawnPlayer(player), ParkourManager.getFinishPoints(name_map), location);
         //System.out.println(ProgressTrackerManager.get(name_map).getSortedByProgress(CheckpointBase.getCheckpoints(name_map)));
         //System.out.println(percent);
@@ -114,7 +116,7 @@ public final class ParkourListener implements Listener {
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
-        if (!ParkourManager.isAutoReconnect(name_map)) {
+        if (!ParkourManager.isAutoReconnect(name_map) || !ParkourManager.isInGame(name_map)) {
             ParkourManager.removePlayerParkour(player);
         }
     }
