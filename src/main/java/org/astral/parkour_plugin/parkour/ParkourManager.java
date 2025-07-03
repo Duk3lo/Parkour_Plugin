@@ -97,7 +97,7 @@ public final class ParkourManager {
         if (rules.isWaitingLobbyEnabled()) {
             parkourMapStates.put(map, new ParkourMapState());
             parkourMapStates.get(map).setCanMove(rules.isWaitingLobbyMovementAllowed());
-            //activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
+            activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
             startWaitingSchedulerIfNeeded();
         }
     }
