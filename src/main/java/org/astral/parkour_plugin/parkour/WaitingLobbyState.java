@@ -4,7 +4,7 @@ import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 
-public class WaitingLobbyState {
+public final class WaitingLobbyState {
 
     private int dotFrame = 0;
     private final Rules rules;

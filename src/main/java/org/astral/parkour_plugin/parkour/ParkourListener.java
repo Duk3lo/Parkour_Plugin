@@ -45,17 +45,33 @@ public final class ParkourListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerMove(final @NotNull PlayerMoveEvent event){
+    public void onPlayerMove(final @NotNull PlayerMoveEvent event) {
         final Player player = event.getPlayer();
+
+        Location from = event.getFrom();
+        Location to = event.getTo();
+        if (from.getBlockX() == to.getBlockX() && from.getBlockY() == to.getBlockY() && from.getBlockZ() == to.getBlockZ()) {
+            return;
+        }
 
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
-        final Location location = player.getLocation();
+
         final String name_map = playerInMap.get();
-        if (ParkourManager.canMove(name_map)) event.setCancelled(true);
-        double percent = ProgressTrackerManager.getNearestEndPointProgress(ParkourManager.getSpawnPlayer(player), ParkourManager.getFinishPoints(name_map), location);
-        //System.out.println(ProgressTrackerManager.get(name_map).getSortedByProgress(CheckpointBase.getCheckpoints(name_map)));
-        //System.out.println(percent);
+        final Location location = player.getLocation();
+
+        if (!ParkourManager.canMove(name_map)) {
+            final Location spawn = ParkourManager.getSpawnPlayer(player);
+            teleportToSpawnOrWarn(player, name_map, spawn);
+            return;
+        }
+
+        double percent = ProgressTrackerManager.getNearestEndPointProgress(
+                ParkourManager.getSpawnPlayer(player),
+                ParkourManager.getFinishPoints(name_map),
+                location
+        );
+
         saveCheckpointIfReached(player, name_map, location);
         teleportIf(player, name_map, location);
     }
@@ -98,13 +114,22 @@ public final class ParkourListener implements Listener {
         teleportToSpawnOrWarn(player, name_map, spawn);
     }
 
-    private void teleportToCheckpoint(final Player player, final @NotNull Checkpoint checkpoint) {
-        TeleportingApi.teleport(player, checkpoint.getLocation());
+    private void teleportToCheckpoint(final @NotNull Player player, final @NotNull Checkpoint checkpoint) {
+        Location checkpointLocation = checkpoint.getLocation().clone();
+        Location playerLocation = player.getLocation();
+        checkpointLocation.setYaw(playerLocation.getYaw());
+        checkpointLocation.setPitch(playerLocation.getPitch());
+
+        TeleportingApi.teleport(player, checkpointLocation);
     }
 
     private void teleportToSpawnOrWarn(final Player player, final String nameMap, final Location spawn) {
         if (spawn != null) {
-            TeleportingApi.teleport(player, spawn);
+            Location spawnWithDirection = spawn.clone();
+            Location playerLocation = player.getLocation();
+            spawnWithDirection.setYaw(playerLocation.getYaw());
+            spawnWithDirection.setPitch(playerLocation.getPitch());
+            TeleportingApi.teleport(player, spawnWithDirection);
         } else {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + nameMap + "§c.");
         }

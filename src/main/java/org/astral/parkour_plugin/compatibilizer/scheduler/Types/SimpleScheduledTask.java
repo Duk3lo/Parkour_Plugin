@@ -4,6 +4,8 @@ import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import java.lang.reflect.Method;
+
 public final class SimpleScheduledTask implements ScheduledTask {
     private final Plugin plugin;
     private final boolean repeating;
@@ -55,9 +57,11 @@ public final class SimpleScheduledTask implements ScheduledTask {
 
         if (foliaTask != null) {
             try {
-                foliaTask.getClass().getMethod("cancel").invoke(foliaTask);
+                Method cancelMethod = foliaTask.getClass().getDeclaredMethod("cancel");
+                cancelMethod.setAccessible(true); // Puede lanzar una excepción en Java 17+ con módulos fuertes
+                cancelMethod.invoke(foliaTask);
             } catch (Exception e) {
-                plugin.getLogger().warning("No se pudo cancelar la tarea de Folia: " + e.getMessage());
+                plugin.getLogger().warning("No se pudo cancelar la tarea de Folia: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             }
         }
 

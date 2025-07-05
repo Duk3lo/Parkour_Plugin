@@ -73,8 +73,10 @@ public final class ParkourManager {
                 new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
         rules.getMessage("start", player.getName()).ifPresent(player::sendMessage);
         if (rules.isIndividualTimerEnabled()){
-            TimerActionBar.starIndividualTimer(rules, player, rules.isIndividualActionBarTimerDisplayEnabled());
+            TimerActionBar.starIndividualTimer(rules, player);
         }
+        parkourMapStates.put(map, new ParkourMapState());
+        parkourMapStates.get(map).setCanMove(true);
         showAllObjectsInMap(player, map);
     }
 
@@ -107,29 +109,28 @@ public final class ParkourManager {
         waitingTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, t -> {
             if (activeWaitingLobbies.isEmpty()) {
                 t.cancel();
-                waitingTask = null;
                 return;
             }
 
-            Iterator<Map.Entry<String, WaitingLobbyState>> iterator = activeWaitingLobbies.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, WaitingLobbyState> entry = iterator.next();
+            for (Map.Entry<String, WaitingLobbyState> entry : activeWaitingLobbies.entrySet()) {
                 String map = entry.getKey();
                 WaitingLobbyState state = entry.getValue();
                 Rules rules = state.getRules();
+
 
                 int current = countPlayersInMap(map);
                 int min = rules.getWaitingLobbyMinPlayers();
                 int maxTime = rules.getWaitingLobbyMaxWaitTimeSeconds();
 
                 if (maxTime > -1 && state.incrementTimer() >= maxTime) {
-                    loadFramesIfNeedAndRemove(state, iterator, rules);
+                    loadFramesIfNeedAndRemove(state);
                     continue;
                 }
                 if (current >= min) {
-                    loadFramesIfNeedAndRemove(state, iterator, rules);
+                    loadFramesIfNeedAndRemove(state);
                     continue;
                 }
+
                 if (rules.isWaitingLobbyActionBarEnabled()) {
                     String format = rules.getWaitingLobbyFormat()
                             .replace("{current}", String.valueOf(current))
@@ -141,8 +142,9 @@ public final class ParkourManager {
         }, 0L, 1L, TimeUnit.SECONDS);
     }
 
-    private static void loadFramesIfNeedAndRemove(@NotNull WaitingLobbyState state, Iterator<Map.Entry<String, WaitingLobbyState>> iterator, Rules rules){
+    private static void loadFramesIfNeedAndRemove(@NotNull WaitingLobbyState state) {
         if (state.getCountDownTask() == null) {
+            final Rules rules = state.getRules();
             String map = rules.getMapName();
             Set<Player> players = getOnlinePlayersInMap(map);
             parkourMapStates.get(map).setInGame(true);
@@ -154,24 +156,27 @@ public final class ParkourManager {
 
             int delay = state.getAnimatedTimerPreStar();
             if (delay == 0) {
-                iterator.remove();
+                activeWaitingLobbies.remove(map);
             } else {
                 ScheduledTask countDown = Kit.getAsyncScheduler().runAtFixedRate(plugin, s -> rules.getAnimatedTitle("star_countdown").ifPresent(animatedRichText -> {
                     int index = state.getStart();
                     int framesSize = animatedRichText.getFrames().size();
                     if (index >= framesSize) {
                         state.setCountDownTask(null);
-                        parkourMapStates.get(map).setCanMove(true);
+                        activeWaitingLobbies.remove(map);
                         s.cancel();
                         return;
                     }
 
                     RichText richText = animatedRichText.getFrames().get(index);
-
                     boolean isLastFrame = index == framesSize - 1;
                     for (Player player : players) {
                         if (isLastFrame) {
+                            parkourMapStates.get(map).setCanMove(true);
                             SoundApi.playSound(player, 1.0f, 1.0f, "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
+                            if (rules.isGlobalTimerEnabled()){
+                                TimerActionBar.startGlobalTimer(rules, player);
+                            }
                         } else {
                             SoundApi.playSound(player, 1.0f, 1.0f, "NOTE_PLING", "BLOCK_NOTE_BLOCK_PLING");
                         }

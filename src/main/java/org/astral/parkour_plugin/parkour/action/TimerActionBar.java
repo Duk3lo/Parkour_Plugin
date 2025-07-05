@@ -22,6 +22,7 @@ public final class TimerActionBar {
     private static final Main plugin = Main.getInstance();
 
     private static final Map<UUID, String> activeActionBars = new HashMap<>();
+    private static final Set<String> mapsAlreadyNotified = new HashSet<>();
     private static ScheduledTask individualActionBarTask = null;
     private static ScheduledTask globalActionBarTask = null;
 
@@ -55,8 +56,27 @@ public final class TimerActionBar {
         }
     }
 
-    public static void starIndividualTimer(final @NotNull Rules rules, final Player player, final boolean show) {
+    private static @NotNull String getBlinkingColor(final @NotNull String baseHex) {
+        double periodMillis = 1000.0;
+        double angle = 2.0 * Math.PI * (System.currentTimeMillis() % (long) periodMillis) / periodMillis;
+        double oscillation = (Math.sin(angle) + 1.0) / 2.0;
+        double factor = 0.4 + (1.0 - 0.4) * oscillation;
+        return darkenColor(baseHex, factor);
+    }
 
+    private static @NotNull String darkenColor(final @NotNull String hex, final double factor) {
+        int r = (int) (Integer.parseInt(hex.substring(0, 2), 16) * factor);
+        int g = (int) (Integer.parseInt(hex.substring(2, 4), 16) * factor);
+        int b = (int) (Integer.parseInt(hex.substring(4, 6), 16) * factor);
+
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+
+        return String.format("%02X%02X%02X", r, g, b);
+    }
+
+    public static void starIndividualTimer(final @NotNull Rules rules, final Player player) {
         int timeLimit = rules.getIndividualTimeLimit();
         boolean isCountdown = rules.isIndividualCountdownEnabled();
         IndividualTimerManager.start(player, isCountdown, timeLimit);
@@ -85,16 +105,25 @@ public final class TimerActionBar {
 
                         Timer timer = IndividualTimerManager.get(p);
                         if (timer == null) return;
+
                         boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
                                 (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
 
                         String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
                         double progress = getProgress(timeLimit, isCountdown, timer);
+                        long remainingMillis = isCountdown ? timer.getRemainingMillis() : (timeLimit * 1000L - timer.getElapsedMillis());
+
                         String hexColor = getDynamicColor(progress);
+                        if (remainingMillis <= 10000) {
+                            hexColor = getBlinkingColor(hexColor);
+                        }
+
                         timer.setFormat(formatForDisplay);
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
-                        if (show) new ActionBar(formatted).send(p);
+                        if (rules.isIndividualActionBarTimerDisplayEnabled()) {
+                            new ActionBar(formatted).send(p);
+                        }
 
                         if (timeFinished) {
                             p.sendMessage("§c¡Se acabó el tiempo!");
@@ -103,12 +132,12 @@ public final class TimerActionBar {
                             ParkourManager.removePlayerParkour(player);
                         }
                     }
-                }, 0L, 2L, TimeUnit.MILLISECONDS);
+                }, 0L, 150L, TimeUnit.MILLISECONDS);
             }
         }
     }
 
-    public static void startGlobalTimer(final @NotNull Rules rules, final Player player, final boolean show) {
+    public static void startGlobalTimer(final @NotNull Rules rules, final Player player) {
         int timeLimit = rules.getGlobalTimeLimit();
         boolean isCountdown = rules.isGlobalCountdownEnabled();
         String mapName = rules.getMapName();
@@ -119,49 +148,54 @@ public final class TimerActionBar {
 
         GlobalTimerManager.addViewer(player, mapName);
 
-        if (rules.isGlobalActionBarTimerDisplayEnabled()) {
-            if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
-                globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
-                    if (!GlobalTimerManager.hasAnyTimerRunning()) {
-                        scheduledTask.cancel();
-                        globalActionBarTask = null;
-                        return;
+        if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
+            globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
+                if (!GlobalTimerManager.hasAnyTimerRunning()) {
+                    scheduledTask.cancel();
+                    globalActionBarTask = null;
+                    return;
+                }
+
+                for (String map : GlobalTimerManager.getActiveMaps()) {
+                    final Timer timer = GlobalTimerManager.get(map);
+                    boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
+                            (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
+
+                    double progress = getProgress(timeLimit, isCountdown, timer);
+                    long remainingMillis = isCountdown ? timer.getRemainingMillis() : (timeLimit * 1000L - timer.getElapsedMillis());
+
+                    String hexColor = getDynamicColor(progress);
+                    if (remainingMillis <= 10000) {
+                        hexColor = getBlinkingColor(hexColor);
                     }
 
-                    for (String map : GlobalTimerManager.getActiveMaps()) {
-                        final Timer timer = GlobalTimerManager.get(map);
-                        boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
-                                (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
+                    String format = rules.getGlobalTimerFormat();
+                    String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
+                    timer.setFormat(formatForDisplay);
 
-                        double progress = getProgress(timeLimit, isCountdown, timer);
-                        String hexColor = getDynamicColor(progress);
+                    String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
-                        String format = rules.getGlobalTimerFormat();
-                        String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
-                        timer.setFormat(formatForDisplay);
-
-                        String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
-
-                        if (show) {
-                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
-                                if (p.isOnline()) {
-                                    new ActionBar(formatted).send(p);
-                                }
+                    if (rules.isGlobalActionBarTimerDisplayEnabled()) {
+                        for (Player p : GlobalTimerManager.getViewersOf(map)) {
+                            if (p.isOnline()) {
+                                new ActionBar(formatted).send(p);
                             }
-                        }
-
-                        if (timeFinished) {
-                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
-                                if (p.isOnline()) {
-                                    p.sendMessage("§c¡Se acabó el tiempo global!");
-                                    ParkourManager.removePlayerParkour(p);
-                                }
-                            }
-                            GlobalTimerManager.stop(map);
                         }
                     }
-                }, 0L, 2L, TimeUnit.MILLISECONDS);
-            }
+
+                    if (timeFinished && !mapsAlreadyNotified.contains(map)) {
+                        mapsAlreadyNotified.add(map);
+                        for (Player p : GlobalTimerManager.getViewersOf(map)) {
+                            if (p.isOnline()) {
+                                p.sendMessage("§c¡Se acabó el tiempo global!");
+                                ParkourManager.removePlayerParkour(p);
+                            }
+                        }
+                        GlobalTimerManager.stop(map);
+                        mapsAlreadyNotified.remove(map);
+                    }
+                }
+            }, 0L, 150L, TimeUnit.MILLISECONDS);
         }
     }
 
