@@ -66,7 +66,7 @@ public final class ParkourManager {
     public static void starParkourHere(final @NotNull Player player, final String map) {
         final Location blockLocation = player.getLocation().clone().subtract(0, 1, 0).getBlock().getLocation();
         CheckpointBase.loadMap(map);
-        addAndSave(player.getUniqueId(), blockLocation, map);
+        addAndSave(player.getUniqueId(), blockLocation, map, Mode.INDIVIDUAL);
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("start");
         optionalTitle.ifPresent(title ->
@@ -75,8 +75,6 @@ public final class ParkourManager {
         if (rules.isIndividualTimerEnabled()){
             TimerActionBar.starIndividualTimer(rules, player);
         }
-        parkourMapStates.put(map, new ParkourMapState());
-        parkourMapStates.get(map).setCanMove(true);
         showAllObjectsInMap(player, map);
     }
 
@@ -88,7 +86,7 @@ public final class ParkourManager {
             return;
         }
         CheckpointBase.loadMap(map);
-        addAndSave(player.getUniqueId(), spawn.get(), map);
+        addAndSave(player.getUniqueId(), spawn.get(), map, Mode.GLOBAL);
         TeleportingApi.teleport(player, spawn.get());
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("start");
@@ -97,7 +95,7 @@ public final class ParkourManager {
 
         showAllObjectsInMap(player, map);
         if (rules.isWaitingLobbyEnabled()) {
-            parkourMapStates.put(map, new ParkourMapState());
+            parkourMapStates.computeIfAbsent(map, k -> new ParkourMapState());
             parkourMapStates.get(map).setCanMove(rules.isWaitingLobbyMovementAllowed());
             activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
             startWaitingSchedulerIfNeeded();
@@ -280,8 +278,8 @@ public final class ParkourManager {
         registerOrUnregisterListener();
     }
 
-    public static void addAndSave(final UUID uuid, final Location location, final String map){
-        playersInParkour.put(uuid, new ParkourPlayerData(map, location));
+    public static void addAndSave(final UUID uuid, final Location location, final String map, Mode mode){
+        playersInParkour.put(uuid, new ParkourPlayerData(map, location, mode));
         registerOrUnregisterListener();
     }
 
@@ -315,7 +313,16 @@ public final class ParkourManager {
         return rules.isAutoReconnectEnabled();
     }
 
-    public static boolean canMove(final String map){
-        return parkourMapStates.get(map).canMove();
+    public static boolean canMove(final String map) {
+        ParkourMapState state = parkourMapStates.get(map);
+        if (state == null) {
+            return true;
+        }
+        return state.canMove();
+    }
+
+    public static Mode getModePlayer(final @NotNull Player player){
+        final UUID uuid = player.getUniqueId();
+        return playersInParkour.get(uuid).getMode();
     }
 }

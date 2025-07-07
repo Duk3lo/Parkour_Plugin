@@ -59,8 +59,7 @@ public final class ParkourListener implements Listener {
 
         final String name_map = playerInMap.get();
         final Location location = player.getLocation();
-
-        if (!ParkourManager.canMove(name_map)) {
+        if (ParkourManager.getModePlayer(player) == Mode.GLOBAL && !ParkourManager.canMove(name_map)) {
             final Location spawn = ParkourManager.getSpawnPlayer(player);
             teleportToSpawnOrWarn(player, name_map, spawn);
             return;

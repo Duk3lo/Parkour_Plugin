@@ -6,10 +6,12 @@ import org.bukkit.Location;
 public final class ParkourPlayerData {
     private final String mapName;
     private final Location spawnLocation;
+    private final Mode mode;
 
-    public ParkourPlayerData(String mapName, Location spawnLocation) {
+    public ParkourPlayerData(String mapName, Location spawnLocation, Mode mode) {
         this.mapName = mapName;
         this.spawnLocation = spawnLocation;
+        this.mode = mode;
     }
 
     public String getMapName() {
@@ -18,5 +20,9 @@ public final class ParkourPlayerData {
 
     public Location getSpawnLocation() {
         return spawnLocation;
+    }
+
+    public Mode getMode(){
+        return mode;
     }
 }

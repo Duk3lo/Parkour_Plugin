@@ -32,12 +32,6 @@ public final class WaitingLobbyState {
         return preStart;
     }
 
-    public int sizeOfFramesTitle() {
-        return rules.getAnimatedTitle("star_countdown")
-                .map(animated -> animated.getFrames().size())
-                .orElse(0);
-    }
-
     public int getAnimatedTimerPreStar(){
         return rules.getAnimatedTitle("star_countdown").map(AnimatedRichText::getUpdateDelaySeconds).orElse(0);
     }
