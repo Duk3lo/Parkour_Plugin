@@ -6,19 +6,20 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public final class IndividualTimerManager {
 
-    private static final Map<Player, TimerData> timerDataMap = new HashMap<>();
+    private static final Map<UUID, TimerData> timerDataMap = new HashMap<>();
 
     public static void start(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
         long now = System.currentTimeMillis();
         Timer timer = new Timer(countdownMode, timeLimitSeconds);
-        timerDataMap.put(player, new TimerData(timer, now));
+        timerDataMap.put(player.getUniqueId(), new TimerData(timer, now));
     }
 
     public static void resume(final @NotNull Player player, final boolean countdownMode, final int timeLimitSeconds) {
-        TimerData oldData = timerDataMap.get(player);
+        TimerData oldData = timerDataMap.get(player.getUniqueId());
         if (oldData == null) return;
 
         long persistedTime = oldData.getStartTime();
@@ -28,20 +29,20 @@ public final class IndividualTimerManager {
                 return System.currentTimeMillis() - persistedTime;
             }
         };
-        timerDataMap.put(player, new TimerData(resumedTimer, persistedTime));
+        timerDataMap.put(player.getUniqueId(), new TimerData(resumedTimer, persistedTime));
     }
 
-    public static void stop(final Player player) {
-        timerDataMap.remove(player);
+    public static void stop(final @NotNull Player player) {
+        timerDataMap.remove(player.getUniqueId());
     }
 
-    public static @Nullable Timer get(final Player player) {
-        TimerData data = timerDataMap.get(player);
+    public static @Nullable Timer get(final @NotNull Player player) {
+        TimerData data = timerDataMap.get(player.getUniqueId());
         return data != null ? data.getTimer() : null;
     }
 
-    public static boolean isRunning(final Player player) {
-        return timerDataMap.containsKey(player);
+    public static boolean isRunning(final @NotNull Player player) {
+        return timerDataMap.containsKey(player.getUniqueId());
     }
 
 

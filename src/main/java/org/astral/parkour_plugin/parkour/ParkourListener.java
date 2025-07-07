@@ -7,7 +7,6 @@ import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
 import org.astral.parkour_plugin.parkour.progress.ProgressTracker;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
-import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,11 +25,9 @@ public final class ParkourListener implements Listener {
     public void onPlayerJoin(final @NotNull PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
-        System.out.println(playerInMap.isPresent());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (ParkourManager.isAutoReconnect(name_map)) {
-            player.sendMessage("CONTINUE");
             final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
             if (checkpoint != null) {
                 teleportToCheckpoint(player, checkpoint);
@@ -38,9 +35,8 @@ public final class ParkourListener implements Listener {
                 final Location spawn = ParkourManager.getSpawnPlayer(player);
                 teleportToSpawnOrWarn(player, name_map, spawn);
             }
-            //final Rules rules = new Rules(name_map);
-            //IndividualTimerManager.resume(player, rules.isIndividualCountdownEnabled(), rules.getIndividualTimeLimit());
-            //TimerActionBar.starIndividualTimer(rules, player, rules.isIndividualTimerEnabled());
+            final Rules rules = new Rules(name_map);
+            TimerActionBar.starIndividualTimer(rules, player);
         }
     }
 

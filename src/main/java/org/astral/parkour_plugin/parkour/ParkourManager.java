@@ -200,8 +200,9 @@ public final class ParkourManager {
                 .count();
     }
 
-    static boolean isInGame(final String map){
-        return parkourMapStates.get(map).isInGame();
+    public static boolean isInGame(final String map) {
+        ParkourMapState state = parkourMapStates.get(map);
+        return state != null && state.isInGame();
     }
 
     private static Set<Player> getOnlinePlayersInMap(final String mapName) {
@@ -321,8 +322,9 @@ public final class ParkourManager {
         return state.canMove();
     }
 
-    public static Mode getModePlayer(final @NotNull Player player){
+    public static Mode getModePlayer(final @NotNull Player player) {
         final UUID uuid = player.getUniqueId();
-        return playersInParkour.get(uuid).getMode();
+        ParkourPlayerData data = playersInParkour.get(uuid);
+        return data != null ? data.getMode() : Mode.DEFAULT;
     }
 }
