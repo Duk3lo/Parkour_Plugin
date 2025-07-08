@@ -92,8 +92,6 @@ public final class TimerActionBar {
             if (individualActionBarTask == null || individualActionBarTask.isCancelled()) {
                 individualActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
 
-                    System.out.println(".");
-
                     boolean someoneOnline = false;
                     for (UUID uuid : activeActionBars.keySet()) {
                         Player online = Bukkit.getPlayer(uuid);

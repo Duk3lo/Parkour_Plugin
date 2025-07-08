@@ -138,8 +138,8 @@ public final class ParkourListener implements Listener {
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         IndividualTimerManager.pause(player);
-        if (!ParkourManager.isAutoReconnect(name_map) || !ParkourManager.isInGame(name_map)) {
-            //ParkourManager.removePlayerParkour(player);
+        if (!ParkourManager.isAutoReconnect(name_map) || (ParkourManager.getModePlayer(player) != Mode.INDIVIDUAL && !ParkourManager.isInGame(name_map))) {
+            ParkourManager.removePlayerParkour(player);
         }
     }
 
