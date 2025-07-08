@@ -3,19 +3,21 @@ package org.astral.parkour_plugin.timer;
 import org.jetbrains.annotations.NotNull;
 
 public class Timer {
-    private final long startTime;
     private final boolean countdownMode;
     private final long timeLimitMillis;
+    private final long initialElapsed;
+    private final long resumedAt;
     private String format = "{minutes}:{seconds}.{millis}";
 
-    public Timer(boolean countdownMode, int timeLimitSeconds) {
+    public Timer(boolean countdownMode, int timeLimitSeconds, long initialElapsed) {
         this.countdownMode = countdownMode;
         this.timeLimitMillis = timeLimitSeconds * 1000L;
-        this.startTime = System.currentTimeMillis();
+        this.initialElapsed = initialElapsed;
+        this.resumedAt = System.currentTimeMillis();
     }
 
     public long getElapsedMillis() {
-        return System.currentTimeMillis() - startTime;
+        return initialElapsed + (System.currentTimeMillis() - resumedAt);
     }
 
     public long getRemainingMillis() {

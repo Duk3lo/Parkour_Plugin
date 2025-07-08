@@ -91,7 +91,19 @@ public final class TimerActionBar {
 
             if (individualActionBarTask == null || individualActionBarTask.isCancelled()) {
                 individualActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
-                    if (activeActionBars.isEmpty()) {
+
+                    System.out.println(".");
+
+                    boolean someoneOnline = false;
+                    for (UUID uuid : activeActionBars.keySet()) {
+                        Player online = Bukkit.getPlayer(uuid);
+                        if (online != null && online.isOnline()) {
+                            someoneOnline = true;
+                            break;
+                        }
+                    }
+
+                    if (!someoneOnline) {
                         scheduledTask.cancel();
                         individualActionBarTask = null;
                         return;
@@ -103,13 +115,14 @@ public final class TimerActionBar {
                         UUID uuid = entry.getKey();
                         String format = entry.getValue();
                         Player p = Bukkit.getPlayer(uuid);
+
                         if (p == null || !p.isOnline() || !IndividualTimerManager.isRunning(p)) {
                             iterator.remove();
                             continue;
                         }
 
                         Timer timer = IndividualTimerManager.get(p);
-                        if (timer == null) return;
+                        if (timer == null) continue;
 
                         boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
                                 (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
@@ -164,11 +177,11 @@ public final class TimerActionBar {
 
                     for (String map : GlobalTimerManager.getActiveMaps()) {
                         final Timer timer = GlobalTimerManager.get(map);
-                        boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
-                                (!isCountdown && timeLimit > 0 && timer.getElapsedMillis() >= timeLimit * 1000L);
+                        boolean timeFinished = (isCountdown && Objects.requireNonNull(timer).isCountdownFinished()) ||
+                                (!isCountdown && timeLimit > 0 && Objects.requireNonNull(timer).getElapsedMillis() >= timeLimit * 1000L);
 
                         double progress = getProgress(timeLimit, isCountdown, timer);
-                        long remainingMillis = isCountdown ? timer.getRemainingMillis() : (timeLimit * 1000L - timer.getElapsedMillis());
+                        long remainingMillis = isCountdown ? timer.getRemainingMillis() : (timeLimit * 1000L - Objects.requireNonNull(timer).getElapsedMillis());
 
                         String hexColor = getDynamicColor(progress);
                         if (remainingMillis <= 10000) {

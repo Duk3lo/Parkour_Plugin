@@ -7,6 +7,7 @@ import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
 import org.astral.parkour_plugin.parkour.progress.ProgressTracker;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
+import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -136,8 +137,9 @@ public final class ParkourListener implements Listener {
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
+        IndividualTimerManager.pause(player);
         if (!ParkourManager.isAutoReconnect(name_map) || !ParkourManager.isInGame(name_map)) {
-            ParkourManager.removePlayerParkour(player);
+            //ParkourManager.removePlayerParkour(player);
         }
     }
 
