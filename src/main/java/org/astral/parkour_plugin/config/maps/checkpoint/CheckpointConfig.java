@@ -7,6 +7,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class CheckpointConfig extends BaseCheckpoint {
 
@@ -28,8 +29,17 @@ public final class CheckpointConfig extends BaseCheckpoint {
     }
 
     // Getters
-    public @NotNull Set<String> keys() {
-        return yamlConfiguration.getKeys(false);
+    public @NotNull List<String> keys() {
+        return yamlConfiguration.getKeys(false).stream()
+                .filter(key -> key.startsWith(CheckpointStructureName))
+                .sorted(Comparator.comparingInt(key -> {
+                    try {
+                        return Integer.parseInt(key.replaceAll("\\D+", ""));
+                    } catch (NumberFormatException e) {
+                        return Integer.MAX_VALUE;
+                    }
+                }))
+                .collect(Collectors.toList());
     }
 
     public double getMinFallY(){

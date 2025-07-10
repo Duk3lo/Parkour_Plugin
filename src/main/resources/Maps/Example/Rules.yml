@@ -1,6 +1,6 @@
 auto_reconnect: true
 
-waiting_lobby:
+waiting_lobby: #Only Works in Global Lobby
   enabled: true
   require_min_players: true
   min_players: 2

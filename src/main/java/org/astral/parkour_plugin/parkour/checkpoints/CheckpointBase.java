@@ -51,14 +51,18 @@ public final class CheckpointBase {
         return checkpointMap.get(key);
     }
 
+    public static void removeCheckpoints(final String key){
+        checkpointMap.remove(key);
+    }
+
     public static boolean isEqualLocation(final Location l1, final Location l2) {
         if (l1 == null || l2 == null) return false;
         if (l1.getWorld() == null || l2.getWorld() == null) return false;
 
         return l1.getWorld().equals(l2.getWorld()) &&
-                l1.getBlockX() == l2.getBlockX() &&
-                l1.getBlockY() == l2.getBlockY() &&
-                l1.getBlockZ() == l2.getBlockZ();
+                (int) l1.getX() == (int) l2.getX() &&
+                (int) l1.getY() == (int) l2.getY() &&
+                (int) l1.getZ() == (int) l2.getZ();
     }
 
     public static double getMaxGeneralY(final String name_map, final  World world){

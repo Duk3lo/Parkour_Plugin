@@ -2,7 +2,6 @@ package org.astral.parkour_plugin.parkour.progress;
 
 
 import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,24 +23,18 @@ public final class ProgressTracker {
         return playerCheckpointMap.getOrDefault(player, -1);
     }
 
-    public double getProgress(Player player, List<Checkpoint> checkpoints) {
-        int index = getCheckpointIndex(player);
-        if (index < 0 || index >= checkpoints.size()) return 0.0;
-        if (index == checkpoints.size() - 1) return 100.0;
+    public double getProgress(Player player, @NotNull List<Checkpoint> checkpoints) {
+        int index = getCheckpointIndex(player); // ejemplo: 0, 1, 2...
+        int totalStages = checkpoints.size();   // ejemplo: 3 checkpoints
 
-        Location playerLoc = player.getLocation();
-        Location current = checkpoints.get(index).getLocation();
-        Location next = checkpoints.get(index + 1).getLocation();
+        if (index < 0 || totalStages == 0) return 0.0;
 
-        if (current == null || next == null) return (index * 100.0) / (checkpoints.size() - 1);
+        // Si quieres que el 100% se alcance en una etapa adicional (fuera del último checkpoint)
+        // Opcionalmente usa (totalStages + 1) si tienes una meta final
 
-        double distTotal = current.distance(next);
-        double distToNext = playerLoc.distance(next);
+        double progress = ((index + 1) * 100.0) / totalStages;
 
-        double segmentProgress = 1.0 - (distToNext / distTotal);
-        segmentProgress = Math.max(0.0, Math.min(1.0, segmentProgress));
-
-        return ((index + segmentProgress) * 100.0) / (checkpoints.size() - 1);
+        return Math.min(progress, 100.0);
     }
 
     public @NotNull List<Player> getSortedByProgress(List<Checkpoint> checkpoints) {

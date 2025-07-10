@@ -109,7 +109,7 @@ public final class Rules {
         return yamlConfiguration.getInt("timer.global.time_limit", -1);
     }
 
-// Timer - INDIVIDUAL
+    // Timer - INDIVIDUAL
 
     public boolean isIndividualTimerEnabled() {
         return yamlConfiguration.getBoolean("timer.individual.enabled", true);

@@ -9,6 +9,7 @@ import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.maps.title.RichText;
 import org.astral.parkour_plugin.parkour.action.TimerActionBar;
+import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.astral.parkour_plugin.parkour.checkpoints.CheckpointBase;
 import org.astral.parkour_plugin.parkour.progress.ProgressTracker;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
@@ -99,6 +100,89 @@ public final class ParkourManager {
             parkourMapStates.get(map).setCanMove(rules.isWaitingLobbyMovementAllowed());
             activeWaitingLobbies.put(map, new WaitingLobbyState(rules));
             startWaitingSchedulerIfNeeded();
+        }
+    }
+
+    public static void autoReconnectPlayersIfNecessary(final Player player){
+        final Optional<String> playerInMap = getMapIfInParkour(player);
+        if (!playerInMap.isPresent()) return;
+        final String name_map = playerInMap.get();
+        if (isAutoReconnect(name_map)) {
+            final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
+            if (checkpoint != null) {
+                teleportToCheckpoint(player, checkpoint);
+            } else {
+                final Location spawn = getSpawnPlayer(player);
+                teleportToSpawnOrWarn(player, name_map, spawn);
+            }
+            final Rules rules = new Rules(name_map);
+            if (getModePlayer(player) == Mode.INDIVIDUAL){
+                TimerActionBar.starIndividualTimer(rules, player);
+            }
+        }
+    }
+
+    public static void saveCheckpointIfReached(final Player player, final String name_map, final Location location) {
+        final List<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(name_map);
+        if (checkpoints == null || checkpoints.isEmpty()) return;
+        for (int i = 0; i < checkpoints.size(); i++) {
+            final Checkpoint checkpoint = checkpoints.get(i);
+            final Location checkpointLoc = checkpoint.getLocation();
+            final Location finalCheckpoint = checkpointLoc.clone();
+            finalCheckpoint.add(0,1,0);
+
+            if (CheckpointBase.isEqualLocation(finalCheckpoint, location)) {
+                if (checkpoint.getPlayers().contains(player)) return;
+
+                checkpoint.getPlayers().add(player);
+                CheckpointBase.addPlayerLastCheckpoint(player, checkpoint);
+
+                ProgressTracker tracker = ProgressTrackerManager.get(name_map);
+                tracker.updateCheckpoint(player, i);
+                double progress = tracker.getProgress(player, checkpoints);
+                System.out.println(progress);
+                // player.sendActionBar("§bProgreso: §a" + String.format("%.2f", progress) + "§f%");
+                return;
+            }
+        }
+    }
+
+    public static void teleportIf(final Player player, final String name_map, final @NotNull Location location) {
+        final double currentY = location.getY();
+        final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
+        if (checkpoint != null && (currentY < checkpoint.getMinY() || currentY > checkpoint.getMaxY())) {
+            teleportToCheckpoint(player, checkpoint);
+            return;
+        }
+        final double minY = CheckpointBase.getMinGeneralY(name_map, location.getWorld());
+        final double maxY = CheckpointBase.getMaxGeneralY(name_map, location.getWorld());
+        if (currentY >= minY && currentY <= maxY) return;
+        if (checkpoint != null) {
+            teleportToCheckpoint(player, checkpoint);
+            return;
+        }
+        final Location spawn = getSpawnPlayer(player);
+        teleportToSpawnOrWarn(player, name_map, spawn);
+    }
+
+    public static void teleportToCheckpoint(final @NotNull Player player, final @NotNull Checkpoint checkpoint) {
+        Location checkpointLocation = checkpoint.getLocation().clone();
+        Location playerLocation = player.getLocation();
+        checkpointLocation.setYaw(playerLocation.getYaw());
+        checkpointLocation.setPitch(playerLocation.getPitch());
+
+        TeleportingApi.teleport(player, checkpointLocation);
+    }
+
+    public static void teleportToSpawnOrWarn(final Player player, final String nameMap, final Location spawn) {
+        if (spawn != null) {
+            Location spawnWithDirection = spawn.clone();
+            Location playerLocation = player.getLocation();
+            spawnWithDirection.setYaw(playerLocation.getYaw());
+            spawnWithDirection.setPitch(playerLocation.getPitch());
+            TeleportingApi.teleport(player, spawnWithDirection);
+        } else {
+            player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + nameMap + "§c.");
         }
     }
 
@@ -247,15 +331,12 @@ public final class ParkourManager {
     public static @Nullable Timer getTimer(final @NotNull Player player) {
         ParkourPlayerData data = playersInParkour.get(player.getUniqueId());
         if (data == null) return null;
-
         String map = data.getMapName();
-
         if (IndividualTimerManager.isRunning(player)) {
             return IndividualTimerManager.get(player);
         } else if (GlobalTimerManager.isRunning(map)) {
             return GlobalTimerManager.get(map);
         }
-
         return null;
     }
 
@@ -266,6 +347,9 @@ public final class ParkourManager {
         hideMap(player, map);
         final ProgressTracker tracker = ProgressTrackerManager.get(map);
         tracker.removePlayer(player);
+        if (getOnlinePlayersInMap(map).isEmpty()){
+            CheckpointBase.removeCheckpoints(map);
+        }
         if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
             ProgressTrackerManager.remove(map);
         }
