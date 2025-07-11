@@ -24,16 +24,10 @@ public final class ProgressTracker {
     }
 
     public double getProgress(Player player, @NotNull List<Checkpoint> checkpoints) {
-        int index = getCheckpointIndex(player); // ejemplo: 0, 1, 2...
-        int totalStages = checkpoints.size();   // ejemplo: 3 checkpoints
-
+        int index = getCheckpointIndex(player);
+        int totalStages = checkpoints.size();
         if (index < 0 || totalStages == 0) return 0.0;
-
-        // Si quieres que el 100% se alcance en una etapa adicional (fuera del último checkpoint)
-        // Opcionalmente usa (totalStages + 1) si tienes una meta final
-
         double progress = ((index + 1) * 100.0) / totalStages;
-
         return Math.min(progress, 100.0);
     }
 

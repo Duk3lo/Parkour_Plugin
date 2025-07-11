@@ -107,8 +107,10 @@ public final class ParkourManager {
         final Optional<String> playerInMap = getMapIfInParkour(player);
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
+
         if (isAutoReconnect(name_map)) {
             final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
+            System.out.println(checkpoint);
             if (checkpoint != null) {
                 teleportToCheckpoint(player, checkpoint);
             } else {
@@ -119,6 +121,7 @@ public final class ParkourManager {
             if (getModePlayer(player) == Mode.INDIVIDUAL){
                 TimerActionBar.starIndividualTimer(rules, player);
             }
+            showAllObjectsInMap(player, name_map);
         }
     }
 
@@ -136,12 +139,25 @@ public final class ParkourManager {
 
                 checkpoint.getPlayers().add(player);
                 CheckpointBase.addPlayerLastCheckpoint(player, checkpoint);
+                System.out.println(CheckpointBase.getLastCheckpointPlayer(player).getLocation());
 
                 ProgressTracker tracker = ProgressTrackerManager.get(name_map);
                 tracker.updateCheckpoint(player, i);
                 double progress = tracker.getProgress(player, checkpoints);
                 System.out.println(progress);
                 // player.sendActionBar("§bProgreso: §a" + String.format("%.2f", progress) + "§f%");
+                return;
+            }
+        }
+    }
+
+    public static void endParkourIfNecessary(final Player player, final String name_map, final Location location) {
+        final List<Location> finishPoints = getFinishPoints(name_map);
+        if (finishPoints.isEmpty()) return;
+        for (Location finishLoc : finishPoints) {
+            final Location adjustedLoc = finishLoc.clone().add(0, 1, 0);
+            if (CheckpointBase.isEqualLocation(adjustedLoc, location)) {
+                finish(player);
                 return;
             }
         }
@@ -170,7 +186,6 @@ public final class ParkourManager {
         Location playerLocation = player.getLocation();
         checkpointLocation.setYaw(playerLocation.getYaw());
         checkpointLocation.setPitch(playerLocation.getPitch());
-
         TeleportingApi.teleport(player, checkpointLocation);
     }
 
@@ -233,7 +248,7 @@ public final class ParkourManager {
 
             for (Player player : players){
                 Location location = playersInParkour.get(player.getUniqueId()).getSpawnLocation();
-                TeleportingApi.teleport(player, location);
+                teleportToSpawnOrWarn(player, map, location);
             }
 
             int delay = state.getAnimatedTimerPreStar();

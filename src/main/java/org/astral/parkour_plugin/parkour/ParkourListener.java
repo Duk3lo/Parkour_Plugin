@@ -46,7 +46,7 @@ public final class ParkourListener implements Listener {
         //System.out.println(percent);
         ParkourManager.saveCheckpointIfReached(player, name_map, location);
         ParkourManager.teleportIf(player, name_map, location);
-
+        ParkourManager.endParkourIfNecessary(player, name_map, location);
     }
 
     @EventHandler
@@ -56,10 +56,10 @@ public final class ParkourListener implements Listener {
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (!ParkourManager.isAutoReconnect(name_map)) {
-            ParkourManager.removePlayerParkour(player);
+            //ParkourManager.removePlayerParkour(player);
         } else {
             if (ParkourManager.getModePlayer(player) == Mode.INDIVIDUAL) {
-                IndividualTimerManager.pause(player);
+                //IndividualTimerManager.pause(player);
             }
         }
     }
