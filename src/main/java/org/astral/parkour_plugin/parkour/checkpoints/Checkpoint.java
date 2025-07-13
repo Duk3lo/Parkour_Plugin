@@ -8,7 +8,7 @@ import java.util.*;
 
 public final class Checkpoint {
 
-    private final Set<Player> players = new HashSet<>();
+    private final Set<UUID> players = new HashSet<>();
     private final Set<Location> locations;
 
     private double maxY;
@@ -30,7 +30,7 @@ public final class Checkpoint {
         return new HashSet<>(locations);
     }
 
-    public Set<Player> getPlayers(){
+    public Set<UUID> getPlayers(){
         return players;
     }
 

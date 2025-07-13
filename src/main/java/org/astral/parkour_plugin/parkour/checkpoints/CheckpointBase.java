@@ -16,7 +16,7 @@ public final class CheckpointBase {
     private final static Main plugin = Main.getInstance();
 
     private static final Map<String, List<Checkpoint>> checkpointMap = new HashMap<>();
-    private static final Map<Player, Checkpoint> actualCheckpoint = new HashMap<>();
+    private static final Map<UUID, Checkpoint> actualCheckpoint = new HashMap<>();
 
     public static void loadMap(final String map){
         final CheckpointConfig checkpointConfig = new CheckpointConfig(map);
@@ -39,12 +39,12 @@ public final class CheckpointBase {
         return checkpoint;
     }
 
-    public static void addPlayerLastCheckpoint(final Player player, final Checkpoint checkpoint){
-        actualCheckpoint.put(player, checkpoint);
+    public static void addPlayerLastCheckpoint(final @NotNull Player player, final Checkpoint checkpoint){
+        actualCheckpoint.put(player.getUniqueId(), checkpoint);
     }
 
-    public static Checkpoint getLastCheckpointPlayer(final Player player){
-        return actualCheckpoint.get(player);
+    public static Checkpoint getLastCheckpointPlayer(final @NotNull Player player){
+        return actualCheckpoint.get(player.getUniqueId());
     }
 
     public static List<Checkpoint> getCheckpoints(final String key){

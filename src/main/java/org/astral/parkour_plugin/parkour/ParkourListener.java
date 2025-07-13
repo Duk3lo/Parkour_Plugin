@@ -25,7 +25,7 @@ public final class ParkourListener implements Listener {
     public void onPlayerMove(final @NotNull PlayerMoveEvent event) {
         final Player player = event.getPlayer();
 
-        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
+        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
 
         final String name_map = playerInMap.get();
@@ -34,16 +34,17 @@ public final class ParkourListener implements Listener {
             Location from = event.getFrom();
             Location to = event.getTo();
             if (from.getBlockX() == to.getBlockX() && from.getBlockY() == to.getBlockY() && from.getBlockZ() == to.getBlockZ()) return;
-            final Location spawn = ParkourManager.getSpawnPlayer(player);
+            final Location spawn = ParkourManager.getSpawnPlayer(player.getUniqueId());
             ParkourManager.teleportToSpawnOrWarn(player, name_map, spawn);
         }
 
-        double percent = ProgressTrackerManager.getNearestEndPointProgress(
-                ParkourManager.getSpawnPlayer(player),
+        double percent = ProgressTrackerManager.getMaxRadialProgress(
+                ParkourManager.getSpawnPlayer(player.getUniqueId()),
                 ParkourManager.getFinishPoints(name_map),
-                location
-        );
-        //System.out.println(percent);
+                location);
+
+        System.out.println(percent);
+
         ParkourManager.saveCheckpointIfReached(player, name_map, location);
         ParkourManager.teleportIf(player, name_map, location);
         ParkourManager.endParkourIfNecessary(player, name_map, location);
@@ -52,14 +53,15 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {
         final Player player = event.getPlayer();
-        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player);
+        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (!ParkourManager.isAutoReconnect(name_map)) {
-            //ParkourManager.removePlayerParkour(player);
+            ParkourManager.removePlayerParkour(player.getUniqueId());
         } else {
+            ParkourManager.hideMap(player, name_map);
             if (ParkourManager.getModePlayer(player) == Mode.INDIVIDUAL) {
-                //IndividualTimerManager.pause(player);
+                IndividualTimerManager.pause(player.getUniqueId());
             }
         }
     }

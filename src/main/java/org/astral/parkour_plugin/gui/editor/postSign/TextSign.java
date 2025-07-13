@@ -1,9 +1,9 @@
-package org.astral.parkour_plugin.editor.postSign;
+package org.astral.parkour_plugin.gui.editor.postSign;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.BlockCache;
-import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.gui.Gui;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;

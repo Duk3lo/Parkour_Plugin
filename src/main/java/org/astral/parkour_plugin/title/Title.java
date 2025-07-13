@@ -14,13 +14,7 @@ public final class Title {
     private final int stay;
     private final int fadeOut;
 
-    public Title(String title) {
-        this(title, null, 20, 200, 20);
-    }
-
-    public Title(String title, @Nullable String subtitle) {
-        this(title, subtitle, 20, 200, 20);
-    }
+    // public Title(String title) {this(title, null, 20, 200, 20);}public Title(String title, @Nullable String subtitle) {this(title, subtitle, 20, 200, 20);}
 
     public Title(String title, @Nullable String subtitle, int fadeIn, int stay, int fadeOut) {
         this.title = ColorUtil.compileColors(title);

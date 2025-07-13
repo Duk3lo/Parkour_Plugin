@@ -17,45 +17,34 @@ public final class ProgressTrackerManager {
         trackerByMap.remove(map);
     }
 
-    public static double getLinearProgressPercentage(Location start, Location end, Location current) {
+    public static double getRadialProgress(Location start, Location end, Location current) {
         if (start == null || end == null || current == null || !start.getWorld().equals(current.getWorld())) {
             return 0.0;
         }
-        double dx = end.getX() - start.getX();
+        double maxDistance = start.distance(end);
+        double currentDistance = current.distance(end);
 
-        double dy = end.getY() - start.getY();
-        double dz = end.getZ() - start.getZ();
+        if (currentDistance >= maxDistance) return 0.0;
 
-        double px = current.getX() - start.getX();
-        double py = current.getY() - start.getY();
-        double pz = current.getZ() - start.getZ();
-
-        double dotProduct = px * dx + py * dy + pz * dz;
-        double totalDistanceSquared = dx * dx + dy * dy + dz * dz;
-
-        double progressFraction = Math.max(0, Math.min(1, dotProduct / totalDistanceSquared));
-
-        return progressFraction * 100.0;
+        double progress = 1.0 - (currentDistance / maxDistance);
+        return Math.round(progress * 10000.0) / 100.0;
     }
 
-    public static double getNearestEndPointProgress(Location start, List<Location> endPoints, Location current) {
+    public static double getMaxRadialProgress(Location start, List<Location> endPoints, Location current) {
         if (start == null || current == null || endPoints == null || endPoints.isEmpty()) {
             return 0.0;
         }
 
-        Location nearestEnd = null;
-        double shortestDistance = Double.MAX_VALUE;
-
+        double maxProgress = 0.0;
         for (Location end : endPoints) {
             if (end.getWorld() != null && end.getWorld().equals(start.getWorld())) {
-                double dist = current.distance(end);
-                if (dist < shortestDistance) {
-                    shortestDistance = dist;
-                    nearestEnd = end;
+                double progress = getRadialProgress(start, end, current);
+                if (progress > maxProgress) {
+                    maxProgress = progress;
                 }
             }
         }
-        if (nearestEnd == null) return 0.0;
-        return getLinearProgressPercentage(start, nearestEnd, current);
+        return maxProgress;
     }
+
 }

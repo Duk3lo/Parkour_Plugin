@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 public final class ApiCompatibility {
 
     private static final String VERSION;
-    private static final boolean COMPONENT;
     private static final boolean FOLIA;
     private static final boolean OFF_HAND_METHOD;
     private static final boolean HAS_PROTOCOL;
@@ -21,7 +20,6 @@ public final class ApiCompatibility {
     static {
         VERSION = version();
         ARRAY_VERSION = array_version();
-        COMPONENT = COMPONENT();
         FOLIA = FOLIA();
         OFF_HAND_METHOD = hasOffHandMethod();
         HAS_PROTOCOL = hasProtocolLib();
@@ -46,15 +44,6 @@ public final class ApiCompatibility {
             return new int[]{-1, -1, -1};
         }
         return versionInts;
-    }
-
-    private static boolean COMPONENT(){
-        try {
-            Class.forName("net.kyori.adventure.text.Component");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
     }
 
     private static boolean FOLIA(){
@@ -97,7 +86,7 @@ public final class ApiCompatibility {
 
     public static String VERSION(){ return VERSION; }
     public static int[] ARRAY_VERSION(){ return ARRAY_VERSION; }
-    public static boolean IS_MODERN_COMPONENT(){ return COMPONENT; }
+
     public static boolean IS_FOLIA(){ return FOLIA; }
     public static boolean HAS_OFF_HAND_METHOD(){ return OFF_HAND_METHOD; }
     public static boolean HAS_PROTOCOL(){ return HAS_PROTOCOL; }

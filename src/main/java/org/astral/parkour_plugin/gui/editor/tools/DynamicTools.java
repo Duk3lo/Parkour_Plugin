@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.tools;
+package org.astral.parkour_plugin.gui.editor.tools;
 
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;

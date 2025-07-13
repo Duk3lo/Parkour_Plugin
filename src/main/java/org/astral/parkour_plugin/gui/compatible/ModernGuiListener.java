@@ -1,6 +1,6 @@
-package org.astral.parkour_plugin.editor.compatible;
+package org.astral.parkour_plugin.gui.compatible;
 
-import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.gui.Gui;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

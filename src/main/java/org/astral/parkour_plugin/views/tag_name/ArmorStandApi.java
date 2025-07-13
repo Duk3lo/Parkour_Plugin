@@ -10,10 +10,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 
 public interface ArmorStandApi {
-    Map<String, Map<Type, Set<Player>>> playersViewingMap = new HashMap<>();
+    Map<String, Map<Type, Set<UUID>>> playersViewingMap = new HashMap<>();
     void showHolograms(final Player player, final String map,final Type type);
     void hideHolograms(final Player player, final String map, final Type type);
     void addHologram(final String map, final String name , final Location location, final Type type);

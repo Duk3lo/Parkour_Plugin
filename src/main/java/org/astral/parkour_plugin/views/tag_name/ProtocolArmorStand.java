@@ -11,10 +11,11 @@ import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
-import org.astral.parkour_plugin.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.editor.tools.Tools;
 import org.astral.parkour_plugin.Kit;
-import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.views.Type;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -38,7 +39,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     private final PacketAdapter adapter;
     private final Listener listener;
     private final Map<String, Map<Type, List<PacketStructureArmorStand>>> protocolStands = new HashMap<>();
-    private final Map<Player, Set<Integer>> visibleEntities = new HashMap<>();
+    private final Map<UUID, Set<Integer>> visibleEntities = new HashMap<>();
 
     private static final double RANGE = 144;
 
@@ -55,6 +56,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             public void onPacketReceiving(PacketEvent event) {
                 if (first != 1) return;
                 final Player player = event.getPlayer();
+                final UUID playerUUID = player.getUniqueId();
                 if (Gui.isInEditMode(player)) {
                     boolean useArmor = false;
                     @SuppressWarnings("deprecation") final ItemStack item = player.getInventory().getItemInHand();
@@ -108,7 +110,7 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                                         list.removeIf(e -> e.getEntityIdPacket() == entityId);
                                     }
                                 }
-                                visibleEntities.getOrDefault(player, Collections.emptySet()).remove(entityId);
+                                visibleEntities.getOrDefault(playerUUID, Collections.emptySet()).remove(entityId);
                             }
                         }
                     }
@@ -116,24 +118,22 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             }
         };
 
-        listener =  new Listener() {
+        listener = new Listener() {
             @EventHandler
             public void onPlayerMove(final @NotNull PlayerMoveEvent event) {
                 final Player player = event.getPlayer();
+                final UUID playerUUID = player.getUniqueId();
                 final Location playerLocation = player.getLocation();
-                final Set<Integer> visible = visibleEntities.computeIfAbsent(player, k -> new HashSet<>());
+                final Set<Integer> visible = visibleEntities.computeIfAbsent(playerUUID, k -> new HashSet<>());
+
                 for (final Map.Entry<String, Map<Type, List<PacketStructureArmorStand>>> entry : protocolStands.entrySet()) {
                     final String viewerId = entry.getKey();
-                    final Map<Type, Set<Player>> typeToViewers = playersViewingMap.get(viewerId);
+                    final Map<Type, Set<UUID>> typeToViewers = playersViewingMap.get(viewerId);
                     if (typeToViewers == null) continue;
 
-                    boolean isViewer = false;
-                    for (Set<Player> viewerSet : typeToViewers.values()) {
-                        if (viewerSet.contains(player)) {
-                            isViewer = true;
-                            break;
-                        }
-                    }
+                    boolean isViewer = typeToViewers.values().stream()
+                            .anyMatch(viewerSet -> viewerSet.contains(playerUUID));
+
                     if (!isViewer) continue;
 
                     final Map<Type, List<PacketStructureArmorStand>> typeMap = entry.getValue();
@@ -141,8 +141,8 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                         final Type type = typeEntry.getKey();
                         final List<PacketStructureArmorStand> packetList = typeEntry.getValue();
 
-                        Set<Player> viewers = typeToViewers.get(type);
-                        if (viewers == null || !viewers.contains(player)) continue;
+                        Set<UUID> viewers = typeToViewers.get(type);
+                        if (viewers == null || !viewers.contains(playerUUID)) continue;
 
                         for (final PacketStructureArmorStand packetStructure : packetList) {
                             final Location packetLocation = packetStructure.getLocation();
@@ -174,11 +174,12 @@ public final class ProtocolArmorStand implements ArmorStandApi {
         return item.isSimilar(Tools.CHECKPOINT_MARKER.getItem()) || item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem()) || item.isSimilar(Tools.MARK_FINISH_ITEM.getItem());
     }
 
-    private @Nullable String getMapOfPlayer(final Player player) {
-        for (Map.Entry<String, Map<Type, Set<Player>>> entry : playersViewingMap.entrySet()) {
-            final Map<Type, Set<Player>> typeMap = entry.getValue();
-            for (Set<Player> players : typeMap.values()) {
-                if (players.contains(player)) {
+    private @Nullable String getMapOfPlayer(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        for (Map.Entry<String, Map<Type, Set<UUID>>> entry : playersViewingMap.entrySet()) {
+            final Map<Type, Set<UUID>> typeMap = entry.getValue();
+            for (Set<UUID> uuids : typeMap.values()) {
+                if (uuids.contains(uuid)) {
                     return entry.getKey();
                 }
             }
@@ -204,10 +205,12 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     }
 
     @Override
-    public void showHolograms(final Player player, final String map, final Type type) {
+    public void showHolograms(final @NotNull Player player, final String map, final Type type) {
+        final UUID playerUUID = player.getUniqueId();
+
         playersViewingMap.computeIfAbsent(map, k -> new HashMap<>())
                 .computeIfAbsent(type, k -> new HashSet<>())
-                .add(player);
+                .add(playerUUID);
 
         final Map<Type, List<PacketStructureArmorStand>> standTypeMap = protocolStands.get(map);
 
@@ -295,9 +298,12 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                 .add(new PacketStructureArmorStand(entityId, name, location.subtract(0.5, 0, 0.5), packet1, packet2, type));
 
 
-        for (Player viewer : playersViewingMap.get(map).get(type)) {
-            protocolManager.sendServerPacket(viewer, packet1);
-            protocolManager.sendServerPacket(viewer, packet2);
+        for (UUID uuidPlayer : playersViewingMap.get(map).get(type)) {
+            final Player viewer = Bukkit.getPlayer(uuidPlayer);
+            if (viewer != null && viewer.isOnline()) {
+                protocolManager.sendServerPacket(viewer, packet1);
+                protocolManager.sendServerPacket(viewer, packet2);
+            }
         }
     }
 
@@ -400,7 +406,8 @@ public final class ProtocolArmorStand implements ArmorStandApi {
     }
 
     @Override
-    public void hideHolograms(final Player player, final String map, final Type type) {
+    public void hideHolograms(final @NotNull Player player, final String map, final Type type) {
+        final UUID playerUUID = player.getUniqueId();
         final Map<Type, List<PacketStructureArmorStand>> typeMap = protocolStands.get(map);
         if (typeMap != null) {
             final List<PacketStructureArmorStand> packetList = typeMap.get(type);
@@ -413,11 +420,11 @@ public final class ProtocolArmorStand implements ArmorStandApi {
             }
         }
 
-        final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+        final Map<Type, Set<UUID>> typeViewers = playersViewingMap.get(map);
         if (typeViewers != null) {
-            final Set<Player> playersForType = typeViewers.get(type);
+            final Set<UUID> playersForType = typeViewers.get(type);
             if (playersForType != null) {
-                playersForType.remove(player);
+                playersForType.remove(playerUUID);
                 if (playersForType.isEmpty()) {
                     typeViewers.remove(type);
                 }
@@ -441,12 +448,15 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                     .toArray();
             final PacketContainer destroyPacket = destroyEntity(ids);
 
-            final Map<Type, Set<Player>> viewersByType = playersViewingMap.get(map);
+            final Map<Type, Set<UUID>> viewersByType = playersViewingMap.get(map);
             if (viewersByType != null) {
-                final Set<Player> players = viewersByType.get(type);
-                if (players != null) {
-                    for (Player player : players) {
-                        protocolManager.sendServerPacket(player, destroyPacket);
+                final Set<UUID> uuids = viewersByType.get(type);
+                if (uuids != null) {
+                    for (UUID uuid : uuids) {
+                        Player player = Bukkit.getPlayer(uuid);
+                        if (player != null && player.isOnline()) {
+                            protocolManager.sendServerPacket(player, destroyPacket);
+                        }
                     }
                 }
             }
@@ -471,12 +481,15 @@ public final class ProtocolArmorStand implements ArmorStandApi {
                             new int[]{stand.getEntityIdPacket()}
                     );
 
-                    final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+                    final Map<Type, Set<UUID>> typeViewers = playersViewingMap.get(map);
                     if (typeViewers != null) {
-                        final Set<Player> viewers = typeViewers.get(type);
+                        final Set<UUID> viewers = typeViewers.get(type);
                         if (viewers != null) {
-                            for (Player viewer : viewers) {
-                                protocolManager.sendServerPacket(viewer, destroyPacket);
+                            for (UUID uuid : viewers) {
+                                Player viewer = Bukkit.getPlayer(uuid);
+                                if (viewer != null && viewer.isOnline()) {
+                                    protocolManager.sendServerPacket(viewer, destroyPacket);
+                                }
                             }
                         }
                     }

@@ -2,8 +2,8 @@ package org.astral.parkour_plugin;
 
 import org.astral.parkour_plugin.commands.GameCommandExecutor;
 import org.astral.parkour_plugin.config.Configuration;
-import org.astral.parkour_plugin.editor.generator.Generator;
-import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.gui.editor.generator.Generator;
+import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;

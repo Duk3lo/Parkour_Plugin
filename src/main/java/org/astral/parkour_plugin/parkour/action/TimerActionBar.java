@@ -76,30 +76,25 @@ public final class TimerActionBar {
         return String.format("%02X%02X%02X", r, g, b);
     }
 
-    public static void starIndividualTimer(final @NotNull Rules rules, final Player player) {
+    public static void starIndividualTimer(final @NotNull Rules rules, final @NotNull UUID uuid) {
         int timeLimit = rules.getIndividualTimeLimit();
         boolean isCountdown = rules.isIndividualCountdownEnabled();
 
-        if (IndividualTimerManager.isRunning(player)) {
-            IndividualTimerManager.resume(player, isCountdown, timeLimit);
+        if (IndividualTimerManager.isRunning(uuid)) {
+            IndividualTimerManager.resume(uuid, isCountdown, timeLimit);
         } else {
-            IndividualTimerManager.start(player, isCountdown, timeLimit);
+            IndividualTimerManager.start(uuid, isCountdown, timeLimit);
         }
 
         if (rules.isIndividualActionBarTimerDisplayEnabled()) {
-            activeActionBars.put(player.getUniqueId(), rules.getIndividualTimerFormat());
+            activeActionBars.put(uuid, rules.getIndividualTimerFormat());
 
             if (individualActionBarTask == null || individualActionBarTask.isCancelled()) {
                 individualActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
 
-                    boolean someoneOnline = false;
-                    for (UUID uuid : activeActionBars.keySet()) {
-                        Player online = Bukkit.getPlayer(uuid);
-                        if (online != null && online.isOnline()) {
-                            someoneOnline = true;
-                            break;
-                        }
-                    }
+                    boolean someoneOnline = activeActionBars.keySet().stream()
+                            .map(Bukkit::getPlayer)
+                            .anyMatch(p -> p != null && p.isOnline());
 
                     if (!someoneOnline) {
                         scheduledTask.cancel();
@@ -110,16 +105,16 @@ public final class TimerActionBar {
                     Iterator<Map.Entry<UUID, String>> iterator = activeActionBars.entrySet().iterator();
                     while (iterator.hasNext()) {
                         Map.Entry<UUID, String> entry = iterator.next();
-                        UUID uuid = entry.getKey();
+                        UUID uuid_game = entry.getKey();
                         String format = entry.getValue();
-                        Player p = Bukkit.getPlayer(uuid);
+                        Player p = Bukkit.getPlayer(uuid_game);
 
-                        if (p == null || !p.isOnline() || !IndividualTimerManager.isRunning(p)) {
+                        if (p == null || !p.isOnline() || !IndividualTimerManager.isRunning(uuid_game)) {
                             iterator.remove();
                             continue;
                         }
 
-                        Timer timer = IndividualTimerManager.get(p);
+                        Timer timer = IndividualTimerManager.get(uuid_game);
                         if (timer == null) continue;
 
                         boolean timeFinished = (isCountdown && timer.isCountdownFinished()) ||
@@ -143,9 +138,9 @@ public final class TimerActionBar {
 
                         if (timeFinished) {
                             p.sendMessage("§c¡Se acabó el tiempo!");
-                            IndividualTimerManager.stop(p);
+                            IndividualTimerManager.stop(uuid_game);
                             iterator.remove();
-                            ParkourManager.removePlayerParkour(p);
+                            ParkourManager.removePlayerParkour(uuid_game);
                         }
                     }
                 }, 0L, 150L, TimeUnit.MILLISECONDS);
@@ -154,7 +149,7 @@ public final class TimerActionBar {
     }
 
 
-    public static void startGlobalTimer(final @NotNull Rules rules, final Player player) {
+    public static void startGlobalTimer(final @NotNull Rules rules, final UUID uuid) {
         int timeLimit = rules.getGlobalTimeLimit();
         boolean isCountdown = rules.isGlobalCountdownEnabled();
         String mapName = rules.getMapName();
@@ -164,7 +159,7 @@ public final class TimerActionBar {
         }
 
         if (rules.isGlobalActionBarTimerDisplayEnabled()) {
-            GlobalTimerManager.addViewer(player, mapName);
+            GlobalTimerManager.addViewer(uuid, mapName);
             if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
                 globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
                     if (!GlobalTimerManager.hasAnyTimerRunning()) {
@@ -193,8 +188,9 @@ public final class TimerActionBar {
                         String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
                         if (rules.isGlobalActionBarTimerDisplayEnabled()) {
-                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
-                                if (p.isOnline()) {
+                            for (UUID uuid_game : GlobalTimerManager.getViewersOf(map)) {
+                                Player p = Bukkit.getPlayer(uuid_game);
+                                if (p != null && p.isOnline()) {
                                     new ActionBar(formatted).send(p);
                                 }
                             }
@@ -202,11 +198,12 @@ public final class TimerActionBar {
 
                         if (timeFinished && !mapsAlreadyNotified.contains(map)) {
                             mapsAlreadyNotified.add(map);
-                            for (Player p : GlobalTimerManager.getViewersOf(map)) {
-                                if (p.isOnline()) {
+                            for (UUID uuid_game : GlobalTimerManager.getViewersOf(map)) {
+                                Player p = Bukkit.getPlayer(uuid_game);
+                                if (p != null && p.isOnline()) {
                                     p.sendMessage("§c¡Se acabó el tiempo global!");
-                                    ParkourManager.removePlayerParkour(p);
                                 }
+                                ParkourManager.removePlayerParkour(uuid_game);
                             }
                             GlobalTimerManager.stop(map);
                             mapsAlreadyNotified.remove(map);

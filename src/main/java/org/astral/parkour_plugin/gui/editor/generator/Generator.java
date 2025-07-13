@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.generator;
+package org.astral.parkour_plugin.gui.editor.generator;
 
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.Kit;

@@ -1,9 +1,9 @@
 package org.astral.parkour_plugin.commands;
 
 import org.astral.parkour_plugin.config.Configuration;
-import org.astral.parkour_plugin.editor.generator.Generator;
-import org.astral.parkour_plugin.editor.Gui;
-import org.astral.parkour_plugin.editor.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.editor.generator.Generator;
+import org.astral.parkour_plugin.gui.Gui;
+import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.parkour.ParkourManager;
 import org.bukkit.Bukkit;
@@ -137,18 +137,18 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                         return true;
                     }
                 }
-                final String map = ParkourManager.getMapIfInParkour(player).orElse(null);
+                final String map = ParkourManager.getMapIfInParkour(player.getUniqueId()).orElse(null);
                 if (map == null) {
                     sender.sendMessage("§e" + player.getName() + " no está dentro de ningún mapa de parkour.");
                     return true;
                 }
-                ParkourManager.removePlayerParkour(player);
+                ParkourManager.removePlayerParkour(player.getUniqueId());
                 sender.sendMessage("§a" + player.getName() + " ha salido del parkour §b" + map + "§a.");
                 return true;
             }
 
             if (args[0].equalsIgnoreCase(finish)){
-                final String map = ParkourManager.getMapIfInParkour(player).orElse(null);
+                final String map = ParkourManager.getMapIfInParkour(player.getUniqueId()).orElse(null);
                 if (map == null) {
                     sender.sendMessage("§e" + player.getName() + " no está dentro de ningún mapa de parkour.");
                     return true;

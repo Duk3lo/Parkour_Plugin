@@ -1,12 +1,12 @@
-package org.astral.parkour_plugin.editor;
+package org.astral.parkour_plugin.gui;
 
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.BlockCache;
 import org.astral.parkour_plugin.config.Config;
-import org.astral.parkour_plugin.editor.tools.BooleanTools;
-import org.astral.parkour_plugin.editor.tools.DynamicTools;
-import org.astral.parkour_plugin.editor.tools.StateTools;
-import org.astral.parkour_plugin.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.editor.tools.BooleanTools;
+import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.editor.tools.StateTools;
+import org.astral.parkour_plugin.gui.editor.tools.Tools;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;

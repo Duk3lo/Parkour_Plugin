@@ -1,9 +1,8 @@
 package org.astral.parkour_plugin.timer;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -12,19 +11,19 @@ public final class GlobalTimerManager {
     private static final Map<String, TimerData> timers = new HashMap<>();
     private static final Map<UUID, String> viewers = new HashMap<>();
 
-    public static void start(@NotNull String map, boolean countdownMode, int timeLimitSeconds) {
+    public static void start(String map, boolean countdownMode, int timeLimitSeconds) {
         Timer timer = new Timer(countdownMode, timeLimitSeconds, 0L);
         timers.put(map, new TimerData(timer, 0L));
     }
 
-    public static void pause(@NotNull String map) {
+    public static void pause(String map) {
         TimerData data = timers.get(map);
         if (data == null) return;
         long elapsed = data.getTimer().getElapsedMillis();
         timers.put(map, new TimerData(data.getTimer(), elapsed));
     }
 
-    public static void resume(@NotNull String map, boolean countdownMode, int timeLimitSeconds) {
+    public static void resume(String map, boolean countdownMode, int timeLimitSeconds) {
         TimerData data = timers.get(map);
         if (data == null) return;
         long elapsed = data.getElapsedMillis();
@@ -46,31 +45,28 @@ public final class GlobalTimerManager {
         viewers.entrySet().removeIf(entry -> entry.getValue().equals(map));
     }
 
-    public static Timer get(@NotNull String map) {
+    public static @Nullable Timer get(String map) {
         TimerData data = timers.get(map);
         return data != null ? data.getTimer() : null;
     }
 
-    public static void addViewer(@NotNull Player player, @NotNull String map) {
-        viewers.put(player.getUniqueId(), map);
+    public static void addViewer(UUID uuid, @NotNull String map) {
+        viewers.put(uuid, map);
     }
 
-    public static void removeViewer(@NotNull Player player) {
-        viewers.remove(player.getUniqueId());
+    public static void removeViewer(UUID uuid) {
+        viewers.remove(uuid);
     }
 
-    public static @NotNull Optional<String> getViewingMap(@NotNull Player player) {
-        return Optional.ofNullable(viewers.get(player.getUniqueId()));
+    public static @NotNull Optional<String> getViewingMap(UUID uuid) {
+        return Optional.ofNullable(viewers.get(uuid));
     }
 
-    public static @NotNull Set<Player> getViewersOf(@NotNull String map) {
-        Set<Player> result = new HashSet<>();
+    public static @NotNull Set<UUID> getViewersOf(@NotNull String map) {
+        Set<UUID> result = new HashSet<>();
         for (Map.Entry<UUID, String> entry : viewers.entrySet()) {
             if (entry.getValue().equals(map)) {
-                Player player = Bukkit.getPlayer(entry.getKey());
-                if (player != null && player.isOnline()) {
-                    result.add(player);
-                }
+                result.add(entry.getKey());
             }
         }
         return result;

@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.tools;
+package org.astral.parkour_plugin.gui.editor.tools;
 
 import org.astral.parkour_plugin.config.Config;
 import org.bukkit.Material;
@@ -8,28 +8,23 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 public enum StateTools {
-    DISTANCE_BLOCK(Config.distaciaBloqueAire, Config.getDistanceBlockAir(), 0,0);
+    DISTANCE_BLOCK(Config.distaciaBloqueAire, Config.getDistanceBlockAir(), 0);
 
     private final String name;
     private int value;
     private int slot;
-    private int page;
 
 
-    StateTools(final String name, final int value, final int slot, final int page){
+    StateTools(final String name, final int value, final int slot){
         this.name = name;
         this.value = value;
         this.slot = slot;
-        this.page = page;
     }
 
     public void setSlot(final int slot) {
         this.slot = slot;
     }
     public final int getSlot(){return this.slot;}
-
-    public void setPage(final int page) {this.page = page;}
-    public int getPage(){ return this.page; }
 
     public int getValue() {
         return value;

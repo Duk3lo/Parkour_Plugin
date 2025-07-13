@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor;
+package org.astral.parkour_plugin.gui;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.SoundApi;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
@@ -9,14 +9,14 @@ import org.astral.parkour_plugin.config.cache.InventoryCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
-import org.astral.parkour_plugin.editor.tools.BooleanTools;
-import org.astral.parkour_plugin.editor.tools.DynamicTools;
-import org.astral.parkour_plugin.editor.tools.StateTools;
-import org.astral.parkour_plugin.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.editor.tools.BooleanTools;
+import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.editor.tools.StateTools;
+import org.astral.parkour_plugin.gui.editor.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
-import org.astral.parkour_plugin.editor.compatible.ModernGuiListener;
-import org.astral.parkour_plugin.editor.postSign.TextSignApi;
+import org.astral.parkour_plugin.gui.compatible.ModernGuiListener;
+import org.astral.parkour_plugin.gui.editor.postSign.TextSignApi;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.astral.parkour_plugin.views.Type;
 import org.bukkit.Bukkit;
@@ -53,26 +53,19 @@ public final class Gui {
 
     //Spawn & Finish
     private static final byte INDEX_SPAWN_FINISH = 3;
-    private static final byte ITEMS_PER_PAGE_SPAWN_FINISH = 4;
+    private static final byte ITEMS_PER_PAGE_SPAWN_FINISH = 3;
 
     //----------------------------------------------------------------------------[Names Inventories]
     //-----------------------------------------------------------------------------------------------
     public static final String order = "Ordena Tus Checkpoints";
     public static final Map<Player, Block> tempBlock = new HashMap<>();
 
-    private static final Map<Player, String> menu = new HashMap<>();
-
     private static final String main_Menu = "Main_Menu";
     private static final String checkpoint_menu = "Checkpoint_Menu";
     private static final String checkpoint_Menu_Edit = "Checkpoint_Menu_Edit";
     private static final String spawnAndFinishMenu = "Spawn_End_Menu";
 
-    private static final Map<Player, ItemStack[]> playerInventories = new HashMap<>();
-    private static final Map<Player, Boolean> editingPlayers = new HashMap<>();
-    private static final Map<Player, Integer> playerPages = new HashMap<>();
-    private static final Map<Player, String> mapPlayer = new HashMap<>();
-    private static final Map<Player, Map<Integer, ItemStack>> originalInventories = new HashMap<>();
-
+    private static final Map<UUID, PlayerDataGui> DatGui = new HashMap<>();
 
     private static final Inventory menuOptions = Bukkit.createInventory(null, 9, "Opciones");
 
@@ -83,65 +76,91 @@ public final class Gui {
     private static final ModernGuiListener MODERN_GUI_LISTENER = new ModernGuiListener();
     private static boolean isActiveListener = false;
 
-    public static void enterEditMode(final Player player) {
-        if (!editingPlayers.containsKey(player)) {
-            final UUID uuid = player.getUniqueId();
+    public static void enterEditMode(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+
+        if (!data.isEditing()) {
             final ItemStack[] itemStacks = player.getInventory().getContents();
-            playerInventories.put(player, itemStacks);
+            data.setPlayerInventories(itemStacks);
             InventoryCache.saveInventory(uuid, itemStacks);
             loadMainInventory(player);
-            editingPlayers.put(player, true);
-            SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP","ENTITY_EXPERIENCE_ORB_PICKUP");
+            data.setEditing(true);
+            SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP", "ENTITY_EXPERIENCE_ORB_PICKUP");
         }
 
-        if (!editingPlayers.isEmpty() && !isActiveListener) {
+        if (!DatGui.isEmpty() && !isActiveListener) {
             plugin.getServer().getPluginManager().registerEvents(GUI_LISTENER, plugin);
-            if (ApiCompatibility.HAS_OFF_HAND_METHOD()) plugin.getServer().getPluginManager().registerEvents(MODERN_GUI_LISTENER, plugin);
+            if (ApiCompatibility.HAS_OFF_HAND_METHOD()) {
+                plugin.getServer().getPluginManager().registerEvents(MODERN_GUI_LISTENER, plugin);
+            }
             isActiveListener = true;
         }
     }
 
     public static void loadMainInventory(final @NotNull Player player) {
-        menu.put(player, main_Menu);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+
+        data.setMenu(main_Menu);
+        data.setPage(0);
+
         player.getInventory().clear();
         player.getInventory().setItem(0, Tools.ADD_MAP_ITEM.getItem());
         player.getInventory().setItem(8, Tools.EXIT_ITEM.getItem());
-        playerPages.put(player, 0);
-        showPage(player, 0, DynamicTools.SELECTS_MAPS_ITEMS,INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
+
+        showPage(player, 0, DynamicTools.SELECTS_MAPS_ITEMS, INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
     }
 
     //----------------------------------------------------------------------[SPAWN AND FINISH]
     //----------------------------------------------------------------------------------------
-    public static void loadSpawnAndEndMenu(final @NotNull Player player){
-        menu.put(player, spawnAndFinishMenu);
-        final String name_map = mapPlayer.getOrDefault(player, "");
-        playerPages.put(player, 0);
+    public static void loadSpawnAndEndMenu(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+
+        data.setMenu(spawnAndFinishMenu);
+        data.setPage(0);
+
+        final String name_map = data.getMapPlayer();
+
         DynamicTools.loadSpawnPoints(name_map);
         DynamicTools.loadFinishPoints(name_map);
+
         player.getInventory().clear();
         player.getInventory().setItem(0, Tools.MARK_SPAWN_ITEM.getItem());
         player.getInventory().setItem(1, Tools.MARK_FINISH_ITEM.getItem());
         player.getInventory().setItem(8, Tools.BACK_ITEM.getItem());
+
         final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
         all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
+
         showPage(player, 0, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
+
         HOLOGRAM_API.showHolograms(player, name_map, Type.SPAWN);
         HOLOGRAM_API.showHolograms(player, name_map, Type.END_POINT);
     }
 
     //----------------------------------------------------------------------------[CHECKPOINT]
     //----------------------------------------------------------------------------------------
-    public static void loadOneCheckpointMap(final @NotNull Player player){
-        menu.put(player, checkpoint_menu);
-        final String name_map = mapPlayer.getOrDefault(player, "");
-        playerPages.put(player, 0);
+    public static void loadOneCheckpointMap(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+
+        data.setMenu(checkpoint_menu);
+        data.setPage(0);
+
+        final String name_map = data.getMapPlayer();
+
         player.getInventory().clear();
+
         showPage(player, 0, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+
         player.getInventory().setItem(0, Tools.CHECKPOINT_MARKER.getItem());
         player.getInventory().setItem(1, DynamicTools.getUniquePlayerItem().getOrDefault(player, null));
-        player.getInventory().setItem(7 , Tools.EDIT_FEATHER_ITEM.getItem());
-        player.getInventory().setItem(8 , Tools.BACK_ITEM.getItem());
+        player.getInventory().setItem(7, Tools.EDIT_FEATHER_ITEM.getItem());
+        player.getInventory().setItem(8, Tools.BACK_ITEM.getItem());
         player.getInventory().setItem(35, Tools.REMOVE_MAP.getItem());
+
         HOLOGRAM_API.showHolograms(player, name_map, Type.CHECKPOINT);
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
@@ -153,39 +172,59 @@ public final class Gui {
         TEXT_SIGN_API.AddNewMap(player);
     }
 
-    public static void removeMap(final @NotNull Player player){
-        final String name_map = mapPlayer.getOrDefault(player, "");
+    public static void removeMap(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         if (name_map.isEmpty()) return;
+
         Configuration.deleteMapFolder(name_map);
         removeMaps(name_map);
     }
 
-    public static void addSpawnPoint(final Player player, final Location location) {
-        final String name_map = mapPlayer.get(player);
+    public static void addSpawnPoint(final @NotNull Player player, final Location location) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         Rules rules = new Rules(name_map);
-        if (rules.isEqualsLocation(location)){
-            player.sendMessage("Esta ubicacion ya se marco como spawn");
-        }else {
+
+        if (rules.isEqualsLocation(location)) {
+            player.sendMessage("Esta ubicación ya se marcó como spawn");
+        } else {
             HOLOGRAM_API.addHologram(name_map, rules.setSpawns(location), location, Type.SPAWN);
             updateAllSpawnEnd(name_map);
         }
     }
 
-    public static void addEndPoint(final Player player, final Location location) {
-        final String name_map = mapPlayer.get(player);
+    public static void addEndPoint(final @NotNull Player player, final Location location) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         Rules rules = new Rules(name_map);
-        if (rules.isEqualsLocation(location)){
-            player.sendMessage("Esta ubicacion ya se marco como Punto final");
-        }else {
+
+        if (rules.isEqualsLocation(location)) {
+            player.sendMessage("Esta ubicación ya se marcó como punto final");
+        } else {
             HOLOGRAM_API.addHologram(name_map, rules.setEndPoints(location), location, Type.END_POINT);
             updateAllSpawnEnd(name_map);
         }
     }
 
-    public static void removeSpawnPoint(final Player  player, final Location location){
-        final String name_map = mapPlayer.get(player);
+    public static void removeSpawnPoint(final @NotNull Player player, final Location location) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         Rules rules = new Rules(name_map);
-        if (rules.isEqualsLocation(location)){
+
+        if (rules.isEqualsLocation(location)) {
             HOLOGRAM_API.removeHologram(name_map, rules.getSpawnKeyFromLocation(location), Type.SPAWN);
             rules.removeSpawnPoint(location);
             updateAllSpawnEnd(name_map);
@@ -193,10 +232,15 @@ public final class Gui {
         }
     }
 
-    public static void removeEndPoint(final Player player, final Location location){
-        final String name_map = mapPlayer.get(player);
+    public static void removeEndPoint(final @NotNull Player player, final Location location) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         Rules rules = new Rules(name_map);
-        if (rules.isEqualsLocation(location)){
+
+        if (rules.isEqualsLocation(location)) {
             HOLOGRAM_API.removeHologram(name_map, rules.getEndPointKeyFromLocation(location), Type.END_POINT);
             rules.removeEndPoint(location);
             updateAllSpawnEnd(name_map);
@@ -204,8 +248,12 @@ public final class Gui {
         }
     }
 
-    public static void addCheckpoint(final Player player, final Location location){
-        final String name_map = mapPlayer.get(player);
+    public static void addCheckpoint(final @NotNull Player player, final Location location) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         CheckpointConfig checkpointConfig = new CheckpointConfig(name_map);
         for (final String key : checkpointConfig.keys()){
             try {
@@ -232,8 +280,12 @@ public final class Gui {
         updateCheckpoints(name_map);
     }
 
-    public static void removeCheckpoint(final Player player, final Location location){
-        final String name_map = mapPlayer.get(player);
+    public static void removeCheckpoint(final @NotNull Player player, final Location location){
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         final CheckpointConfig checkpointConfig = new CheckpointConfig(name_map);
         for (final String key : checkpointConfig.keys()){
             try {
@@ -250,33 +302,47 @@ public final class Gui {
         }
     }
 
-    public static void reorderCheckpoints(final Player player){
-        final String name_map = mapPlayer.get(player);
+    public static void reorderCheckpoints(final @NotNull Player player){
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         CheckpointConfig checkpointConfig = new CheckpointConfig(name_map);
         checkpointConfig.reorderCheckpoints();
         HOLOGRAM_API.reorderArmorStandNames(name_map, Type.CHECKPOINT);
         updateCheckpoints(name_map);
     }
 
-    public static void refreshAllMaps(){
-        Kit.getAsyncScheduler().runNow(plugin, t ->{
+    public static void refreshAllMaps() {
+        Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.refreshMaps();
-            for (final Map.Entry<Player, String> entry : menu.entrySet()){
-                if (entry.getValue().equals(main_Menu)) updateInventory(entry.getKey());
+            for (final Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+                final UUID uuid = entry.getKey();
+                final PlayerDataGui data = entry.getValue();
+                if (main_Menu.equals(data.getMenu())) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null) {
+                        updateInventory(player);
+                    }
+                }
             }
         });
     }
 
-    private static void removeMaps(final String name_map){
-        Kit.getAsyncScheduler().runNow(plugin, t ->{
+    private static void removeMaps(final String name_map) {
+        Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.refreshMaps();
-            for (final Map.Entry<Player, String> entry : mapPlayer.entrySet()){
-                final String name = entry.getValue();
-                final Player player = entry.getKey();
-                if (name.equals(name_map)){
+            for (final Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+                final UUID uuid = entry.getKey();
+                final PlayerDataGui data = entry.getValue();
+                Player player = Bukkit.getPlayer(uuid);
+                if (player == null) continue;
+                final String name = data.getMapPlayer();
+                if (name.equals(name_map)) {
                     final String inventory = player.getOpenInventory().getTitle();
                     if (inventory.equals(order)) player.closeInventory();
-                    for (Type type : Type.values()){
+                    for (Type type : Type.values()) {
                         HOLOGRAM_API.hideHolograms(player, name_map, type);
                     }
                     loadMainInventory(player);
@@ -287,12 +353,18 @@ public final class Gui {
         });
     }
 
-    private static void updateCheckpoints(final String name_map){
-        Kit.getAsyncScheduler().runNow(plugin, t ->{
+    private static void updateCheckpoints(final String name_map) {
+        Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.loadCheckpointsItems(name_map);
-            for (Map.Entry<Player, String> entry : mapPlayer.entrySet()) {
-                final String nameMap = entry.getValue();
-                final Player player = entry.getKey();
+
+            for (Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+                final UUID uuid = entry.getKey();
+                final PlayerDataGui data = entry.getValue();
+                Player player = Bukkit.getPlayer(uuid);
+                if (player == null) continue;
+
+                final String nameMap = data.getMapPlayer();
+
                 if (name_map.equals(nameMap)) {
                     updateInventory(player);
                 }
@@ -300,13 +372,18 @@ public final class Gui {
         });
     }
 
-    private static void updateAllSpawnEnd(final String name_map){
-        Kit.getAsyncScheduler().runNow(plugin, t->{
+    private static void updateAllSpawnEnd(final String name_map) {
+        Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.loadSpawnPoints(name_map);
             DynamicTools.loadFinishPoints(name_map);
-            for (Map.Entry<Player, String> entry : mapPlayer.entrySet()) {
-                final String nameMap = entry.getValue();
-                final Player player = entry.getKey();
+
+            for (Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+                final UUID uuid = entry.getKey();
+                final PlayerDataGui data = entry.getValue();
+                Player player = Bukkit.getPlayer(uuid);
+                if (player == null) continue;
+
+                final String nameMap = data.getMapPlayer();
                 if (name_map.equals(nameMap)) {
                     updateInventory(player);
                 }
@@ -316,8 +393,10 @@ public final class Gui {
 
     //------------------------------------------------------------------------------------[Gui]
     //----------------------------------------------------------------------------------------
-    public static void setMapPlayer(final Player player, final String name_map){
-        mapPlayer.put(player, name_map);
+    public static void setMapPlayer(final @NotNull Player player, final String name_map) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        data.setMapPlayer(name_map);
     }
 
     public static void openInventoryOptions(final @NotNull Player player){
@@ -348,23 +427,30 @@ public final class Gui {
         });
     }
 
-    public static void setItemModifiable(final @NotNull Player player){
-        if (menu.get(player).equals(checkpoint_menu)){
+    public static void setItemModifiable(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+
+        if (data != null && checkpoint_menu.equals(data.getMenu())) {
             player.getInventory().setItem(1, DynamicTools.getUniquePlayerItem().getOrDefault(player, null));
             player.getInventory().setHeldItemSlot(1);
             player.sendMessage("Checa tu inventario");
-
-        }else {
+        } else {
             player.sendMessage("Para clonar un item necesitas estar en el modo Check Point");
         }
     }
 
-    public static String getMapPlayer(final @NotNull Player player){
-        return mapPlayer.getOrDefault(player,"");
+    public static String getMapPlayer(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        return data != null ? data.getMapPlayer() : "";
     }
 
     public static void goToCheckpoint(final @NotNull Player player, final ItemStack item) {
-        final String name_map = mapPlayer.get(player);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+        final String name_map = data.getMapPlayer();
         final String checkpoint = DynamicTools.getName(item);
         final CheckpointConfig config = new CheckpointConfig(name_map);
         try {
@@ -381,7 +467,10 @@ public final class Gui {
     }
 
     public static void gotoSpawnPoint(final @NotNull Player player, final ItemStack item){
-        final String name_map = mapPlayer.get(player);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+        final String name_map = data.getMapPlayer();
         final String key = DynamicTools.getName(item);
         final Rules rules = new Rules(name_map);
         final Location location = rules.getSpawnLocationFromKey(key);
@@ -393,7 +482,10 @@ public final class Gui {
     }
 
     public static void gotoEndPoint(final @NotNull Player player, final ItemStack item) {
-        final String name_map = mapPlayer.get(player);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+        final String name_map = data.getMapPlayer();
         final String key = DynamicTools.getName(item);
         final Rules rules = new Rules(name_map);
         final Location location = rules.getEndPointLocationFromKey(key);
@@ -404,10 +496,15 @@ public final class Gui {
         TeleportingApi.teleport(player, location);
     }
 
-    public static void loadEditInventoryMap(final @NotNull Player player){
-        menu.put(player, checkpoint_Menu_Edit);
-        final String name_map = mapPlayer.getOrDefault(player, "");
+    public static void loadEditInventoryMap(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+
+        data.setMenu(checkpoint_Menu_Edit);
+        final String name_map = data.getMapPlayer();
+
         DynamicTools.loadCheckpointsItems(name_map);
+
         player.getInventory().clear();
         player.getInventory().setItem(0, Tools.ONE_CHECKPOINT_MENU.getItem());
         player.getInventory().setItem(1, Tools.LIST_CHECKPOINT_MENU.getItem());
@@ -422,37 +519,43 @@ public final class Gui {
         if (BooleanTools.SET_FLOATING_BLOCKS.getToggle()) {
             StateTools.DISTANCE_BLOCK.setItemSlot(player.getInventory());
         }
+
         SoundApi.playSound(player, 1.0f, 1.0f, "LEVEL_UP", "ENTITY_PLAYER_LEVELUP");
     }
 
-    public static void changeStates(final @NotNull StateTools stateTools){
+    public static void changeStates(final @NotNull StateTools stateTools) {
         stateTools.nextState(6);
-        for (Map.Entry<Player, String> entry : menu.entrySet()){
-            final Player player = entry.getKey();
-            final String name_inventory = entry.getValue();
-            if (name_inventory.equals(checkpoint_Menu_Edit)){
+
+        for (Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+            final UUID uuid = entry.getKey();
+            final PlayerDataGui data = entry.getValue();
+
+            if (checkpoint_Menu_Edit.equals(data.getMenu())) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player == null) continue;
+
                 final PlayerInventory playerInventory = player.getInventory();
                 stateTools.setItemSlot(playerInventory);
-                SoundApi.playSound(player, 1.0f,  ((float) stateTools.getValue() / 3)+0.3f, "NOTE_BASS", "BLOCK_NOTE_BLOCK_BASS");
+
+                SoundApi.playSound(player, 1.0f, ((float) stateTools.getValue() / 3) + 0.3f, "NOTE_BASS", "BLOCK_NOTE_BLOCK_BASS");
             }
         }
     }
 
     public static void updateToggles(final @NotNull BooleanTools booleanTools) {
         booleanTools.toggle();
-
-        for (Map.Entry<Player, String> entry : menu.entrySet()) {
-            final Player player = entry.getKey();
-            final String name_inventory = entry.getValue();
-
-            if (name_inventory.equals(checkpoint_Menu_Edit)) {
-
+        for (Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+            final UUID uuid = entry.getKey();
+            final PlayerDataGui data = entry.getValue();
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null) continue;
+            final String name_inventory = data.getMenu();
+            if (checkpoint_Menu_Edit.equals(name_inventory)) {
                 booleanTools.setItemSlot(menuOptions);
-                if (BooleanTools.SET_FLOATING_BLOCKS.getToggle()){
+                if (BooleanTools.SET_FLOATING_BLOCKS.getToggle()) {
                     StateTools.DISTANCE_BLOCK.setItemSlot(player.getInventory());
-                }else {
+                } else {
                     player.getInventory().setItem(StateTools.DISTANCE_BLOCK.getSlot(), null);
-
                 }
                 SoundApi.playSound(player, 1.0f, 2.0f, "CLICK", "UI_BUTTON_CLICK");
             }
@@ -460,7 +563,11 @@ public final class Gui {
     }
 
     public static void changeItems(final @NotNull Player player) {
-        final String name_map = mapPlayer.get(player);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         final List<ItemStack> checkpointItems = DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map);
 
         if (checkpointItems != null && checkpointItems.size() > 1) {
@@ -479,7 +586,8 @@ public final class Gui {
             reorderInventory.setItem(slots - 1, new ItemStack(Tools.CANCEL_CHANGES_ITEM.getItem()));
             mapItemOrder.put(slots - 1, Tools.CANCEL_CHANGES_ITEM.getItem());
 
-            originalInventories.put(player, mapItemOrder);
+            data.setOriginalInventory(mapItemOrder);
+
             player.openInventory(reorderInventory);
             SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
         } else {
@@ -489,19 +597,29 @@ public final class Gui {
     }
 
     public static void cancelChangesTop(final @NotNull Player player) {
-        if (originalInventories.containsKey(player)) {
-            final Map<Integer, ItemStack> inventoryMap = originalInventories.get(player);
-            final Inventory playerInventory = player.getOpenInventory().getTopInventory();
-            playerInventory.clear();
-            inventoryMap.forEach(playerInventory::setItem);
-            player.sendMessage("Los cambios han sido cancelados y tu inventario ha sido restaurado.");
-        } else {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) {
             player.sendMessage("No se encontró un inventario original para restaurar.");
+            return;
         }
+        final Map<Integer, ItemStack> inventoryMap = data.getOriginalInventory();
+        if (inventoryMap.isEmpty()) {
+            player.sendMessage("No se encontró un inventario original para restaurar.");
+            return;
+        }
+        final Inventory playerInventory = player.getOpenInventory().getTopInventory();
+        playerInventory.clear();
+        inventoryMap.forEach(playerInventory::setItem);
+        player.sendMessage("Los cambios han sido cancelados y tu inventario ha sido restaurado.");
     }
 
     public static void applyChangesCheckpoints(final @NotNull Player player) {
-        final String name_map = mapPlayer.get(player);
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        final String name_map = data.getMapPlayer();
         boolean containsSpaces = false;
         boolean isIdentical = true;
         final Inventory topInventory = player.getOpenInventory().getTopInventory();
@@ -557,12 +675,14 @@ public final class Gui {
                 topInventory.setItem(i, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map).get(i));
                 mapItemOrder.put(i, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map).get(i));
             }
-            originalInventories.put(player, mapItemOrder);
+
+            data.setOriginalInventory(mapItemOrder);
+
             HOLOGRAM_API.reorderArmorStandNames(name_map, Type.CHECKPOINT);
             SoundApi.playSound(player, 1.0f, 2.0f, "BLOCK_ANVIL_USE", "ANVIL_USE");
         } else {
             player.sendMessage("Coloca todos los items que sostienes dentro de los slots.");
-            SoundApi.playSound(player,  1.0f, 2.0f, "BLOCK_ANVIL_BREAK", "ANVIL_BREAK");
+            SoundApi.playSound(player, 1.0f, 2.0f, "BLOCK_ANVIL_BREAK", "ANVIL_BREAK");
         }
         player.sendMessage("_______________________________________");
     }
@@ -570,10 +690,15 @@ public final class Gui {
     //---------------------------------------------------------------------------------[PAGES]
     //----------------------------------------------------------------------------------------
 
-    public static void nextPages(final Player player) {
-        final String name_map = mapPlayer.get(player);
-        final String name_menu = menu.getOrDefault(player, "");
-
+    public static void nextPages(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) {
+            player.sendMessage("Error: Datos del jugador no encontrados.");
+            return;
+        }
+        final String name_map = data.getMapPlayer();
+        final String name_menu = data.getMenu();
         switch (name_menu) {
             case main_Menu:
                 nextPage(player, DynamicTools.SELECTS_MAPS_ITEMS, INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
@@ -582,9 +707,9 @@ public final class Gui {
                 nextPage(player, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 break;
             case spawnAndFinishMenu:
-                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
-                all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
-                nextPage(player, all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.getOrDefault(name_map, Collections.emptyList()));
+                all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(name_map, Collections.emptyList()));
+                nextPage(player, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
                 break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
@@ -593,9 +718,16 @@ public final class Gui {
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
-    public static void previousPages(final Player player) {
-        final String name_map = mapPlayer.get(player);
-        final String name_menu = menu.getOrDefault(player, "");
+    public static void previousPages(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) {
+            player.sendMessage("Error: Datos del jugador no encontrados.");
+            return;
+        }
+
+        final String name_map = data.getMapPlayer();
+        final String name_menu = data.getMenu();
 
         switch (name_menu) {
             case main_Menu:
@@ -605,14 +737,15 @@ public final class Gui {
                 previousPage(player, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 break;
             case spawnAndFinishMenu:
-                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(name_map));
-                all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
-                previousPage(player, all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.getOrDefault(name_map, Collections.emptyList()));
+                all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(name_map, Collections.emptyList()));
+                previousPage(player, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
                 break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
                 break;
         }
+
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
@@ -633,39 +766,51 @@ public final class Gui {
         else player.getInventory().setItem(Index+items_for_page, null);
     }
 
-    private static void nextPage(final Player player, final @NotNull List<ItemStack> itemsSize, final int slotIndex ,final int items_for_page) {
-        int currentPage = playerPages.getOrDefault(player, 0);
+    private static void nextPage(final @NotNull Player player, final @NotNull List<ItemStack> itemsSize, final int slotIndex, final int items_for_page) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        int currentPage = data.getPage();
         final int maxPage = (int) Math.ceil((double) itemsSize.size() / items_for_page) - 1;
         if (currentPage < maxPage) {
             currentPage++;
-            playerPages.put(player, currentPage);
+            data.setPage(currentPage);
             showPage(player, currentPage, itemsSize, slotIndex, items_for_page);
         }
     }
 
-    private static void previousPage(final Player player, final @NotNull List<ItemStack> itemsSize, final int slotIndex ,final int items_for_page) {
-        int currentPage = playerPages.getOrDefault(player, 0);
+    private static void previousPage(final @NotNull Player player, final @NotNull List<ItemStack> itemsSize, final int slotIndex, final int items_for_page) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        int currentPage = data.getPage();
         if (currentPage > 0) {
             currentPage--;
-            playerPages.put(player, currentPage);
+            data.setPage(currentPage);
             showPage(player, currentPage, itemsSize, slotIndex, items_for_page);
         }
     }
     //----------------------------------------------------------------------------------[UPDATES]
     //----------------------------------------------------------------------------------------
 
-    public static void updateInventory(final Player player) {
-        final String menu_player = menu.getOrDefault(player, "");
+    public static void updateInventory(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
 
-        final String map_name = mapPlayer.get(player);
+        final String menu_player = data.getMenu();
+        final String map_name = data.getMapPlayer();
+        final int currentPage = data.getPage();
 
         switch (menu_player) {
             case main_Menu:
-                showPage(player, playerPages.getOrDefault(player, 0), DynamicTools.SELECTS_MAPS_ITEMS, INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
+                showPage(player, currentPage, DynamicTools.SELECTS_MAPS_ITEMS, INDEX_MAPS, ITEMS_PER_PAGE_MAPS);
                 break;
             case checkpoint_menu:
-                if (map_name != null) {
-                    showPage(player, playerPages.getOrDefault(player, 0), DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(map_name), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                if (map_name != null && !map_name.isEmpty()) {
+                    showPage(player, currentPage, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(map_name), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 }
                 break;
             case checkpoint_Menu_Edit:
@@ -675,10 +820,10 @@ public final class Gui {
                 }
                 break;
             case spawnAndFinishMenu:
-                if (map_name != null) {
-                    final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.get(map_name));
-                    all.addAll(DynamicTools.FINISH_LOCATION.get(map_name));
-                    showPage(player, playerPages.getOrDefault(player, 0), all, INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
+                if (map_name != null && !map_name.isEmpty()) {
+                    final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.getOrDefault(map_name, Collections.emptyList()));
+                    all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(map_name, Collections.emptyList()));
+                    showPage(player, currentPage, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
                 }
                 break;
             default:
@@ -687,22 +832,30 @@ public final class Gui {
         }
     }
 
-    public static void backInventory(final Player player) {
-        playerPages.put(player, 0);
-        final String name_map = mapPlayer.get(player);
-        final String menu_player = menu.getOrDefault(player, "");
+    public static void backInventory(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        data.setPage(0);
+        final String name_map = data.getMapPlayer();
+        final String menu_player = data.getMenu();
+
+        System.out.println(menu_player);
 
         switch (menu_player) {
             case checkpoint_Menu_Edit:
-                if (name_map != null) HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
                 loadMainInventory(player);
+                data.setMapPlayer(null);
                 break;
             case checkpoint_menu:
-                if (name_map != null) loadEditInventoryMap(player);
-                mapPlayer.remove(player);
+                if (name_map != null && !name_map.isEmpty()) {
+                    HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
+                    loadEditInventoryMap(player);
+                }
                 break;
             case spawnAndFinishMenu:
-                if (name_map != null){
+                if (name_map != null && !name_map.isEmpty()) {
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.SPAWN);
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.END_POINT);
                 }
@@ -712,7 +865,6 @@ public final class Gui {
                 player.sendMessage("Valor inesperado para menu_player: " + menu_player);
                 break;
         }
-        //SoundApi.playSound(player, 1.0f,  1.0f, "SHEEP_SHEAR", "BLOCK_GLASS_PLACE");
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
@@ -793,35 +945,41 @@ public final class Gui {
     //----------------------------------------------------------------------------------[EXIT]
     //----------------------------------------------------------------------------------------
 
-    public static void exitEditMode(final Player player) {
-        if (editingPlayers.containsKey(player)) {
-            final UUID uuid = player.getUniqueId();
+    public static void exitEditMode(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data != null && data.isEditing()) {
             destroyBlock(player);
-            final ItemStack[] savedInventory = playerInventories.get(player);
+
+            final ItemStack[] savedInventory = data.getPlayerInventories();
             if (savedInventory != null) player.getInventory().setContents(savedInventory);
-            playerInventories.remove(player);
-            editingPlayers.remove(player);
-            originalInventories.remove(player);
-            final String name_map = mapPlayer.get(player);
-            if (name_map != null) {
-                for (Type type : Type.values()){
+
+            DatGui.remove(uuid);
+
+            final String name_map = data.getMapPlayer();
+            if (name_map != null && !name_map.isEmpty()) {
+                for (Type type : Type.values()) {
                     HOLOGRAM_API.hideHolograms(player, name_map, type);
                 }
             }
-            mapPlayer.remove(player);
-            menu.remove(player);
+
             DynamicTools.getUniquePlayerItem().remove(player);
             InventoryCache.removeInventory(uuid);
+
             SoundApi.playSound(player, 1.0f, 1.0f, "NOTE_BASS", "BLOCK_NOTE_BLOCK_BASS");
         }
-        if (editingPlayers.isEmpty() && isActiveListener){
+
+        if (DatGui.isEmpty() && isActiveListener) {
             HandlerList.unregisterAll(GUI_LISTENER);
             if (ApiCompatibility.HAS_OFF_HAND_METHOD()) HandlerList.unregisterAll(MODERN_GUI_LISTENER);
             isActiveListener = false;
         }
     }
 
-    public static boolean isInEditMode(final Player player) {
-        return editingPlayers.getOrDefault(player, false);
+    public static boolean isInEditMode(final @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        return data != null && data.isEditing();
     }
 }

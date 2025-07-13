@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.postSign;
+package org.astral.parkour_plugin.gui.editor.postSign;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -17,7 +17,7 @@ import com.comphenix.protocol.wrappers.nbt.NbtList;
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.Kit;
-import org.astral.parkour_plugin.editor.Gui;
+import org.astral.parkour_plugin.gui.Gui;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;

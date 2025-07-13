@@ -3,8 +3,8 @@ package org.astral.parkour_plugin.views.tag_name;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
-import org.astral.parkour_plugin.editor.Gui;
-import org.astral.parkour_plugin.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.Gui;
+import org.astral.parkour_plugin.gui.editor.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.views.Type;
 import org.bukkit.Location;
@@ -45,8 +45,14 @@ public final class ArmorStandView implements ArmorStandApi {
 
                     if (entity instanceof ArmorStand) {
                         final ArmorStand armorStand = (ArmorStand) entity;
+                        final Location location = armorStand.getLocation().subtract(0.5, 0, 0.5);
+
                         if (item.isSimilar(Tools.CHECKPOINT_MARKER.getItem())) {
-                            Gui.removeCheckpoint(player, armorStand.getLocation().subtract(0.5, 0, 0.5));
+                            Gui.removeCheckpoint(player, location);
+                        } else if (item.isSimilar(Tools.MARK_SPAWN_ITEM.getItem())) {
+                            Gui.removeSpawnPoint(player, location);
+                        } else if (item.isSimilar(Tools.MARK_FINISH_ITEM.getItem())) {
+                            Gui.removeEndPoint(player, location);
                         }
                     }
                     event.setCancelled(true);
@@ -77,10 +83,11 @@ public final class ArmorStandView implements ArmorStandApi {
     }
 
     @Override
-    public void showHolograms(final Player player, final String map, final Type type) {
-        final Map<Type, Set<Player>> typeViewers = playersViewingMap.computeIfAbsent(map, k -> new HashMap<>());
-        final Set<Player> playersForType = typeViewers.computeIfAbsent(type, k -> new HashSet<>());
-        playersForType.add(player);
+    public void showHolograms(final @NotNull Player player, final String map, final Type type) {
+        final UUID uuid = player.getUniqueId();
+        final Map<Type, Set<UUID>> typeViewers = playersViewingMap.computeIfAbsent(map, k -> new HashMap<>());
+        final Set<UUID> uuidsForType = typeViewers.computeIfAbsent(type, k -> new HashSet<>());
+        uuidsForType.add(uuid);
         addingHolograms(map, type);
     }
 
@@ -106,10 +113,10 @@ public final class ArmorStandView implements ArmorStandApi {
             case SPAWN:
             case END_POINT:
                 final Rules rules = new Rules(map);
-                final String[] keys = (type == Type.SPAWN) ? rules.getSpawnKeys() : rules.getEndKeys();
-
+                final boolean isSpawn = type == Type.SPAWN;
+                final String[] keys = isSpawn ? rules.getSpawnKeys() : rules.getEndKeys();
                 for (final String key : keys) {
-                    final Location location = rules.getSpawnLocationFromKey(key);
+                    final Location location = isSpawn? rules.getSpawnLocationFromKey(key) : rules.getEndPointLocationFromKey(key);
                     if (location != null) {
                         addHologram(map, key, location, type);
                     }
@@ -120,13 +127,14 @@ public final class ArmorStandView implements ArmorStandApi {
 
 
     @Override
-    public void hideHolograms(final Player player, final String map, final Type type) {
-        final Map<Type, Set<Player>> typeViewers = playersViewingMap.get(map);
+    public void hideHolograms(final @NotNull Player player, final String map, final Type type) {
+        final UUID uuid = player.getUniqueId();
+        final Map<Type, Set<UUID>> typeViewers = playersViewingMap.get(map);
         if (typeViewers != null) {
-            final Set<Player> playersForType = typeViewers.get(type);
-            if (playersForType != null) {
-                playersForType.remove(player);
-                if (playersForType.isEmpty()) {
+            final Set<UUID> uuidsForType = typeViewers.get(type);
+            if (uuidsForType != null) {
+                uuidsForType.remove(uuid);
+                if (uuidsForType.isEmpty()) {
                     removeAllHolograms(map, type);
                     typeViewers.remove(type);
                 }
@@ -135,6 +143,7 @@ public final class ArmorStandView implements ArmorStandApi {
                 playersViewingMap.remove(map);
             }
         }
+
         registerOrUnregisterListener();
     }
 

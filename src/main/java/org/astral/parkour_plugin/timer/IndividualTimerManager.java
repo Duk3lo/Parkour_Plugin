@@ -1,6 +1,5 @@
 package org.astral.parkour_plugin.timer;
 
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,37 +11,37 @@ public final class IndividualTimerManager {
 
     private static final Map<UUID, TimerData> timerDataMap = new HashMap<>();
 
-    public static void start(@NotNull Player player, boolean countdownMode, int timeLimitSeconds) {
+    public static void start(UUID uuid, boolean countdownMode, int timeLimitSeconds) {
         Timer timer = new Timer(countdownMode, timeLimitSeconds, 0L);
-        timerDataMap.put(player.getUniqueId(), new TimerData(timer, 0L));
+        timerDataMap.put(uuid, new TimerData(timer, 0L));
     }
 
-    public static void pause(@NotNull Player player) {
-        TimerData data = timerDataMap.get(player.getUniqueId());
+    public static void pause(UUID uuid) {
+        TimerData data = timerDataMap.get(uuid);
         if (data == null) return;
         long elapsed = data.getTimer().getElapsedMillis();
-        timerDataMap.put(player.getUniqueId(), new TimerData(data.getTimer(), elapsed));
+        timerDataMap.put(uuid, new TimerData(data.getTimer(), elapsed));
     }
 
-    public static void resume(@NotNull Player player, boolean countdownMode, int timeLimitSeconds) {
-        TimerData data = timerDataMap.get(player.getUniqueId());
+    public static void resume(UUID uuid, boolean countdownMode, int timeLimitSeconds) {
+        TimerData data = timerDataMap.get(uuid);
         if (data == null) return;
         long elapsed = data.getElapsedMillis();
         Timer resumedTimer = new Timer(countdownMode, timeLimitSeconds, elapsed);
-        timerDataMap.put(player.getUniqueId(), new TimerData(resumedTimer, elapsed));
+        timerDataMap.put(uuid, new TimerData(resumedTimer, elapsed));
     }
 
-    public static void stop(@NotNull Player player) {
-        timerDataMap.remove(player.getUniqueId());
+    public static void stop(@NotNull UUID uuid) {
+        timerDataMap.remove(uuid);
     }
 
-    public static @Nullable Timer get(@NotNull Player player) {
-        TimerData data = timerDataMap.get(player.getUniqueId());
+    public static @Nullable Timer get(@NotNull UUID uuid) {
+        TimerData data = timerDataMap.get(uuid);
         return data != null ? data.getTimer() : null;
     }
 
-    public static boolean isRunning(@NotNull Player player) {
-        return timerDataMap.containsKey(player.getUniqueId());
+    public static boolean isRunning(@NotNull UUID uuid) {
+        return timerDataMap.containsKey(uuid);
     }
 
     private static class TimerData {

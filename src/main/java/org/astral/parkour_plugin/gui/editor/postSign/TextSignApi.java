@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.postSign;
+package org.astral.parkour_plugin.gui.editor.postSign;
 
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.bukkit.entity.Player;

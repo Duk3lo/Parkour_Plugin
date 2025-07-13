@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.editor.tools;
+package org.astral.parkour_plugin.gui.editor.tools;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
@@ -7,7 +7,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,22 +14,20 @@ import java.util.Collections;
 
 public enum BooleanTools {
 
-    DESTROY_BLOCKS_EDIT_MODE(Config.romperBloques, Config.getBreakBlocksEditMode(), 0, 0),
-    COPY_BLOCKS_EDIT_MODE(Config.copiarBloque, Config.getCopyBlocks(), 0, 0),
-    SET_FLOATING_BLOCKS(Config.bloquesFlotantes, Config.getFloatingBlocks(), 0, 0),
+    DESTROY_BLOCKS_EDIT_MODE(Config.romperBloques, Config.getBreakBlocksEditMode(), 0),
+    COPY_BLOCKS_EDIT_MODE(Config.copiarBloque, Config.getCopyBlocks(), 0),
+    SET_FLOATING_BLOCKS(Config.bloquesFlotantes, Config.getFloatingBlocks(), 0),
 
     ;
 
     private final String name;
     private boolean active;
     private int slot;
-    private int page;
 
-    BooleanTools(final String name, boolean active, int slot, int page){
+    BooleanTools(final String name, boolean active, int slot){
         this.name = name;
         this.active = active;
         this.slot = slot;
-        this.page = page;
     }
 
     public void setSlot(final int slot) {
@@ -40,8 +37,6 @@ public enum BooleanTools {
         return this.slot;
     }
 
-    public void setPage(final int page) {this.page = page;}
-    public int getPage(){ return this.page; }
 
     public @NotNull ItemStack getItem() {
         return getItem(MaterialApi.getMaterial("WOOL", "GREEN_WOOL"), MaterialApi.getMaterial("WOOL", "RED_WOOL"));
@@ -71,10 +66,6 @@ public enum BooleanTools {
             result.setItemMeta(meta);
         }
         return result;
-    }
-
-    public void setItemSlot(final @NotNull PlayerInventory playerInventory){
-        playerInventory.setItem(this.slot, this.getItem());
     }
 
     public void setItemSlot(final @NotNull Inventory inventory){
