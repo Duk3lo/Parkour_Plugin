@@ -7,10 +7,7 @@ waiting_lobby: #Only Works in Global Lobby
   max_wait_time: 10
   allow_movement: false
   display_actionbar: true
-  format:
-    - "§eEsperando jugadores. (§f{current}§e/§f{required}§e)"
-    - "§eEsperando jugadores.. (§f{current}§e/§f{required}§e)"
-    - "§eEsperando jugadores... (§f{current}§e/§f{required}§e)"
+  format: §eEsperando jugadores{dots} (§f{current}§e/§f{required}§e)
 
 timer:
   global:

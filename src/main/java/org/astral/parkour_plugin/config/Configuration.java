@@ -82,10 +82,7 @@ public final class Configuration {
                                     "  max_wait_time: 10\n" +
                                     "  allow_movement: false\n" +
                                     "  display_actionbar: true\n" +
-                                    "  format:\n" +
-                                    "    - \"§eEsperando jugadores. (§f{current}§e/§f{required}§e)\"\n" +
-                                    "    - \"§eEsperando jugadores.. (§f{current}§e/§f{required}§e)\"\n" +
-                                    "    - \"§eEsperando jugadores... (§f{current}§e/§f{required}§e)\"\n" +
+                                    "  format: \"§eEsperando jugadores{dots} (§f{current}§e/§f{required}§e)\"\n" +
                                     "\n" +
                                     "timer:\n" +
                                     "  global:\n" +
