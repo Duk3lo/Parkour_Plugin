@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.config.cache;
 
 import com.google.gson.*;
+import org.astral.parkour_plugin.config.Config;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
 import org.bukkit.Location;
@@ -17,14 +18,19 @@ public final class BlockCache {
     private static final File jsonFile = new File(Configuration.FOLDER_PLUGIN, Configuration.CACHE + File.separator + CacheType.Block.name() + Configuration.JSON);
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, Map<Material[], Location>> mapCacheBlocks = new HashMap<>();
+    private static final boolean DEBUG_LOGS = Config.isDebugMode();
 
     private static void ensureDirectoryExists() {
         File parentDir = jsonFile.getParentFile();
         if (!parentDir.exists()) {
             if (parentDir.mkdirs()) {
-                plugin.getLogger().info("Se creó la carpeta: " + parentDir.getPath());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().info("Se creó la carpeta: " + parentDir.getPath());
+                }
             } else {
-                plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
+                }
             }
         }
     }
@@ -50,14 +56,22 @@ public final class BlockCache {
                     blockData.put(new Material[]{material1, material2}, location);
                     mapCacheBlocks.put(uuid, blockData);
                 }
-                plugin.getLogger().info("Block cache initialized from JSON.");
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().info("Block cache initialized from JSON.");
+                }
             } catch (IOException e) {
-                plugin.getLogger().severe("Error initializing block cache: " + e.getMessage());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().severe("Error initializing block cache: " + e.getMessage());
+                }
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().severe("Error parsing material or location: " + e.getMessage());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().severe("Error parsing material or location: " + e.getMessage());
+                }
             }
         } else {
-            plugin.getLogger().info("No cache file found. Starting with empty block cache.");
+            if (DEBUG_LOGS) {
+                plugin.getLogger().info("No cache file found. Starting with empty block cache.");
+            }
         }
     }
 
@@ -78,7 +92,9 @@ public final class BlockCache {
             try (Reader reader = new FileReader(jsonFile)) {
                 jsonArray = gson.fromJson(reader, JsonArray.class);
             } catch (IOException e) {
-                plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                }
             }
         }
 
@@ -122,7 +138,9 @@ public final class BlockCache {
             try (Reader reader = new FileReader(jsonFile)) {
                 jsonArray = gson.fromJson(reader, JsonArray.class);
             } catch (IOException e) {
-                plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                if (DEBUG_LOGS) {
+                    plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                }
                 return;
             }
 
@@ -136,9 +154,13 @@ public final class BlockCache {
 
             if (updatedJsonArray.size() == 0) {
                 if (jsonFile.delete()) {
-                    plugin.getLogger().info("JSON file deleted as it became empty.");
+                    if (DEBUG_LOGS) {
+                        plugin.getLogger().info("JSON file deleted as it became empty.");
+                    }
                 } else {
-                    plugin.getLogger().severe("Failed to delete the empty JSON file.");
+                    if (DEBUG_LOGS) {
+                        plugin.getLogger().severe("Failed to delete the empty JSON file.");
+                    }
                 }
             } else {
                 saveToFile(updatedJsonArray);
@@ -154,7 +176,9 @@ public final class BlockCache {
         try (Writer writer = new FileWriter(jsonFile)) {
             gson.toJson(jsonArray, writer);
         } catch (IOException e) {
-            plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
+            if (DEBUG_LOGS) {
+                plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
+            }
         }
     }
 }

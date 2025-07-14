@@ -19,13 +19,18 @@ public final class Config {
     // Configuration
     private static final YamlConfiguration yamlConfiguration;
 
+    //GENERAL SETTINGS
+
+    //Paths
+    public final static String modeDebug = "DEBUG_MODE";
+
+
     //EDIT MODE
     //Names
     public final static String romperBloques = "Destruir Bloques";
     public final static String copiarBloque = "Copiar Bloque (slots vacios)";
     public static final String bloquesFlotantes = "Bloques Flotantes al Interactuar";
     public static final String distaciaBloqueAire = "Distancia del bloque";
-
 
     //Paths
     private final static String base = "EDIT_MODE.";
@@ -66,13 +71,14 @@ public final class Config {
         saveConfiguration();
     }
 
-    public static void setCommands(final boolean b){
-        yamlConfiguration.set(commands, b);
-        saveConfiguration();
-    }
-
 
     //--------------------------------------------------------Getters
+    //--------------------------------------------------------General
+    public static boolean isDebugMode(){
+        return yamlConfiguration.getBoolean(modeDebug, false);
+    }
+
+    //--------------------------------------------------------Edit_Mode
     public static boolean getBreakBlocksEditMode(){
         return yamlConfiguration.getBoolean(break_blocks, false);
     }

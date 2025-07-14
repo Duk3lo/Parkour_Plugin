@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.config.cache;
 
 import com.google.gson.*;
+import org.astral.parkour_plugin.config.Config;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
 import org.bukkit.inventory.ItemStack;
@@ -20,6 +21,7 @@ public final class InventoryCache {
             Configuration.CACHE + File.separator + CacheType.Inventory.name() + Configuration.JSON);
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<UUID, ItemStack[]> playerInventories = new HashMap<>();
+    private static final boolean DEBUG_LOGS = Config.isDebugMode();
 
     static {
         ensureDirectoryExists();
@@ -29,7 +31,7 @@ public final class InventoryCache {
     private static void ensureDirectoryExists() {
         File parentDir = jsonFile.getParentFile();
         if (!parentDir.exists() && !parentDir.mkdirs()) {
-            plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
+            if (DEBUG_LOGS) plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
         }
     }
 
@@ -44,9 +46,9 @@ public final class InventoryCache {
                 ItemStack[] items = deserializeItems(obj.get("items").getAsString());
                 playerInventories.put(uuid, items);
             }
-            plugin.getLogger().info("Inventarios cargados: " + playerInventories.size());
+            if (DEBUG_LOGS) plugin.getLogger().info("Inventarios cargados: " + playerInventories.size());
         } catch (Exception e) {
-            plugin.getLogger().severe("Error al cargar cache: " + e.getMessage());
+            if (DEBUG_LOGS) plugin.getLogger().severe("Error al cargar cache: " + e.getMessage());
         }
     }
 
@@ -102,7 +104,7 @@ public final class InventoryCache {
         // Si no hay inventarios guardados, eliminar el archivo
         if (playerInventories.isEmpty()) {
             if (jsonFile.exists() && !jsonFile.delete()) {
-                plugin.getLogger().warning("No se pudo eliminar el archivo de cache vacío");
+                if (DEBUG_LOGS) plugin.getLogger().warning("No se pudo eliminar el archivo de cache vacío");
             }
             return;
         }
@@ -116,14 +118,14 @@ public final class InventoryCache {
                 entry.addProperty("items", serializeItems(items));
                 jsonArray.add(entry);
             } catch (IOException e) {
-                plugin.getLogger().warning("Error al serializar items de " + uuid);
+                if (DEBUG_LOGS) plugin.getLogger().warning("Error al serializar items de " + uuid);
             }
         });
 
         try (Writer writer = new FileWriter(jsonFile)) {
             gson.toJson(jsonArray, writer);
         } catch (IOException e) {
-            plugin.getLogger().severe("Error al guardar cache: " + e.getMessage());
+            if (DEBUG_LOGS) plugin.getLogger().severe("Error al guardar cache: " + e.getMessage());
         }
     }
 }

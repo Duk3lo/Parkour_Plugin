@@ -61,8 +61,8 @@ public final class Gui {
     public static final Map<Player, Block> tempBlock = new HashMap<>();
 
     private static final String main_Menu = "Main_Menu";
+    private static final String menuOfMap = "Menu_Of_Map";
     private static final String checkpoint_menu = "Checkpoint_Menu";
-    private static final String checkpoint_Menu_Edit = "Checkpoint_Menu_Edit";
     private static final String spawnAndFinishMenu = "Spawn_End_Menu";
 
     private static final Map<UUID, PlayerDataGui> DatGui = new HashMap<>();
@@ -135,9 +135,6 @@ public final class Gui {
         all.addAll(DynamicTools.FINISH_LOCATION.get(name_map));
 
         showPage(player, 0, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
-
-        HOLOGRAM_API.showHolograms(player, name_map, Type.SPAWN);
-        HOLOGRAM_API.showHolograms(player, name_map, Type.END_POINT);
     }
 
     //----------------------------------------------------------------------------[CHECKPOINT]
@@ -161,7 +158,7 @@ public final class Gui {
         player.getInventory().setItem(8, Tools.BACK_ITEM.getItem());
         player.getInventory().setItem(35, Tools.REMOVE_MAP.getItem());
 
-        HOLOGRAM_API.showHolograms(player, name_map, Type.CHECKPOINT);
+
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
@@ -500,7 +497,7 @@ public final class Gui {
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
 
-        data.setMenu(checkpoint_Menu_Edit);
+        data.setMenu(menuOfMap);
         final String name_map = data.getMapPlayer();
 
         DynamicTools.loadCheckpointsItems(name_map);
@@ -519,7 +516,9 @@ public final class Gui {
         if (BooleanTools.SET_FLOATING_BLOCKS.getToggle()) {
             StateTools.DISTANCE_BLOCK.setItemSlot(player.getInventory());
         }
-
+        for (Type type : Type.values()) {
+            HOLOGRAM_API.showHolograms(player, name_map, type);
+        }
         SoundApi.playSound(player, 1.0f, 1.0f, "LEVEL_UP", "ENTITY_PLAYER_LEVELUP");
     }
 
@@ -530,7 +529,7 @@ public final class Gui {
             final UUID uuid = entry.getKey();
             final PlayerDataGui data = entry.getValue();
 
-            if (checkpoint_Menu_Edit.equals(data.getMenu())) {
+            if (menuOfMap.equals(data.getMenu())) {
                 Player player = Bukkit.getPlayer(uuid);
                 if (player == null) continue;
 
@@ -550,7 +549,7 @@ public final class Gui {
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
             final String name_inventory = data.getMenu();
-            if (checkpoint_Menu_Edit.equals(name_inventory)) {
+            if (menuOfMap.equals(name_inventory)) {
                 booleanTools.setItemSlot(menuOptions);
                 if (BooleanTools.SET_FLOATING_BLOCKS.getToggle()) {
                     StateTools.DISTANCE_BLOCK.setItemSlot(player.getInventory());
@@ -813,7 +812,7 @@ public final class Gui {
                     showPage(player, currentPage, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(map_name), INDEX_CHECKPOINT, ITEMS_PER_PAGE_CHECKPOINT);
                 }
                 break;
-            case checkpoint_Menu_Edit:
+            case menuOfMap:
                 final String inventory = player.getOpenInventory().getTitle();
                 if (inventory.equals(order)) {
                     player.closeInventory();
@@ -841,24 +840,18 @@ public final class Gui {
         final String name_map = data.getMapPlayer();
         final String menu_player = data.getMenu();
 
-        System.out.println(menu_player);
-
         switch (menu_player) {
-            case checkpoint_Menu_Edit:
+            case menuOfMap:
                 loadMainInventory(player);
                 data.setMapPlayer(null);
-                break;
-            case checkpoint_menu:
                 if (name_map != null && !name_map.isEmpty()) {
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);
-                    loadEditInventoryMap(player);
-                }
-                break;
-            case spawnAndFinishMenu:
-                if (name_map != null && !name_map.isEmpty()) {
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.SPAWN);
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.END_POINT);
                 }
+                break;
+            case checkpoint_menu:
+            case spawnAndFinishMenu:
                 loadEditInventoryMap(player);
                 break;
             default:

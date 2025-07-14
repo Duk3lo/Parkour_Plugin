@@ -24,13 +24,13 @@ public final class Main extends JavaPlugin {
         //Plugin
         instance = this;
 
-        //Cache
-        Utils.loadCacheAndClear(instance);
-
         //Instances
         configuration = new Configuration();
         generator = new Generator();
         armorStandApi = ArmorStandApi._view(instance);
+
+        //Cache
+        Utils.loadCacheAndClear(instance);
 
         //Commands
         final PluginCommand command = instance.getCommand("parkour");
@@ -48,7 +48,5 @@ public final class Main extends JavaPlugin {
     public Configuration getConfiguration(){ return configuration; }
     public Generator getGenerator(){ return generator; }
     public ArmorStandApi getArmorStandApi(){ return armorStandApi; }
-
-
 
 }

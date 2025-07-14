@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.config.cache;
 
 import com.google.gson.*;
+import org.astral.parkour_plugin.config.Config;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
 import org.bukkit.entity.Entity;
@@ -15,14 +16,15 @@ public final class EntityCache {
     private static final File jsonFile = new File(Configuration.FOLDER_PLUGIN, Configuration.CACHE + File.separator + CacheType.Entity.name() + Configuration.JSON);
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<EntityType, List<UUID>> mapCacheEntity = new HashMap<>();
+    private static final boolean DEBUG_LOGS = Config.isDebugMode();
 
     private static void ensureDirectoryExists() {
         File parentDir = jsonFile.getParentFile();
         if (!parentDir.exists()) {
             if (parentDir.mkdirs()) {
-                plugin.getLogger().info("Se creó la carpeta: " + parentDir.getPath());
+                if (DEBUG_LOGS) plugin.getLogger().info("Se creó la carpeta: " + parentDir.getPath());
             } else {
-                plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
+                if (DEBUG_LOGS) plugin.getLogger().severe("No se pudo crear la carpeta: " + parentDir.getPath());
             }
         }
     }
@@ -42,17 +44,17 @@ public final class EntityCache {
                         }
                         mapCacheEntity.put(entityType, uuids);
                     }
-                    plugin.getLogger().info("Entity cache initialized from JSON.");
+                    if (DEBUG_LOGS) plugin.getLogger().info("Entity cache initialized from JSON.");
                 } else {
-                    plugin.getLogger().info("JSON file is empty or invalid. Starting with empty entity cache.");
+                    if (DEBUG_LOGS) plugin.getLogger().info("JSON file is empty or invalid. Starting with empty entity cache.");
                 }
             } catch (IOException e) {
-                plugin.getLogger().severe("Error initializing entity cache: " + e.getMessage());
+                if (DEBUG_LOGS) plugin.getLogger().severe("Error initializing entity cache: " + e.getMessage());
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().severe("Error parsing entity type or UUID: " + e.getMessage());
+                if (DEBUG_LOGS) plugin.getLogger().severe("Error parsing entity type or UUID: " + e.getMessage());
             }
         } else {
-            plugin.getLogger().info("No cache file found. Starting with empty entity cache.");
+            if (DEBUG_LOGS) plugin.getLogger().info("No cache file found. Starting with empty entity cache.");
         }
     }
 
@@ -63,14 +65,15 @@ public final class EntityCache {
         saveToFile();
     }
 
+    /**
     public static void removeEntityTypeFromCache(final @NotNull EntityType entityType) {
         if (!mapCacheEntity.containsKey(entityType)) {
-            plugin.getLogger().info("EntityType " + entityType + " not found in cache.");
+            if (DEBUG_LOGS) plugin.getLogger().info("EntityType " + entityType + " not found in cache.");
             return;
         }
 
         mapCacheEntity.remove(entityType);
-        plugin.getLogger().info("EntityType " + entityType + " removed from cache.");
+        if (DEBUG_LOGS) plugin.getLogger().info("EntityType " + entityType + " removed from cache.");
 
         saveToFile();
         if (jsonFile.exists()) {
@@ -78,32 +81,33 @@ public final class EntityCache {
             try (Reader reader = new FileReader(jsonFile)) {
                 jsonObject = gson.fromJson(reader, JsonObject.class);
             } catch (IOException e) {
-                plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                if (DEBUG_LOGS) plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
                 return;
             }
 
             if (jsonObject == null || jsonObject.entrySet().isEmpty()) {
                 if (jsonFile.delete()) {
-                    plugin.getLogger().info("JSON file deleted as it became empty.");
+                    if (DEBUG_LOGS) plugin.getLogger().info("JSON file deleted as it became empty.");
                 } else {
-                    plugin.getLogger().severe("Failed to delete the empty JSON file.");
+                    if (DEBUG_LOGS) plugin.getLogger().severe("Failed to delete the empty JSON file.");
                 }
             }
         }
     }
+    **/
 
     public static void removeEntityFromCache(final @NotNull Entity entity) {
         EntityType entityType = entity.getType();
         UUID uuid = entity.getUniqueId();
         if (!mapCacheEntity.containsKey(entityType)) {
-            plugin.getLogger().info("EntityType " + entityType + " not found in cache.");
+            if (DEBUG_LOGS) plugin.getLogger().info("EntityType " + entityType + " not found in cache.");
             return;
         }
         final List<UUID> uuids = mapCacheEntity.get(entityType);
 
         boolean removed = uuids.remove(uuid);
         if (!removed) {
-            plugin.getLogger().info("UUID " + uuid + " not found for EntityType " + entityType + ".");
+            if (DEBUG_LOGS) plugin.getLogger().info("UUID " + uuid + " not found for EntityType " + entityType + ".");
             return;
         }
         if (uuids.isEmpty()) {
@@ -114,7 +118,7 @@ public final class EntityCache {
             try (Reader reader = new FileReader(jsonFile)) {
                 jsonObject = gson.fromJson(reader, JsonObject.class);
             } catch (IOException e) {
-                plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
+                if (DEBUG_LOGS) plugin.getLogger().severe("Error reading JSON file: " + e.getMessage());
                 return;
             }
 
@@ -137,19 +141,19 @@ public final class EntityCache {
 
                 if (jsonObject.entrySet().size() == 0) { // Workaround for isEmpty()
                     if (jsonFile.delete()) {
-                        plugin.getLogger().info("JSON file deleted as it became empty.");
+                        if (DEBUG_LOGS) plugin.getLogger().info("JSON file deleted as it became empty.");
                     } else {
-                        plugin.getLogger().severe("Failed to delete the empty JSON file.");
+                        if (DEBUG_LOGS) plugin.getLogger().severe("Failed to delete the empty JSON file.");
                     }
                 } else {
                     try (Writer writer = new FileWriter(jsonFile)) {
                         gson.toJson(jsonObject, writer);
                     } catch (IOException e) {
-                        plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
+                        if (DEBUG_LOGS) plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
                     }
                 }
             } else {
-                plugin.getLogger().info("JSON file is empty or invalid. Skipping update.");
+                if (DEBUG_LOGS) plugin.getLogger().info("JSON file is empty or invalid. Skipping update.");
             }
         }
     }
@@ -171,7 +175,7 @@ public final class EntityCache {
         try (Writer writer = new FileWriter(jsonFile)) {
             gson.toJson(jsonObject, writer);
         } catch (IOException e) {
-            plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
+            if (DEBUG_LOGS) plugin.getLogger().severe("Error saving JSON file: " + e.getMessage());
         }
     }
 }

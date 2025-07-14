@@ -72,28 +72,72 @@ public final class Configuration {
             if (!rulesFile.exists()) {
                 if (rulesFile.createNewFile()) {
                     plugin.getLogger().info("Created file: " + rulesFile.getAbsolutePath());
-                    String defaultRules = "title:\n" +
-                            "  main: \"§a¡Parkour iniciado!\"\n" +
-                            "  subtitle: \"§fMapa: §b" + mapFolder + "\"\n" +
-                            "  fadeIn: 10\n" +
-                            "  stay: 40\n" +
-                            "  fadeOut: 10\n" +
-                            "\n" +
-                            "messages:\n" +
-                            "  start: \"§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!\"\n" +
-                            "  end: \"§e¡{player} ha completado el parkour! Tiempo: §f{time}s\"\n" +
-                            "  checkpoint: \"§6{player}, has alcanzado un punto de control.\"\n" +
-                            "  fall: \"\"\n" +
-                            "\n" +
-                            "min_y_overworld: 5.0\n" +
-                            "max_y_overworld: 250.0\n" +
-                            "min_y_nether: 10.0\n" +
-                            "max_y_nether: 120.0\n" +
-                            "min_y_end: 0.0\n" +
-                            "max_y_end: 200.0\n" +
-                            "\n" +
-                            "spawns_points: []\n" +
-                            "end_points: []\n";
+                    String defaultRules =
+                            "auto_reconnect: true\n" +
+                                    "\n" +
+                                    "waiting_lobby: #Only Works in Global Lobby\n" +
+                                    "  enabled: true\n" +
+                                    "  require_min_players: true\n" +
+                                    "  min_players: 2\n" +
+                                    "  max_wait_time: 10\n" +
+                                    "  allow_movement: false\n" +
+                                    "  display_actionbar: true\n" +
+                                    "  format:\n" +
+                                    "    - \"§eEsperando jugadores. (§f{current}§e/§f{required}§e)\"\n" +
+                                    "    - \"§eEsperando jugadores.. (§f{current}§e/§f{required}§e)\"\n" +
+                                    "    - \"§eEsperando jugadores... (§f{current}§e/§f{required}§e)\"\n" +
+                                    "\n" +
+                                    "timer:\n" +
+                                    "  global:\n" +
+                                    "    enabled: true\n" +
+                                    "    display_actionbar: true\n" +
+                                    "    format: \"{minutes}:{seconds}:{millis}\"\n" +
+                                    "    countdown: false\n" +
+                                    "    time_limit: 60 # (Cuenta regresiva desde 60 segundos) (-1 desactivado)\n" +
+                                    "  individual:\n" +
+                                    "    enabled: true\n" +
+                                    "    display_actionbar: true\n" +
+                                    "    format: \"{minutes}:{seconds}:{millis}\"\n" +
+                                    "    countdown: false\n" +
+                                    "    time_limit: 60 # (Cuenta regresiva desde 60 segundos) (-1 desactivado)\n" +
+                                    "\n" +
+                                    "title:\n" +
+                                    "  common:\n" +
+                                    "    start:\n" +
+                                    "      title: \"§a¡Parkour iniciado!\"\n" +
+                                    "      subtitle: \"§fMapa: §b" + mapFolder + "\"\n" +
+                                    "      fadeIn: 10\n" +
+                                    "      stay: 40\n" +
+                                    "      fadeOut: 10\n" +
+                                    "  animated:\n" +
+                                    "    star_countdown:\n" +
+                                    "      update-delay_seconds: 1\n" +
+                                    "      texts:\n" +
+                                    "        - title: \"§aComenzando en §f3\"\n" +
+                                    "          subtitle: \"§7Prepárate\"\n" +
+                                    "        - title: \"§aComenzando en §f2\"\n" +
+                                    "          subtitle: \"§7Prepárate\"\n" +
+                                    "        - title: \"§aComenzando en §f1\"\n" +
+                                    "          subtitle: \"§7Prepárate\"\n" +
+                                    "        - title: \"§aCorre\"\n" +
+                                    "\n" +
+                                    "messages:\n" +
+                                    "  start: \"§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!\"\n" +
+                                    "  end: \"§e¡{player} ha completado el parkour! Tiempo: §f{time}s\"\n" +
+                                    "  checkpoint: \"§6{player}, has alcanzado un punto de control.\"\n" +
+                                    "  fall: \"\"\n" +
+                                    "\n" +
+                                    "min_y_overworld: 5.0\n" +
+                                    "max_y_overworld: 250.0\n" +
+                                    "min_y_nether: 10.0\n" +
+                                    "max_y_nether: 120.0\n" +
+                                    "min_y_end: 0.0\n" +
+                                    "max_y_end: 200.0\n" +
+                                    "\n" +
+                                    "spawns_points:\n" +
+                                    "  []\n" +
+                                    "end_points:\n" +
+                                    "  []\n";
                     try (BufferedWriter writer = new BufferedWriter(new FileWriter(rulesFile))) {
                         writer.write(defaultRules);
                     } catch (IOException e) {
