@@ -6,6 +6,7 @@ public final class AnimatedRichText {
     private final List<RichText> frames;
     private final int updateDelaySeconds;
 
+
     public AnimatedRichText(List<RichText> frames, int updateDelaySeconds) {
         this.frames = frames;
 

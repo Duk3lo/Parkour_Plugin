@@ -44,7 +44,7 @@ public class PaperRegionScheduler implements RegionScheduler {
     @Override
     public @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Consumer<ScheduledTask> task, long delayTicks) {
         SimpleScheduledTask scheduledTask = new SimpleScheduledTask(plugin, false);
-        int taskId = Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        int taskId = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (scheduledTask.isCancelled()) {
                 return;
             }
@@ -62,7 +62,7 @@ public class PaperRegionScheduler implements RegionScheduler {
     public @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull World world, int chunkX, int chunkZ, @NotNull Consumer<ScheduledTask> task, long initialDelayTicks, long periodTicks) {
         SimpleScheduledTask scheduledTask = new SimpleScheduledTask(plugin, true);
 
-        int taskId = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+        int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (scheduledTask.isCancelled()) {
                 return;
             }

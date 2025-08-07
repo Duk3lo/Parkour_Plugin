@@ -9,10 +9,10 @@ import org.astral.parkour_plugin.config.cache.InventoryCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
-import org.astral.parkour_plugin.gui.editor.tools.BooleanTools;
-import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
-import org.astral.parkour_plugin.gui.editor.tools.StateTools;
-import org.astral.parkour_plugin.gui.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.tools.BooleanTools;
+import org.astral.parkour_plugin.gui.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.tools.StateTools;
+import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.gui.compatible.ModernGuiListener;
@@ -40,6 +40,16 @@ public final class Gui {
 
     private static final Main plugin = Main.getInstance();
 
+    private static final Map<UUID, PlayerDataGui> DatGui = new HashMap<>();
+
+    
+    public static @NotNull Set<UUID> playersInEdit(){
+        return new HashSet<>(DatGui.keySet());
+    }
+
+    //------------------------------------------------------------------------------[EDITOR SETTINGS]
+    //-----------------------------------------------------------------------------------------------
+
     //----------------------------------------------------------------------------------[Index Pages]
     //-----------------------------------------------------------------------------------------------
 
@@ -55,8 +65,7 @@ public final class Gui {
     private static final byte INDEX_SPAWN_FINISH = 3;
     private static final byte ITEMS_PER_PAGE_SPAWN_FINISH = 3;
 
-    //----------------------------------------------------------------------------[Names Inventories]
-    //-----------------------------------------------------------------------------------------------
+
     public static final String order = "Ordena Tus Checkpoints";
     public static final Map<Player, Block> tempBlock = new HashMap<>();
 
@@ -64,8 +73,6 @@ public final class Gui {
     private static final String menuOfMap = "Menu_Of_Map";
     private static final String checkpoint_menu = "Checkpoint_Menu";
     private static final String spawnAndFinishMenu = "Spawn_End_Menu";
-
-    private static final Map<UUID, PlayerDataGui> DatGui = new HashMap<>();
 
     private static final Inventory menuOptions = Bukkit.createInventory(null, 9, "Opciones");
 
@@ -76,6 +83,138 @@ public final class Gui {
     private static final ModernGuiListener MODERN_GUI_LISTENER = new ModernGuiListener();
     private static boolean isActiveListener = false;
 
+    //----------------------------------------------------------------------------[Lobby's]
+    //-------------------------------------------------------------------------------------
+    public static final String lobbyMenuSelectorGlobal = "Selector de Lobby's Globales";
+    // LOBBY'S
+    private static final byte INDEX_LOBBY = 0;
+    private static final byte ITEMS_PER_PAGE_LOBBY = 52;
+
+
+    //----------------------------------------------------------------------------[Events]
+    //------------------------------------------------------------------------------------
+    private static void registerOrUnregisterEvents(){
+        if (!DatGui.isEmpty() && !isActiveListener) {
+            plugin.getServer().getPluginManager().registerEvents(GUI_LISTENER, plugin);
+            if (ApiCompatibility.HAS_OFF_HAND_METHOD()) {
+                plugin.getServer().getPluginManager().registerEvents(MODERN_GUI_LISTENER, plugin);
+            }
+            isActiveListener = true;
+        }
+    }
+
+    //----------------------------------------------------------------------[SELECTOR LOBBY'S]
+    //----------------------------------------------------------------------------------------
+
+    public static void loadInventorySelectorGlobal(@NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        exitGui(Bukkit.getPlayer(uuid));
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        registerOrUnregisterEvents();
+        DynamicTools.refreshLobbyItems();
+        Inventory personalInventory = Bukkit.createInventory(player, 54, lobbyMenuSelectorGlobal);
+        List<ItemStack> items = new ArrayList<>(DynamicTools.LOBBY_STATE.values());
+        int initialPage = 0;
+        data.setPage(initialPage);
+        showPage(personalInventory, initialPage, items);
+        data.setMenu(lobbyMenuSelectorGlobal);
+        player.openInventory(personalInventory);
+    }
+
+    public static void closeInventoryGlobal(final @NotNull Player player){
+        final UUID uuid = player.getUniqueId();
+        DatGui.remove(uuid);
+        registerOrUnregisterEvents();
+    }
+
+    public static String getMenu(final @NotNull Player player){
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        return data.getMenu();
+    }
+
+    private static void showPage(@NotNull Inventory inventory, final int page, @NotNull final List<ItemStack> items) {
+        for (int i = Gui.INDEX_LOBBY; i < (int) Gui.INDEX_LOBBY + (int) Gui.ITEMS_PER_PAGE_LOBBY; i++) {
+            inventory.setItem(i, null);
+        }
+        int slotIndex = Gui.INDEX_LOBBY;
+        int startIndex = page * (int) Gui.ITEMS_PER_PAGE_LOBBY;
+        int endIndex = Math.min(startIndex + (int) Gui.ITEMS_PER_PAGE_LOBBY, items.size());
+        for (int i = startIndex; i < endIndex; i++) {
+            inventory.setItem(slotIndex, items.get(i));
+            slotIndex++;
+        }
+        int previousSlot = 52;
+        int nextSlot = 53;
+        if (page > 0) inventory.setItem(previousSlot, Tools.PREVIOUS_PAGE_ITEM.getItem());
+        else inventory.setItem(previousSlot, null);
+
+        if (endIndex < items.size()) inventory.setItem(nextSlot, Tools.NEXT_PAGE_ITEM.getItem());
+        else inventory.setItem(nextSlot, null);
+    }
+
+    private static void nextInventoryPage(@NotNull Player player, @NotNull List<ItemStack> items) {
+        UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        int currentPage = data.getPage();
+        int maxPage = (int) Math.ceil((double) items.size() / (int) Gui.ITEMS_PER_PAGE_LOBBY) - 1;
+
+        if (currentPage < maxPage) {
+            currentPage++;
+            data.setPage(currentPage);
+
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            showPage(inventory, currentPage, items);
+        }
+    }
+
+    private static void previousInventoryPage(@NotNull Player player, @NotNull List<ItemStack> items) {
+        UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.get(uuid);
+        if (data == null) return;
+
+        int currentPage = data.getPage();
+        if (currentPage > 0) {
+            currentPage--;
+            data.setPage(currentPage);
+
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            showPage(inventory, currentPage, items);
+        }
+    }
+
+    public static void updateItemInLobbyInventories(String mapName) {
+        if (DatGui.isEmpty())return;
+        ItemStack updatedItem = DynamicTools.createItemLobbyGlobal(mapName);
+        for (Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
+            UUID uuid = entry.getKey();
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !player.isOnline()) continue;
+            PlayerDataGui data = entry.getValue();
+            if (!lobbyMenuSelectorGlobal.equals(data.getMenu())) continue;
+
+            int currentPage = data.getPage();
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            List<ItemStack> allItems = new ArrayList<>(DynamicTools.LOBBY_STATE.values());
+
+            int start = currentPage * ITEMS_PER_PAGE_LOBBY;
+            int end = Math.min(start + ITEMS_PER_PAGE_LOBBY, allItems.size());
+
+            for (int i = start, slot = INDEX_LOBBY; i < end; i++, slot++) {
+                ItemStack item = allItems.get(i);
+                String itemName = DynamicTools.getName(item);
+                if (itemName != null && itemName.equalsIgnoreCase(mapName)) {
+                    inventory.setItem(slot, updatedItem);
+                    break;
+                }
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------------[EDITOR]
+    //----------------------------------------------------------------------------------------
     public static void enterEditMode(final @NotNull Player player) {
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
@@ -89,13 +228,7 @@ public final class Gui {
             SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP", "ENTITY_EXPERIENCE_ORB_PICKUP");
         }
 
-        if (!DatGui.isEmpty() && !isActiveListener) {
-            plugin.getServer().getPluginManager().registerEvents(GUI_LISTENER, plugin);
-            if (ApiCompatibility.HAS_OFF_HAND_METHOD()) {
-                plugin.getServer().getPluginManager().registerEvents(MODERN_GUI_LISTENER, plugin);
-            }
-            isActiveListener = true;
-        }
+        registerOrUnregisterEvents();
     }
 
     public static void loadMainInventory(final @NotNull Player player) {
@@ -314,14 +447,18 @@ public final class Gui {
     public static void refreshAllMaps() {
         Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.refreshMaps();
+            DynamicTools.refreshLobbyItems(); // Refresca también los ítems del lobby global
+
             for (final Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
                 final UUID uuid = entry.getKey();
                 final PlayerDataGui data = entry.getValue();
-                if (main_Menu.equals(data.getMenu())) {
-                    Player player = Bukkit.getPlayer(uuid);
-                    if (player != null) {
-                        updateInventory(player);
-                    }
+                Player player = Bukkit.getPlayer(uuid);
+                if (player == null) continue;
+
+                final String menu = data.getMenu();
+
+                if (main_Menu.equals(menu) || lobbyMenuSelectorGlobal.equals(menu)) {
+                    updateInventory(player);
                 }
             }
         });
@@ -330,12 +467,17 @@ public final class Gui {
     private static void removeMaps(final String name_map) {
         Kit.getAsyncScheduler().runNow(plugin, t -> {
             DynamicTools.refreshMaps();
+            DynamicTools.refreshLobbyItems();
             for (final Map.Entry<UUID, PlayerDataGui> entry : DatGui.entrySet()) {
                 final UUID uuid = entry.getKey();
                 final PlayerDataGui data = entry.getValue();
                 Player player = Bukkit.getPlayer(uuid);
                 if (player == null) continue;
                 final String name = data.getMapPlayer();
+                final String nameMenu = data.getMenu();
+                if (nameMenu.equals(lobbyMenuSelectorGlobal)) {
+                    updateInventory(player);
+                }
                 if (name.equals(name_map)) {
                     final String inventory = player.getOpenInventory().getTitle();
                     if (inventory.equals(order)) player.closeInventory();
@@ -345,6 +487,7 @@ public final class Gui {
                     loadMainInventory(player);
                     SoundApi.playSound(player, 1.0f, 1.0f, "ITEM_BREAK", "ENTITY_ITEM_BREAK");
                 }
+
             }
             DynamicTools.CHECKPOINTS_MAPS_ITEMS.remove(name_map);
         });
@@ -710,6 +853,9 @@ public final class Gui {
                 all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(name_map, Collections.emptyList()));
                 nextPage(player, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
                 break;
+            case lobbyMenuSelectorGlobal:
+                nextInventoryPage(player, new ArrayList<>(DynamicTools.LOBBY_STATE.values()));
+                break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
                 break;
@@ -739,6 +885,9 @@ public final class Gui {
                 final List<ItemStack> all = new ArrayList<>(DynamicTools.SPAWN_LOCATIONS.getOrDefault(name_map, Collections.emptyList()));
                 all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(name_map, Collections.emptyList()));
                 previousPage(player, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
+                break;
+            case lobbyMenuSelectorGlobal:
+                previousInventoryPage(player, new ArrayList<>(DynamicTools.LOBBY_STATE.values()));
                 break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
@@ -824,6 +973,9 @@ public final class Gui {
                     all.addAll(DynamicTools.FINISH_LOCATION.getOrDefault(map_name, Collections.emptyList()));
                     showPage(player, currentPage, all, INDEX_SPAWN_FINISH, ITEMS_PER_PAGE_SPAWN_FINISH);
                 }
+                break;
+            case lobbyMenuSelectorGlobal:
+                showPage(player.getOpenInventory().getTopInventory(), currentPage, new ArrayList<>(DynamicTools.LOBBY_STATE.values()));
                 break;
             default:
                 player.sendMessage("Valor inesperado para menu_player: " + menu_player);
@@ -938,7 +1090,7 @@ public final class Gui {
     //----------------------------------------------------------------------------------[EXIT]
     //----------------------------------------------------------------------------------------
 
-    public static void exitEditMode(final @NotNull Player player) {
+    public static void exitGui(final @NotNull Player player) {
         final UUID uuid = player.getUniqueId();
 
         PlayerDataGui data = DatGui.get(uuid);

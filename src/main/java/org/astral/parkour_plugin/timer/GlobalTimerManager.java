@@ -10,6 +10,7 @@ public final class GlobalTimerManager {
 
     private static final Map<String, TimerData> timers = new HashMap<>();
     private static final Map<UUID, String> viewers = new HashMap<>();
+    private static final Map<String, String> format = new HashMap<>();
 
     public static void start(String map, boolean countdownMode, int timeLimitSeconds) {
         Timer timer = new Timer(countdownMode, timeLimitSeconds, 0L);

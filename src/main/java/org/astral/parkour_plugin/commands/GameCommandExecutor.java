@@ -3,7 +3,7 @@ package org.astral.parkour_plugin.commands;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.gui.editor.generator.Generator;
 import org.astral.parkour_plugin.gui.Gui;
-import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.tools.DynamicTools;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.parkour.ParkourManager;
 import org.bukkit.Bukkit;
@@ -26,6 +26,10 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     private static final String exit = "exit";
     private static final String start_here = "start_here";
     private static final String finish = "finish";
+    private static final String openGlobalLobby = "open_global_lobby";
+    private static final String stop = "pause";
+    private static final String pause = "stop";
+    private static final String resume = "resume";
 
     // ------------------------------------------- [ Editable ]
     // ------------------------------------------- [ 0 ]
@@ -34,7 +38,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     private static final String command3 = "help";
 
     private static final String command4 = "edit_mode";
-    private static final String command5 = "Exit-Edit-Mode";
+    private static final String command5 = "Exit-Edit-Type";
 
     // ------------------------------------------- [ 1 ]
     private static final String generation_item = "block_generate";
@@ -83,7 +87,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
-            //Tools
+
             if (args[0].equalsIgnoreCase(command2)){
                 if (args.length == 2){
                     if (args[1].equalsIgnoreCase(generation_item)){
@@ -97,13 +101,13 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
-            //Edit Mode
+            //Edit Type
             if (args[0].equalsIgnoreCase(command4) && !Gui.isInEditMode(player)) {
                 Gui.enterEditMode(player);
                 return true;
             }
             if (args[0].equalsIgnoreCase(command5) && Gui.isInEditMode(player)) {
-                Gui.exitEditMode(player);
+                Gui.exitGui(player);
                 return true;
             }
             if (args[0].equalsIgnoreCase(start) || args[0].equalsIgnoreCase(start_here)){
@@ -114,9 +118,9 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                         return true;
                     }
                     if (Configuration.getMaps().contains(args[1])){
-                        if (Gui.isInEditMode(player)) Gui.exitEditMode(player);
+                        if (Gui.isInEditMode(player)) Gui.exitGui(player);
                         if (args[0].equalsIgnoreCase(start)) {
-                            ParkourManager.gotoParkour(player, args[1]);
+                            ParkourManager.startParkourGlobal(player, args[1]);
                         }else {
                             ParkourManager.starParkourHere(player, args[1]);
                         }
@@ -157,6 +161,10 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
+            if (args[0].equalsIgnoreCase(openGlobalLobby)){
+                Gui.loadInventorySelectorGlobal(player);
+            }
+
         }
         return false;
     }
@@ -168,7 +176,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 final Player player = ((Player) sender).getPlayer();
                 commandOpen = !Gui.isInEditMode(player)? command4 : command5;
             }
-            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit, finish));
+            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit, finish, openGlobalLobby));
 
         }
 

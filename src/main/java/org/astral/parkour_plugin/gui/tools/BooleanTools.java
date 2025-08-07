@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.gui.editor.tools;
+package org.astral.parkour_plugin.gui.tools;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;

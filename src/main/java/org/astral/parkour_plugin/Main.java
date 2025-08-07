@@ -4,6 +4,7 @@ import org.astral.parkour_plugin.commands.GameCommandExecutor;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.gui.editor.generator.Generator;
 import org.astral.parkour_plugin.gui.Gui;
+import org.astral.parkour_plugin.parkour.ParkourManager;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -41,7 +42,14 @@ public final class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         Utils.clear();
-        Bukkit.getOnlinePlayers().forEach(Gui::exitEditMode);
+        Gui.playersInEdit().stream()
+                .map(Bukkit::getPlayer)
+                .filter(Objects::nonNull)
+                .forEach(Gui::exitGui);
+
+        ParkourManager.getAllPlayers().stream()
+                .filter(Objects::nonNull)
+                .forEach(ParkourManager::removePlayerParkour);
     }
 
     public static Main getInstance(){ return instance; }

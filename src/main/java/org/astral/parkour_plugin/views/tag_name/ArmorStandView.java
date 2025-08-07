@@ -1,10 +1,11 @@
 package org.astral.parkour_plugin.views.tag_name;
 
+import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.gui.Gui;
-import org.astral.parkour_plugin.gui.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.views.Type;
 import org.bukkit.Location;
@@ -143,11 +144,11 @@ public final class ArmorStandView implements ArmorStandApi {
                 playersViewingMap.remove(map);
             }
         }
-
         registerOrUnregisterListener();
     }
 
     private void removeAllHolograms(final String map, final Type type) {
+        if (ApiCompatibility.IS_FOLIA() && !plugin.isEnabled())return;
         final Map<Type, List<ArmorStand>> armorType = armorStands.get(map);
         if (armorType != null && armorType.containsKey(type)) {
             for (final ArmorStand armorStand : armorType.get(type)) {
@@ -181,6 +182,7 @@ public final class ArmorStandView implements ArmorStandApi {
 
     @Override
     public void removeHologram(final String map, final String name, final Type type) {
+
         final Map<Type, List<ArmorStand>> armorType = armorStands.get(map);
         if (armorType != null) {
             final List<ArmorStand> stands = armorType.get(type);

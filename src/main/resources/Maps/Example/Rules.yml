@@ -2,8 +2,8 @@ auto_reconnect: true
 
 waiting_lobby: #Only Works in Global Lobby
   enabled: true
-  require_min_players: true
   min_players: 2
+  max_players: -1 # (10 Players) (-1 Unlimited)
   max_wait_time: 10
   allow_movement: false
   display_actionbar: true
@@ -15,16 +15,22 @@ timer:
     display_actionbar: true
     format: "{minutes}:{seconds}:{millis}"
     countdown: false
-    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 infinito)
   individual:
     enabled: true
     display_actionbar: true
     format: "{minutes}:{seconds}:{millis}"
     countdown: false
-    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 desactivado)
+    time_limit: 180 # (Cuenta regresiva desde 180 segundos) (-1 infinito)
 
 title:
   common:
+    join:
+      title: "§a¡Bienvenido al Parkour!"
+      subtitle: "§fMapa: §bExample"
+      fadeIn: 10
+      stay: 40
+      fadeOut: 10
     start:
       title: "§a¡Parkour iniciado!"
       subtitle: "§fMapa: §bExample"
@@ -45,6 +51,7 @@ title:
 
 
 messages:
+  join: "Bienvenido al parkour, §f{map}§a!"
   start: "§a¡{player} ha comenzado el parkour en el mapa §f{map}§a!"
   end: "§e¡{player} ha completado el parkour! Tiempo: §f{time}s"
   checkpoint: "§6{player}, has alcanzado un punto de control."

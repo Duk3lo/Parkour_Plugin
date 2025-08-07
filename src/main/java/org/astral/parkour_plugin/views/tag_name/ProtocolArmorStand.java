@@ -11,7 +11,7 @@ import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
-import org.astral.parkour_plugin.gui.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.tools.Tools;
 import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.views.Type;

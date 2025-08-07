@@ -3,10 +3,10 @@ package org.astral.parkour_plugin.gui;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.config.cache.BlockCache;
 import org.astral.parkour_plugin.config.Config;
-import org.astral.parkour_plugin.gui.editor.tools.BooleanTools;
-import org.astral.parkour_plugin.gui.editor.tools.DynamicTools;
-import org.astral.parkour_plugin.gui.editor.tools.StateTools;
-import org.astral.parkour_plugin.gui.editor.tools.Tools;
+import org.astral.parkour_plugin.gui.tools.BooleanTools;
+import org.astral.parkour_plugin.gui.tools.DynamicTools;
+import org.astral.parkour_plugin.gui.tools.StateTools;
+import org.astral.parkour_plugin.gui.tools.Tools;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
@@ -41,7 +41,7 @@ public final class GuiListener implements Listener {
     public void opPlayerRespawn(final @NotNull PlayerRespawnEvent event){
         final Player player = event.getPlayer();
         if (Gui.isInEditMode(player)){
-            Gui.exitEditMode(player);
+            Gui.exitGui(player);
             Gui.enterEditMode(player);
         }
     }
@@ -53,9 +53,9 @@ public final class GuiListener implements Listener {
 
         final ItemStack item = event.getItem();
 
-        if (Gui.isInEditMode(player) && item != null) {
+        if ((Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal))&& item != null) {
 
-            if (item.isSimilar(Tools.EXIT_ITEM.getItem())) Gui.exitEditMode(player);
+            if (item.isSimilar(Tools.EXIT_ITEM.getItem())) Gui.exitGui(player);
 
             if (block != null && (block.getType().name().contains("DOOR") || block.getType().name().contains("TRAP") && !block.getType().name().contains("TRAPPED")) &&event.getAction().name().contains("RIGHT")) return;
 
@@ -177,7 +177,7 @@ public final class GuiListener implements Listener {
     @EventHandler
     public void onItemPickup(final @SuppressWarnings("deprecation") @NotNull PlayerPickupItemEvent event){
         final Player player = event.getPlayer();
-        if (Gui.isInEditMode(player)) event.setCancelled(true);
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)) event.setCancelled(true);
     }
 
     @EventHandler
@@ -188,7 +188,16 @@ public final class GuiListener implements Listener {
         final String inventoryName = event.getView().getTitle();
         final Player player = ((Player) event.getWhoClicked()).getPlayer();
 
-        if (Gui.isInEditMode(player)){
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)){
+
+            if (item != null){
+                if (item.isSimilar(Tools.NEXT_PAGE_ITEM.getItem())){
+                    Gui.nextPages(player);
+                }
+                if (item.isSimilar(Tools.PREVIOUS_PAGE_ITEM.getItem())){
+                    Gui.previousPages(player);
+                }
+            }
 
             if (item != null) {
                 isBooleanTool(item);
@@ -225,7 +234,7 @@ public final class GuiListener implements Listener {
                     }
                     if (item.isSimilar(Tools.EXIT_ITEM.getItem())) {
                         player.closeInventory();
-                        Gui.exitEditMode(player);
+                        Gui.exitGui(player);
                         event.setCancelled(true);
                     }
                 } else event.setCancelled(true);
@@ -239,8 +248,8 @@ public final class GuiListener implements Listener {
         final String inventoryName = event.getView().getTitle();
         if (event.getWhoClicked() instanceof Player) {
             Player player = (Player) event.getWhoClicked();
-            if (Gui.isInEditMode(player)) {
-                if (inventoryName.equals(Gui.order)) {
+            if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)) {
+                if (inventoryName.equals(Gui.order) || inventoryName.equals(Gui.lobbyMenuSelectorGlobal)) {
                     event.setCancelled(true);
                 }
             }
@@ -251,7 +260,11 @@ public final class GuiListener implements Listener {
     public void onInventoryClose(final @NotNull InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player) {
             final Player player = (Player) event.getPlayer();
-            if (Gui.isInEditMode(player)) {
+            if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)) {
+                final String inventoryName = event.getView().getTitle();
+                if (inventoryName.equals(Gui.lobbyMenuSelectorGlobal)){
+                    Gui.closeInventoryGlobal(player);
+                }
                 player.getItemOnCursor();
                 player.setItemOnCursor(null);
             }
@@ -262,6 +275,9 @@ public final class GuiListener implements Listener {
     public void onItemClone(final @NotNull InventoryCreativeEvent event) {
         if (event.getClick() == ClickType.CREATIVE) {
             final Player player = (Player) event.getWhoClicked();
+            if (Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)){
+                event.setCancelled(true);
+            }
             if (Gui.isInEditMode(player)){
                 final ItemStack itemStack = event.getCursor();
                 if (itemStack.getType() != Material.AIR) {
@@ -306,14 +322,13 @@ public final class GuiListener implements Listener {
         if (Gui.isInEditMode(player)) {
             final String mapName = event.getLine(0);
             Gui.updateSignMap(player, mapName, sign);
-
         }
     }
 
     @EventHandler
     public void onPlayerDropItem(final @NotNull PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
-        if (Gui.isInEditMode(player)){
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)){
             event.setCancelled(true);
             player.updateInventory();
         }
@@ -322,8 +337,8 @@ public final class GuiListener implements Listener {
     @EventHandler
     public void onPlayerQuit(final @NotNull PlayerQuitEvent event){
         final Player player = event.getPlayer();
-        if (Gui.isInEditMode(player)){
-            Gui.exitEditMode(player);
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)){
+            Gui.exitGui(player);
         }
     }
 

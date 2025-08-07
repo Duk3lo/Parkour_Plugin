@@ -63,12 +63,12 @@ public final class Rules {
         return yamlConfiguration.getBoolean("waiting_lobby.enabled", true);
     }
 
-    public boolean isWaitingLobbyRequireMinPlayers() {
-        return yamlConfiguration.getBoolean("waiting_lobby.require_min_players", true);
-    }
-
     public int getWaitingLobbyMinPlayers() {
         return yamlConfiguration.getInt("waiting_lobby.min_players", 2);
+    }
+
+    public int getWaitingLobbyMaxPlayers() {
+        return yamlConfiguration.getInt("waiting_lobby.max_players", 2);
     }
 
     public int getWaitingLobbyMaxWaitTimeSeconds() {
@@ -133,7 +133,7 @@ public final class Rules {
 
     public Optional<RichText> getTitle(final String sectionKey) {
         ConfigurationSection section = yamlConfiguration.getConfigurationSection("title.common." + sectionKey);
-        if (section == null || section.contains("texts")) return Optional.empty(); // Es una animación
+        if (section == null || section.contains("texts")) return Optional.empty();
 
         String rawMain = section.getString("title", "§a¡Parkour iniciado!");
         String rawSubtitle = section.getString("subtitle", "§fMapa: §b{map}");

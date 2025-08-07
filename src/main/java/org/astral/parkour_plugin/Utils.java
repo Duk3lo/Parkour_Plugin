@@ -1,12 +1,13 @@
 package org.astral.parkour_plugin;
 
+import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.config.cache.BlockCache;
 import org.astral.parkour_plugin.config.cache.EntityCache;
 import org.astral.parkour_plugin.config.cache.InventoryCache;
+import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.gui.Gui;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -19,9 +20,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public final class Utils {
 
@@ -43,29 +45,51 @@ public final class Utils {
 
     public static void loadCacheAndClear(final @NotNull JavaPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(listener, plugin);
-        ////[1.8]
-        for (final Map.Entry<EntityType, List<UUID>> entry : EntityCache.getEntityCache().entrySet()) {
-            final EntityType entityType = entry.getKey();
-            if (entityType.equals(EntityType.ARMOR_STAND)) {
-                final List<UUID> uuids = entry.getValue();
-                for (final UUID uuid : uuids) {
-                    for (final World world : plugin.getServer().getWorlds()) {
-                        for (final Entity e : world.getEntities()) {
-                            if (e.getUniqueId().equals(uuid)) {
-                                Kit.getAsyncScheduler().runNow(plugin, t ->
-                                        Kit.getRegionScheduler().execute(plugin, e.getLocation(), ()->{
-                                            e.remove();
-                                            EntityCache.removeEntityFromCache(e);
-                                        })
-                                );
-                                break;
-                            }
-                        }
-                    }
+
+        List<Location> allLocations = new ArrayList<>();
+        for (String mapName : Configuration.getMaps()) {
+            Rules rules = new Rules(mapName);
+            allLocations.addAll(rules.getSpawnsPoints());
+            allLocations.addAll(rules.getEndPoints());
+            CheckpointConfig checkpointConfig = new CheckpointConfig(mapName);
+            for (final String key : checkpointConfig.keys()) {
+                try {
+                    checkpointConfig.getCheckpoint(key);
+                    Location checkpointLocation = checkpointConfig.getLocation();
+                    allLocations.add(checkpointLocation);
+                } catch (IOException ex) {
+                    Bukkit.getLogger().warning("No se pudo cargar el checkpoint " + key + ": " + ex.getMessage());
                 }
             }
         }
 
+        Kit.getAsyncScheduler().runNow(plugin, t -> {
+            for (final Map.Entry<EntityType, List<UUID>> entry : EntityCache.getEntityCache().entrySet()) {
+                for (final UUID uuid : entry.getValue()) {
+                    for (Location location : allLocations) {
+                        Kit.getRegionScheduler().runDelayed(plugin, location, st -> {
+                            Entity entity;
+                            try {
+                                Method getEntityMethod = Bukkit.class.getMethod("getEntity", UUID.class);
+                                entity = (Entity) getEntityMethod.invoke(null, uuid);
+                                if (entity != null) {
+                                    entity.remove();
+                                    EntityCache.removeEntityFromCache(entity);
+                                }
+                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                                for (Entity worldEntity : location.getWorld().getEntities()) {
+                                    if (worldEntity.getUniqueId().equals(uuid)) {
+                                        worldEntity.remove();
+                                        EntityCache.removeEntityFromCache(worldEntity);
+                                        break;
+                                    }
+                                }
+                            }
+                        }, 20L);
+                    }
+                }
+            }
+        });
 
         for (final Map.Entry<UUID, Map<Material[], Location>> entry : BlockCache.cacheTempBlock().entrySet()) {
             final UUID uuid = entry.getKey();

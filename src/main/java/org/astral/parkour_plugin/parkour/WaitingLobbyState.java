@@ -24,6 +24,10 @@ public final class WaitingLobbyState {
         return timer++;
     }
 
+    public int getIncrementTimer(){
+        return timer;
+    }
+
     public void incrementStart(){
         preStart++;
     }
