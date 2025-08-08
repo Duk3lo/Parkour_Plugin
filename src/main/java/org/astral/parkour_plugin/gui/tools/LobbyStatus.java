@@ -58,7 +58,7 @@ public enum LobbyStatus {
             lore.add(color + description);
 
             // ⚠️ Cargar info de jugadores usando ParkourManager
-            ParkourMapStateGlobal state = ParkourManager.getMapState(lobbyName);
+            ParkourMapStateGlobal state = ParkourManager.getMapStateGlobal(lobbyName);
             if (state != null) {
                 lore.add(ChatColor.GRAY + "Jugadores: " + ChatColor.WHITE + state.getCurrentPlayers()
                         + ChatColor.GRAY + " / "

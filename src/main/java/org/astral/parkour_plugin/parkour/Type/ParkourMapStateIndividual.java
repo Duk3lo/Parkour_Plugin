@@ -9,16 +9,23 @@ public final class ParkourMapStateIndividual {
     private final String name;
     private boolean inGame;
     private boolean canMove;
-    private boolean displayActionBarTimer;
     private AnimatedRichText animatedRichText;
     private ParkourPlayerData data;
+    private int timeLimit;
+    private boolean isCountdown;
+    private String format;
+    private boolean displayActionBarTimer;
+
 
     public ParkourMapStateIndividual(String name){
         this.name = name;
         inGame = false;
         canMove = false;
-        displayActionBarTimer = false;
         animatedRichText = new AnimatedRichText(Collections.emptyList(), 0);
+        timeLimit = -1;
+        isCountdown = false;
+        format = "{minutes}:{seconds}:{millis}";
+        displayActionBarTimer = false;
     }
 
     public String getName() {
@@ -63,5 +70,29 @@ public final class ParkourMapStateIndividual {
 
     public void setInGame(boolean inGame) {
         this.inGame = inGame;
+    }
+
+    public int getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
+    }
+
+    public boolean isCountdown() {
+        return isCountdown;
+    }
+
+    public void setCountdown(boolean countdown) {
+        isCountdown = countdown;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 }

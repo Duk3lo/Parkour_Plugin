@@ -65,7 +65,7 @@ public final class EntityCache {
         saveToFile();
     }
 
-    /**
+
     public static void removeEntityTypeFromCache(final @NotNull EntityType entityType) {
         if (!mapCacheEntity.containsKey(entityType)) {
             if (DEBUG_LOGS) plugin.getLogger().info("EntityType " + entityType + " not found in cache.");
@@ -94,7 +94,6 @@ public final class EntityCache {
             }
         }
     }
-    **/
 
     public static void removeEntityFromCache(final @NotNull Entity entity) {
         EntityType entityType = entity.getType();

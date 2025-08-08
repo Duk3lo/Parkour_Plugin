@@ -65,7 +65,7 @@ public final class ParkourManager {
         }
     }
 
-    public static ParkourMapStateGlobal getMapState(String name) {
+    public static ParkourMapStateGlobal getMapStateGlobal(String name) {
         return parkourMapStatesGlobal.get(name);
     }
 
@@ -94,6 +94,9 @@ public final class ParkourManager {
         rules.getAnimatedTitle("star_countdown").ifPresent(state::setAnimatedRichText);
         state.setData(new ParkourPlayerData(blockLocation));
         state.setDisplayActionBarTimer(rules.isIndividualActionBarTimerDisplayEnabled());
+        state.setTimeLimit(rules.getIndividualTimeLimit());
+        state.setFormat(rules.getIndividualTimerFormat());
+        state.setCountdown(rules.isIndividualCountdownEnabled());
         boolean canMove = state.getAnimatedRichText().getFrames().size() <= 1;
         state.setCanMove(canMove);
         loadFrames(state.getAnimatedRichText(), Collections.singleton(uuid), map, Type.INDIVIDUAL);
@@ -129,6 +132,9 @@ public final class ParkourManager {
             );
             newState.setDisplayActionBarTimer(rules.isGlobalActionBarTimerDisplayEnabled());
             newState.setCanMove(rules.isWaitingLobbyMovementAllowed());
+            newState.setTimeLimit(rules.getGlobalTimeLimit());
+            newState.setCountdown(rules.isGlobalCountdownEnabled());
+            newState.setFormat(rules.getGlobalTimerFormat());
             return newState;
         });
         state.addPlayer(player.getUniqueId(), new ParkourPlayerData(spawn));
@@ -186,9 +192,8 @@ public final class ParkourManager {
                     final Location spawn = getSpawnPlayer(player.getUniqueId());
                     teleportToSpawnOrWarn(player, name_map, spawn);
                 }
-                final Rules rules = new Rules(name_map);
                 if (type == Type.INDIVIDUAL){
-                    TimerActionBar.starIndividualTimer(rules, player.getUniqueId());
+                    TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(player.getUniqueId()), player.getUniqueId());
                 }
                 showAllObjectsInMap(player, name_map);
             }
@@ -327,17 +332,16 @@ public final class ParkourManager {
         int framesSize = textAnimated.getFrames().size();
         if (framesSize == 0) {
             Kit.getAsyncScheduler().runDelayed(plugin, t -> {
-                Rules rules = new Rules(map);
                 for (UUID uuid : uuids) {
                     Player player = Bukkit.getPlayer(uuid);
                     if (player != null && player.isOnline()) {
                         SoundApi.playSound(player, 1.0f, 1.0f,
                                 "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
                         if (type == Type.GLOBAL) {
-                            TimerActionBar.startGlobalTimer(rules, uuid);
+                            TimerActionBar.startGlobalTimer(parkourMapStatesGlobal.get(map), uuid);
                             parkourMapStatesGlobal.get(map).setCanMove(true);
                         } else {
-                            TimerActionBar.starIndividualTimer(rules, uuid);
+                            TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(uuid), uuid);
                             parkourMapStateIndividual.get(uuid).setCanMove(true);
                         }
                     }
@@ -368,13 +372,11 @@ public final class ParkourManager {
                     if (isLastFrame) {
                         SoundApi.playSound(player, 1.0f, 1.0f,
                                 "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
-
-                        Rules rules = new Rules(map);
                         if (type == Type.GLOBAL) {
-                            TimerActionBar.startGlobalTimer(rules, uuid);
+                            TimerActionBar.startGlobalTimer(parkourMapStatesGlobal.get(map), uuid);
                             parkourMapStatesGlobal.get(map).setCanMove(true);
                         } else {
-                            TimerActionBar.starIndividualTimer(rules, uuid);
+                            TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(uuid), uuid);
                             parkourMapStateIndividual.get(uuid).setCanMove(true);
                         }
                     } else {
@@ -439,25 +441,43 @@ public final class ParkourManager {
 
     public static void finish(final @NotNull Player player) {
         UUID uuid = player.getUniqueId();
-        ParkourMapStateGlobal state = getPlayerCurrentMapState(uuid);
-        if (state == null) return;
-
-        ParkourPlayerData data = state.getPlayersMap().get(uuid);
+        ParkourMapStateIndividual stateIndividual = parkourMapStateIndividual.get(uuid);
+        ParkourMapStateGlobal stateGlobal = null;
+        String mapName;
+        boolean isIndividual = false;
+        if (stateIndividual != null) {
+            isIndividual = true;
+            mapName = stateIndividual.getName();
+        } else {
+            stateGlobal = getPlayerCurrentMapState(uuid);
+            if (stateGlobal == null) return;
+            mapName = stateGlobal.getName();
+        }
+        ParkourPlayerData data = isIndividual
+                ? stateIndividual.getData()
+                : stateGlobal.getPlayersMap().get(uuid);
         if (data == null) return;
-
-        String map = state.getName();
         final Timer timer = getTimer(player);
         boolean hasValidTime = timer != null;
-
         final String formattedTime = hasValidTime ? timer.getFormattedTime() : "";
-        final String msg = "§a¡Buen trabajo! Completaste el parkour §b" + map +
-                (hasValidTime ? " §aen §e" + formattedTime + "§a." : "§a.");
+        String msg;
+        if (isIndividual) {
+            msg = "§a¡Has completado tu parkour personal!" +
+                    (hasValidTime ? " §aTiempo: §e" + formattedTime + "§a." : "");
+        } else {
+            msg = "§a¡Buen trabajo! Completaste el parkour global §b" + mapName +
+                    (hasValidTime ? " §aen §e" + formattedTime + "§a." : "§a.");
+        }
         player.sendMessage(msg);
-
         if (hasValidTime) {
             new ActionBar(formattedTime).send(player);
         }
-        state.getPlayersMap().remove(uuid);
+        removePlayerParkour(uuid);
+        if (isIndividual) {
+            parkourMapStateIndividual.remove(uuid);
+        } else {
+            stateGlobal.getPlayersMap().remove(uuid);
+        }
     }
 
     private static ParkourMapStateGlobal getPlayerCurrentMapState(UUID uuid) {
@@ -484,17 +504,42 @@ public final class ParkourManager {
 
     public static void removePlayerParkour(final @NotNull UUID uuid) {
         IndividualTimerManager.stop(uuid);
-        parkourMapStateIndividual.remove(uuid);
+        ParkourMapStateIndividual individualState = parkourMapStateIndividual.remove(uuid);
+        if (individualState != null) {
+            final String map = individualState.getName();
+            final Player player = Bukkit.getPlayer(uuid);
+            if (player != null) hideMap(player, map);
+            final ProgressTracker tracker = ProgressTrackerManager.get(map);
+            if (tracker != null) {
+                tracker.removePlayer(uuid);
+                if (getOnlinePlayersInMap(map).isEmpty()) {
+                    CheckpointBase.removeCheckpoints(map);
+                }
+                if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
+                    ProgressTrackerManager.remove(map);
+                }
+            }
+            GlobalTimerManager.getViewingMap(uuid).ifPresent(viewingMap -> {
+                GlobalTimerManager.removeViewer(uuid);
+                if (GlobalTimerManager.getViewersOf(viewingMap).isEmpty()) {
+                    stopGlobal(viewingMap);
+                }
+            });
+            registerOrUnregisterListener();
+            return;
+        }
         ParkourMapStateGlobal state = parkourMapStatesGlobal.values().stream()
                 .filter(s -> s.getPlayersMap().containsKey(uuid))
                 .findFirst()
                 .orElse(null);
         if (state == null) return;
+
         state.removePlayer(uuid);
-        //ParkourPlayerData data = state.getPlayersMap().remove(uuid);if (data == null) return;
+
         final String map = state.getName();
         final Player player = Bukkit.getPlayer(uuid);
         if (player != null) hideMap(player, map);
+
         final ProgressTracker tracker = ProgressTrackerManager.get(map);
         if (tracker != null) {
             tracker.removePlayer(uuid);
@@ -505,6 +550,7 @@ public final class ParkourManager {
                 ProgressTrackerManager.remove(map);
             }
         }
+
         GlobalTimerManager.getViewingMap(uuid).ifPresent(viewingMap -> {
             GlobalTimerManager.removeViewer(uuid);
             if (GlobalTimerManager.getViewersOf(viewingMap).isEmpty()) {
@@ -527,11 +573,8 @@ public final class ParkourManager {
                 }
             }
             state.getPlayersMap().clear();
-
         }
         GlobalTimerManager.stop(map);
-
-
         Gui.updateItemInLobbyInventories(map);
         Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
             MapAnimationKey key = entry.getKey();

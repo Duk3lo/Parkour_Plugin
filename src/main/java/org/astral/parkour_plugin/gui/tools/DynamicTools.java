@@ -59,7 +59,7 @@ public final class DynamicTools {
     }
 
     public static @NotNull ItemStack createItemLobbyGlobal(final String name){
-        ParkourMapStateGlobal state = ParkourManager.getMapState(name);
+        ParkourMapStateGlobal state = ParkourManager.getMapStateGlobal(name);
         LobbyStatus status = state != null ? state.getStatus() : LobbyStatus.DISABLED;
         return status.toItemStack(name);
     }

@@ -8,7 +8,6 @@ import java.util.*;
 public final class IndividualTimerManager {
 
     private static final Map<UUID, TimerData> timerDataMap = new HashMap<>();
-    private static final Map<UUID, String> individualMapTask = new HashMap<>();
 
 
     public static void start(UUID uuid, boolean countdownMode, int timeLimitSeconds) {

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Utils {
 
@@ -65,24 +66,35 @@ public final class Utils {
 
         Kit.getAsyncScheduler().runNow(plugin, t -> {
             for (final Map.Entry<EntityType, List<UUID>> entry : EntityCache.getEntityCache().entrySet()) {
-                for (final UUID uuid : entry.getValue()) {
+                EntityType type = entry.getKey();
+                List<UUID> uuids = entry.getValue();
+
+                AtomicInteger pendingTasks = new AtomicInteger(uuids.size() * allLocations.size());
+
+                for (final UUID uuid : uuids) {
                     for (Location location : allLocations) {
                         Kit.getRegionScheduler().runDelayed(plugin, location, st -> {
-                            Entity entity;
                             try {
-                                Method getEntityMethod = Bukkit.class.getMethod("getEntity", UUID.class);
-                                entity = (Entity) getEntityMethod.invoke(null, uuid);
-                                if (entity != null) {
-                                    entity.remove();
-                                    EntityCache.removeEntityFromCache(entity);
-                                }
-                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                                for (Entity worldEntity : location.getWorld().getEntities()) {
-                                    if (worldEntity.getUniqueId().equals(uuid)) {
-                                        worldEntity.remove();
-                                        EntityCache.removeEntityFromCache(worldEntity);
-                                        break;
+                                Entity entity;
+                                try {
+                                    Method getEntityMethod = Bukkit.class.getMethod("getEntity", UUID.class);
+                                    entity = (Entity) getEntityMethod.invoke(null, uuid);
+                                    if (entity != null) {
+                                        entity.remove();
+                                        EntityCache.removeEntityFromCache(entity);
                                     }
+                                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                                    for (Entity worldEntity : location.getWorld().getEntities()) {
+                                        if (worldEntity.getUniqueId().equals(uuid)) {
+                                            worldEntity.remove();
+                                            EntityCache.removeEntityFromCache(worldEntity);
+                                            break;
+                                        }
+                                    }
+                                }
+                            } finally {
+                                if (pendingTasks.decrementAndGet() == 0) {
+                                    EntityCache.removeEntityTypeFromCache(type);
                                 }
                             }
                         }, 20L);

@@ -120,7 +120,7 @@ public final class Rules {
     }
 
     public @NotNull String getIndividualTimerFormat() {
-        return yamlConfiguration.getString("timer.individual.format", "§fTiempo: §b{minutes}m {seconds}s");
+        return yamlConfiguration.getString("timer.individual.format", "{minutes}:{seconds}:{millis}");
     }
 
     public boolean isIndividualCountdownEnabled() {

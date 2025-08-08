@@ -4,8 +4,9 @@ import org.astral.parkour_plugin.Kit;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
-import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.parkour.ParkourManager;
+import org.astral.parkour_plugin.parkour.Type.ParkourMapStateGlobal;
+import org.astral.parkour_plugin.parkour.Type.ParkourMapStateIndividual;
 import org.astral.parkour_plugin.textcomponent.ColorUtil;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.Timer;
@@ -76,9 +77,9 @@ public final class TimerActionBar {
         return String.format("%02X%02X%02X", r, g, b);
     }
 
-    public static void starIndividualTimer(final @NotNull Rules rules, final @NotNull UUID uuid) {
-        int timeLimit = rules.getIndividualTimeLimit();
-        boolean isCountdown = rules.isIndividualCountdownEnabled();
+    public static void starIndividualTimer(final @NotNull ParkourMapStateIndividual mapStateIndividual, final @NotNull UUID uuid) {
+        int timeLimit = mapStateIndividual.getTimeLimit();
+        boolean isCountdown = mapStateIndividual.isCountdown();
 
         if (IndividualTimerManager.isRunning(uuid)) {
             IndividualTimerManager.resume(uuid, isCountdown, timeLimit);
@@ -87,7 +88,7 @@ public final class TimerActionBar {
         }
 
 
-        individualMapTask.put(uuid, rules.getIndividualTimerFormat());
+        individualMapTask.put(uuid, mapStateIndividual.getFormat());
 
         if (individualActionBarTask == null || individualActionBarTask.isCancelled()) {
             individualActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
@@ -132,7 +133,7 @@ public final class TimerActionBar {
                     timer.setFormat(formatForDisplay);
                     String formatted = ColorUtil.compileColors("<#" + hexColor + ">" + timer.getFormattedTime());
 
-                    if (rules.isIndividualActionBarTimerDisplayEnabled()) {
+                    if (mapStateIndividual.isDisplayActionBarTimer()) {
                         new ActionBar(formatted).send(p);
                     }
 
@@ -148,10 +149,10 @@ public final class TimerActionBar {
     }
 
 
-    public static void startGlobalTimer(final @NotNull Rules rules, final UUID uuid) {
-        int timeLimit = rules.getGlobalTimeLimit();
-        boolean isCountdown = rules.isGlobalCountdownEnabled();
-        String mapName = rules.getMapName();
+    public static void startGlobalTimer(final @NotNull ParkourMapStateGlobal mapStateGlobal, final UUID uuid) {
+        int timeLimit = mapStateGlobal.getTimeLimit();
+        boolean isCountdown = mapStateGlobal.isCountdown();
+        String mapName = mapStateGlobal.getName();
 
         if (!GlobalTimerManager.isRunning(mapName)) {
             GlobalTimerManager.start(mapName, isCountdown, timeLimit);
@@ -170,15 +171,16 @@ public final class TimerActionBar {
                 for (String map : GlobalTimerManager.getActiveMaps()) {
                     final Timer timer = GlobalTimerManager.get(map);
                     if (timer == null) continue;
+                    ParkourMapStateGlobal stateGlobal = ParkourManager.getMapStateGlobal(map);
+                    if (stateGlobal == null) continue;
 
-                    final Rules mapRules = new Rules(map);
-                    boolean mapIsCountdown = mapRules.isGlobalCountdownEnabled();
-                    int mapTimeLimit = mapRules.getGlobalTimeLimit();
+                    boolean mapIsCountdown = stateGlobal.isCountdown();
+                    int mapTimeLimit = stateGlobal.getTimeLimit();
 
                     boolean timeFinished = (mapIsCountdown && timer.isCountdownFinished()) ||
                             (!mapIsCountdown && mapTimeLimit > 0 && timer.getElapsedMillis() >= mapTimeLimit * 1000L);
 
-                    if (mapRules.isGlobalActionBarTimerDisplayEnabled()) {
+                    if (stateGlobal.isDisplayActionBarTimer()) {
                         double progress = getProgress(mapTimeLimit, mapIsCountdown, timer);
                         long remainingMillis = mapIsCountdown
                                 ? timer.getRemainingMillis()
@@ -189,7 +191,7 @@ public final class TimerActionBar {
                             hexColor = getBlinkingColor(hexColor);
                         }
 
-                        String format = mapRules.getGlobalTimerFormat();
+                        String format = stateGlobal.getFormat();
                         String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
                         timer.setFormat(formatForDisplay);
 

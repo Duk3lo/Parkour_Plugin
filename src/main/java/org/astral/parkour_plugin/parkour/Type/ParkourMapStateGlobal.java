@@ -20,11 +20,14 @@ public final class ParkourMapStateGlobal {
     private final int maxPlayers;
     private final int minPlayers;
     private int limitTimeWait;
-    private boolean displayActionBarTimer;
     private boolean displayWaitingPlayer;
     private String formatWaiting;
     private AnimatedRichText animatedRichText;
     private LobbyStatus lobbyStatus;
+    private int timeLimit;
+    private boolean isCountdown;
+    private String format;
+    private boolean displayActionBarTimer;
 
     private int timerWaiting = 0;
 
@@ -37,10 +40,13 @@ public final class ParkourMapStateGlobal {
         waitingPlayers = false;
         startingSoon = false;
         limitTimeWait = 0;
-        displayActionBarTimer = true;
         displayWaitingPlayer = true;
         formatWaiting = "§eEsperando jugadores... ({current}/{required})";
         animatedRichText = new AnimatedRichText(Collections.emptyList(), 0);
+        timeLimit = -1;
+        isCountdown = false;
+        format = "{minutes}:{seconds}:{millis}";
+        displayActionBarTimer = true;
         updateLobbyItemGlobal();
     }
 
@@ -202,9 +208,7 @@ public final class ParkourMapStateGlobal {
         return timerWaiting++;
     }
 
-    public int getTimerWaiting(){
-        return timerWaiting;
-    }
+    //public int getTimerWaiting(){return timerWaiting;}
 
     public AnimatedRichText getAnimatedRichText() {
         return animatedRichText;
@@ -212,5 +216,29 @@ public final class ParkourMapStateGlobal {
 
     public void setAnimatedRichText(AnimatedRichText animatedRichText) {
         this.animatedRichText = animatedRichText;
+    }
+
+    public int getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
+    }
+
+    public boolean isCountdown() {
+        return isCountdown;
+    }
+
+    public void setCountdown(boolean countdown) {
+        isCountdown = countdown;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 }
