@@ -97,6 +97,7 @@ public final class ParkourManager {
         state.setTimeLimit(rules.getIndividualTimeLimit());
         state.setFormat(rules.getIndividualTimerFormat());
         state.setCountdown(rules.isIndividualCountdownEnabled());
+        state.setTimerEnable(rules.isIndividualTimerEnabled());
         boolean canMove = state.getAnimatedRichText().getFrames().size() <= 1;
         state.setCanMove(canMove);
         loadFrames(state.getAnimatedRichText(), Collections.singleton(uuid), map, Type.INDIVIDUAL);
@@ -151,6 +152,7 @@ public final class ParkourManager {
             state.setLimitTimeWait(rules.getWaitingLobbyMaxWaitTimeSeconds());
             state.setDisplayWaitingPlayer(rules.isWaitingLobbyActionBarEnabled());
             state.setFormatWaiting(rules.getWaitingLobbyFormat());
+            state.setTimerEnable(rules.isGlobalTimerEnabled());
             waitSchedulerGlobal();
         } else {
             state.setWaitingPlayers(false);
@@ -462,11 +464,15 @@ public final class ParkourManager {
         final String formattedTime = hasValidTime ? timer.getFormattedTime() : "";
         String msg;
         if (isIndividual) {
-            msg = "§a¡Has completado tu parkour personal!" +
-                    (hasValidTime ? " §aTiempo: §e" + formattedTime + "§a." : "");
+            msg = "§a¡Has completado tu parkour personal!";
+            if (hasValidTime) {
+                msg += " §aTiempo: §e" + formattedTime + "§a.";
+            }
         } else {
-            msg = "§a¡Buen trabajo! Completaste el parkour global §b" + mapName +
-                    (hasValidTime ? " §aen §e" + formattedTime + "§a." : "§a.");
+            msg = "§a¡Buen trabajo! Completaste el parkour global §b" + mapName;
+            if (hasValidTime) {
+                msg += " §aen §e" + formattedTime + "§a.";
+            }
         }
         player.sendMessage(msg);
         if (hasValidTime) {
@@ -489,15 +495,16 @@ public final class ParkourManager {
 
     public static @Nullable Timer getTimer(final @NotNull Player player) {
         UUID uuid = player.getUniqueId();
-        ParkourMapStateGlobal state = getPlayerCurrentMapState(uuid);
-        if (state == null) return null;
-        ParkourPlayerData data = state.getPlayersMap().get(uuid);
-        if (data == null) return null;
-        String map = state.getName();
-        if (IndividualTimerManager.isRunning(uuid)) {
+        ParkourMapStateIndividual individualState = parkourMapStateIndividual.get(uuid);
+        if (individualState != null && IndividualTimerManager.isRunning(uuid)) {
             return IndividualTimerManager.get(uuid);
-        } else if (GlobalTimerManager.isRunning(map)) {
-            return GlobalTimerManager.get(map);
+        }
+        ParkourMapStateGlobal globalState = getPlayerCurrentMapState(uuid);
+        if (globalState != null) {
+            String map = globalState.getName();
+            if (GlobalTimerManager.isRunning(map)) {
+                return GlobalTimerManager.get(map);
+            }
         }
         return null;
     }

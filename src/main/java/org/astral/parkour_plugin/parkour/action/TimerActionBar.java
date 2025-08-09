@@ -78,6 +78,7 @@ public final class TimerActionBar {
     }
 
     public static void starIndividualTimer(final @NotNull ParkourMapStateIndividual mapStateIndividual, final @NotNull UUID uuid) {
+        if (!mapStateIndividual.isTimerEnable())return;
         int timeLimit = mapStateIndividual.getTimeLimit();
         boolean isCountdown = mapStateIndividual.isCountdown();
 
@@ -150,6 +151,7 @@ public final class TimerActionBar {
 
 
     public static void startGlobalTimer(final @NotNull ParkourMapStateGlobal mapStateGlobal, final UUID uuid) {
+        if (!mapStateGlobal.isTimerEnable())return;
         int timeLimit = mapStateGlobal.getTimeLimit();
         boolean isCountdown = mapStateGlobal.isCountdown();
         String mapName = mapStateGlobal.getName();

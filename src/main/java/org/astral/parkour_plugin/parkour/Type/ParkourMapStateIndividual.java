@@ -15,6 +15,7 @@ public final class ParkourMapStateIndividual {
     private boolean isCountdown;
     private String format;
     private boolean displayActionBarTimer;
+    private boolean isTimerEnable;
 
 
     public ParkourMapStateIndividual(String name){
@@ -26,6 +27,7 @@ public final class ParkourMapStateIndividual {
         isCountdown = false;
         format = "{minutes}:{seconds}:{millis}";
         displayActionBarTimer = false;
+        isTimerEnable = true;
     }
 
     public String getName() {
@@ -94,5 +96,13 @@ public final class ParkourMapStateIndividual {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public boolean isTimerEnable() {
+        return isTimerEnable;
+    }
+
+    public void setTimerEnable(boolean timerEnable) {
+        isTimerEnable = timerEnable;
     }
 }

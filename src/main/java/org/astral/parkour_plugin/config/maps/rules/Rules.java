@@ -47,10 +47,6 @@ public final class Rules {
         }
     }
 
-    public String getMapName(){
-        return MAP_FOLDER;
-    }
-
     // Auto Reconnect
 
     public boolean isAutoReconnectEnabled() {

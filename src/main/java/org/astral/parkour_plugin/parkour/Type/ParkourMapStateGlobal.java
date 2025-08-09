@@ -28,6 +28,7 @@ public final class ParkourMapStateGlobal {
     private boolean isCountdown;
     private String format;
     private boolean displayActionBarTimer;
+    private boolean isTimerEnable;
 
     private int timerWaiting = 0;
 
@@ -47,6 +48,7 @@ public final class ParkourMapStateGlobal {
         isCountdown = false;
         format = "{minutes}:{seconds}:{millis}";
         displayActionBarTimer = true;
+        isTimerEnable = true;
         updateLobbyItemGlobal();
     }
 
@@ -240,5 +242,13 @@ public final class ParkourMapStateGlobal {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public boolean isTimerEnable() {
+        return isTimerEnable;
+    }
+
+    public void setTimerEnable(boolean timerEnable) {
+        isTimerEnable = timerEnable;
     }
 }
