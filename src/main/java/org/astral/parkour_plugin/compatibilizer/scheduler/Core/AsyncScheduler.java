@@ -9,15 +9,19 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+
 public interface AsyncScheduler {
 
+    @SuppressWarnings("UnusedReturnValue")
     @NotNull
     ScheduledTask runNow(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task);
 
+    @SuppressWarnings("UnusedReturnValue")
     @NotNull ScheduledTask runDelayed(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task, long delay, @NotNull TimeUnit unit);
 
     @NotNull ScheduledTask runAtFixedRate(@NotNull Plugin plugin, @NotNull Consumer<ScheduledTask> task, long initialDelay, long period, @NotNull TimeUnit unit);
 
+    @SuppressWarnings("unused")
     void cancelTasks(@NotNull Plugin plugin);
 
     static @NotNull AsyncScheduler __API(){

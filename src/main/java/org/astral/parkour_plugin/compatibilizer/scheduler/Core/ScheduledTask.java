@@ -2,10 +2,13 @@ package org.astral.parkour_plugin.compatibilizer.scheduler.Core;
 
 import org.bukkit.plugin.Plugin;
 
+@SuppressWarnings("UnusedReturnValue")
 public interface ScheduledTask {
 
+    @SuppressWarnings("unused")
     Plugin getOwningPlugin();
 
+    @SuppressWarnings("unused")
     boolean isRepeatingTask();
 
     CancelledState cancel();
@@ -22,7 +25,7 @@ public interface ScheduledTask {
         RUNNING,
         FINISHED,
         CANCELLED,
-        CANCELLED_RUNNING;
+        CANCELLED_RUNNING
     }
 
     enum CancelledState {

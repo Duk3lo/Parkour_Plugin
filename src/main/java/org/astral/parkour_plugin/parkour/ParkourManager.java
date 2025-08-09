@@ -161,15 +161,7 @@ public final class ParkourManager {
         showAllObjectsInMap(player, map);
     }
 
-    public static boolean isPlayerInGlobal(UUID uuid) {
-        return parkourMapStatesGlobal.values()
-                .stream()
-                .anyMatch(state -> state.getAllPlayers().contains(uuid));
-    }
 
-    public static boolean isPlayerInIndividual(UUID uuid){
-        return parkourMapStateIndividual.containsKey(uuid);
-    }
 
     public static @NotNull Set<UUID> getAllPlayers() {
         Set<UUID> allPlayers = parkourMapStatesGlobal.values().stream()
