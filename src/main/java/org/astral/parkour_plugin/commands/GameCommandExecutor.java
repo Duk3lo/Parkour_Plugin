@@ -4,6 +4,7 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.astral.parkour_plugin.compatibilizer.adapters.SoundApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.gui.editor.generator.Generator;
 import org.astral.parkour_plugin.gui.Gui;
@@ -33,18 +34,18 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     private static final String exit = "exit";
     private static final String finish = "finish";
     private static final String openGlobalLobby = "open_global_lobby";
-    private static final String stop = "pause";
-    private static final String pause = "stop";
+    private static final String stop = "stop";
+    private static final String pause = "pause";
     private static final String resume = "resume";
 
     // ------------------------------------------- [ Editable ]
     // ------------------------------------------- [ 0 ]
-    private static final String command1 = "generate";
-    private static final String command2 = "tools";
-    private static final String command3 = "help";
+    private static final String generate = "generate";
+    private static final String tools = "tools";
+    private static final String help = "help";
 
-    private static final String command4 = "edit_mode";
-    private static final String command5 = "Exit-Edit-Type";
+    private static final String editMode = "edit_mode";
+    private static final String exitEditMode = "Exit-Edit-Type";
 
     // ------------------------------------------- [ 1 ]
     private static final String generation_item = "block_generate";
@@ -78,7 +79,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args[0].equalsIgnoreCase("confirmjoin")) {
                 String stored = pendingJoin.remove(uuid);
                 if (stored != null) {
-                    String[] parts = stored.split(";");
+                    String[] parts = stored.split(":");
                     String map = parts[0];
                     String type = parts[1];
                     ParkourManager.removePlayerParkour(uuid);
@@ -93,9 +94,8 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
-
             //Generator
-            if (args[0].equalsIgnoreCase(command1)) {
+            if (args[0].equalsIgnoreCase(generate)) {
                 byte count = 3;
                 String name = "Generator";
                 if (args.length == 2){
@@ -116,7 +116,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             }
 
 
-            if (args[0].equalsIgnoreCase(command2)){
+            if (args[0].equalsIgnoreCase(tools)){
                 if (args.length == 2){
                     if (args[1].equalsIgnoreCase(generation_item)){
                         return true;
@@ -125,16 +125,16 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
-            if (args[0].equalsIgnoreCase(command3)){
+            if (args[0].equalsIgnoreCase(help)){
                 return true;
             }
 
             //Edit Type
-            if (args[0].equalsIgnoreCase(command4) && !Gui.isInEditMode(player)) {
+            if (args[0].equalsIgnoreCase(editMode) && !Gui.isInEditMode(player)) {
                 Gui.enterEditMode(player);
                 return true;
             }
-            if (args[0].equalsIgnoreCase(command5) && Gui.isInEditMode(player)) {
+            if (args[0].equalsIgnoreCase(exitEditMode) && Gui.isInEditMode(player)) {
                 Gui.exitGui(player);
                 return true;
             }
@@ -180,6 +180,54 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 return true;
             }
 
+            if (args[0].equalsIgnoreCase(stop) || args[0].equalsIgnoreCase(pause) || args[0].equalsIgnoreCase(resume)) {
+                if (args.length >= 2) {
+                    String[] parts = args[1].split(":");
+                    if (parts.length != 2) {
+                        player.sendMessage("§cNo es un dato válido. Usa m:<mapa> o p:<jugador>");
+                        return true;
+                    }
+
+                    String type = parts[0];
+                    String val = parts[1];
+
+                    if (type.equalsIgnoreCase("m")) {
+                        // Buscar el mapa y ejecutar acción
+                        if (!ParkourManager.getAllGlobalMaps().contains(val)) {
+                            player.sendMessage("§cNo existe el mapa: " + val);
+                            return true;
+                        }
+
+                        if (args[0].equalsIgnoreCase(stop)) {
+                            ParkourManager.stopGlobal(val);
+                        } else if (args[0].equalsIgnoreCase(pause)) {
+                            //ParkourManager.pauseMap(val);
+                        } else if (args[0].equalsIgnoreCase(resume)) {
+                            //ParkourManager.resumeMap(val);
+                        }
+
+                    } else if (type.equalsIgnoreCase("p")) {
+                        Player target = Bukkit.getPlayer(val);
+                        if (target == null) {
+                            player.sendMessage("§cNo existe el jugador: " + val);
+                            return true;
+                        }
+
+                        if (args[0].equalsIgnoreCase(stop)) {
+                            ParkourManager.removePlayerParkour(target.getUniqueId());
+                        } else if (args[0].equalsIgnoreCase(pause)) {
+                            //ParkourManager.pausePlayer(target);
+                        } else if (args[0].equalsIgnoreCase(resume)) {
+                            //ParkourManager.resumePlayer(target);
+                        }
+
+                    } else {
+                        player.sendMessage("§cNo es un tipo válido. Usa m:<mapa> o p:<jugador>");
+                    }
+
+                    return true;
+                }
+            }
 
             if (args[0].equalsIgnoreCase(exit)) {
                 if (args.length == 2) {
@@ -218,8 +266,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     }
 
     private void sendJoinConfirmation(@NotNull Player player, String newMapName, String type) {
-        // Guardamos en formato "mapa;tipo"
-        pendingJoin.put(player.getUniqueId(), newMapName + ";" + type);
+        pendingJoin.put(player.getUniqueId(), newMapName + ":" + type);
 
         TextComponent message = new TextComponent("§eYa estás en otro parkour. ¿Quieres salir y unirte al §b" + type + " §a" + newMapName + "§e?");
         message.addExtra("\n");
@@ -241,21 +288,22 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
         message.addExtra(no);
 
         player.spigot().sendMessage(message);
+        SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP", "ENTITY_EXPERIENCE_ORB_PICKUP");
     }
 
     public @NotNull @Unmodifiable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 1){
-            String commandOpen = "";
+            String commandEditMode = "";
             if ((sender instanceof Player)){
                 final Player player = ((Player) sender).getPlayer();
-                commandOpen = !Gui.isInEditMode(player)? command4 : command5;
+                commandEditMode = !Gui.isInEditMode(player)? editMode : exitEditMode;
             }
-            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, startGlobal, startIndividual,exit, finish, openGlobalLobby));
+            return filterByPrefix(args[0], Arrays.asList(generate, tools, help, commandEditMode, startGlobal, startIndividual,exit, finish, openGlobalLobby, pause ,stop, resume));
 
         }
 
         //Generators
-        if (args[0].equalsIgnoreCase(command1)) {
+        if (args[0].equalsIgnoreCase(generate)) {
             if (args.length == 2) {
                 final int max = 6;
                 final int min = 2;
@@ -267,8 +315,8 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
         }
 
         //Items
-        if (args[0].equalsIgnoreCase(command2)){
-            if (args.length == 2) return filterByPrefix(args[1], Arrays.asList(command4, generation_item));
+        if (args[0].equalsIgnoreCase(tools)){
+            if (args.length == 2) return filterByPrefix(args[1], Arrays.asList(editMode, generation_item));
             if (args.length == 3) return filterByPrefix(args[1], Configuration.getMaps());
          }
 
@@ -280,6 +328,24 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
         if (args[0].equalsIgnoreCase(exit)) {
             if (args.length == 2) {
                 return filterByPrefix(args[1], ParkourManager.getAllPlayerNamesInParkour());
+            }
+        }
+
+        if (args[0].equalsIgnoreCase(stop) || args[0].equalsIgnoreCase(pause) || args[0].equalsIgnoreCase(resume)) {
+            if (args.length == 2) {
+                List<String> all_maps = ParkourManager.getAllGlobalMaps().stream()
+                        .map(name -> "m:" + name)
+                        .collect(Collectors.toList());
+
+                List<String> all_players = ParkourManager.getAllPlayersIndividual().stream()
+                        .map(name -> "p:" + name)
+                        .collect(Collectors.toList());
+
+                List<String> combined = new ArrayList<>();
+                combined.addAll(all_maps);
+                combined.addAll(all_players);
+
+                return filterByPrefix(args[1], combined);
             }
         }
 

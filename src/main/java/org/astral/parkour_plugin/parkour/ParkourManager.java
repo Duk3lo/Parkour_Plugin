@@ -90,12 +90,30 @@ public final class ParkourManager {
     }
 
     public static List<String> getAllPlayerNamesInParkour() {
-        return parkourMapStatesGlobal.values().stream()
-                .flatMap(state -> state.getAllPlayers().stream())
+        Set<UUID> allPlayers = new HashSet<>();
+        allPlayers.addAll(
+                parkourMapStatesGlobal.values().stream()
+                        .flatMap(state -> state.getAllPlayers().stream())
+                        .collect(Collectors.toSet())
+        );
+        allPlayers.addAll(parkourMapStateIndividual.keySet());
+        return allPlayers.stream()
                 .map(Bukkit::getPlayer)
                 .filter(Objects::nonNull)
                 .map(Player::getName)
                 .collect(Collectors.toList());
+    }
+
+    public static List<String> getAllPlayersIndividual() {
+        return parkourMapStateIndividual.keySet().stream()
+                .map(Bukkit::getPlayer)
+                .filter(Objects::nonNull)
+                .map(Player::getName)
+                .collect(Collectors.toList());
+    }
+
+    public static @NotNull List<String> getAllGlobalMaps() {
+        return new ArrayList<>(parkourMapStatesGlobal.keySet());
     }
 
     public static void starParkourIndividual(final @NotNull Player player, final String map) {
