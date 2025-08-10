@@ -507,16 +507,6 @@ public final class ParkourManager {
             final String map = individualState.getName();
             final Player player = Bukkit.getPlayer(uuid);
             if (player != null) hideMap(player, map);
-            final ProgressTracker tracker = ProgressTrackerManager.get(map);
-            if (tracker != null) {
-                tracker.removePlayer(uuid);
-                if (getOnlinePlayersInMap(map).isEmpty()) {
-                    CheckpointBase.removeCheckpoints(map);
-                }
-                if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
-                    ProgressTrackerManager.remove(map);
-                }
-            }
             Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
                 MapAnimationKey key = entry.getKey();
                 if (key.getMapName().equals(map) && key.getMode()==Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
@@ -525,8 +515,6 @@ public final class ParkourManager {
                 }
                 return false;
             }));
-            registerOrUnregisterListener();
-            return;
         }
         ParkourMapStateGlobal state = parkourMapStatesGlobal.values().stream()
                 .filter(s -> s.getPlayersMap().containsKey(uuid))
@@ -562,6 +550,7 @@ public final class ParkourManager {
     }
 
     public static void stopGlobal(final String map) {
+        GlobalTimerManager.stop(map);
         ParkourMapStateGlobal state = parkourMapStatesGlobal.remove(map);
         if (state != null) {
 
@@ -574,7 +563,7 @@ public final class ParkourManager {
             }
             state.getPlayersMap().clear();
         }
-        GlobalTimerManager.stop(map);
+
         Gui.updateItemInLobbyInventories(map);
         Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
             MapAnimationKey key = entry.getKey();
