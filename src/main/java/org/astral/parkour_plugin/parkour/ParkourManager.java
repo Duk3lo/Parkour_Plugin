@@ -116,6 +116,50 @@ public final class ParkourManager {
         return new ArrayList<>(parkourMapStatesGlobal.keySet());
     }
 
+    public static void pauseGlobal(String name) {
+        ParkourMapStateGlobal mapStateGlobal = parkourMapStatesGlobal.get(name);
+        if (mapStateGlobal!=null){
+            for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
+                MapAnimationKey key = entry.getKey();
+                if (key.getMapName().equals(name) && key.getMode() == Type.GLOBAL) {
+                    return;
+                }
+            }
+            GlobalTimerManager.pause(name);
+            mapStateGlobal.setCanMove(false);
+        }
+    }
+
+    public static void resumeGlobal(String name) {
+        ParkourMapStateGlobal mapStateGlobal = parkourMapStatesGlobal.get(name);
+        if (mapStateGlobal!=null){
+            GlobalTimerManager.resume(name, mapStateGlobal.isCountdown(), mapStateGlobal.getTimeLimit());
+            mapStateGlobal.setCanMove(true);
+        }
+    }
+
+    public static void pauseIndividual(UUID uuid) {
+        ParkourMapStateIndividual mapStateIndividual = parkourMapStateIndividual.get(uuid);
+        if (mapStateIndividual != null){
+            for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
+                MapAnimationKey key = entry.getKey();
+                if (key.getMode() == Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
+                    return;
+                }
+            }
+            IndividualTimerManager.pause(uuid);
+            mapStateIndividual.setCanMove(false);
+        }
+    }
+
+    public static void resumeIndividual(UUID uuid) {
+        ParkourMapStateIndividual mapStateIndividual = parkourMapStateIndividual.get(uuid);
+        if (mapStateIndividual != null){
+            IndividualTimerManager.resume(uuid, mapStateIndividual.isCountdown(), mapStateIndividual.getTimeLimit());
+            mapStateIndividual.setCanMove(false);
+        }
+    }
+
     public static void starParkourIndividual(final @NotNull Player player, final String map) {
         final UUID uuid = player.getUniqueId();
         ParkourMapStateIndividual state = parkourMapStateIndividual.computeIfAbsent(uuid, k->new ParkourMapStateIndividual(map));

@@ -192,7 +192,6 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                     String val = parts[1];
 
                     if (type.equalsIgnoreCase("m")) {
-                        // Buscar el mapa y ejecutar acción
                         if (!ParkourManager.getAllGlobalMaps().contains(val)) {
                             player.sendMessage("§cNo existe el mapa: " + val);
                             return true;
@@ -201,24 +200,24 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                         if (args[0].equalsIgnoreCase(stop)) {
                             ParkourManager.stopGlobal(val);
                         } else if (args[0].equalsIgnoreCase(pause)) {
-                            //ParkourManager.pauseMap(val);
+                            ParkourManager.pauseGlobal(val);
                         } else if (args[0].equalsIgnoreCase(resume)) {
-                            //ParkourManager.resumeMap(val);
+                            ParkourManager.resumeGlobal(val);
                         }
 
                     } else if (type.equalsIgnoreCase("p")) {
-                        Player target = Bukkit.getPlayer(val);
+                        UUID target = Bukkit.getPlayer(val).getUniqueId();
                         if (target == null) {
                             player.sendMessage("§cNo existe el jugador: " + val);
                             return true;
                         }
 
                         if (args[0].equalsIgnoreCase(stop)) {
-                            ParkourManager.removePlayerParkour(target.getUniqueId());
+                            ParkourManager.removePlayerParkour(target);
                         } else if (args[0].equalsIgnoreCase(pause)) {
-                            //ParkourManager.pausePlayer(target);
+                            ParkourManager.pauseIndividual(target);
                         } else if (args[0].equalsIgnoreCase(resume)) {
-                            //ParkourManager.resumePlayer(target);
+                            ParkourManager.resumeIndividual(target);
                         }
 
                     } else {
