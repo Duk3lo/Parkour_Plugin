@@ -80,7 +80,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 if (stored != null) {
                     String[] parts = stored.split(";");
                     String map = parts[0];
-                    String type =   parts[1];
+                    String type = parts[1];
                     ParkourManager.removePlayerParkour(uuid);
                     if (type.equalsIgnoreCase("Global")) {
                         ParkourManager.startParkourGlobal(player, map);

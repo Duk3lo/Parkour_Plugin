@@ -53,15 +53,22 @@ public final class ParkourManager {
     private static final ArmorStandApi hologram = plugin.getArmorStandApi();
 
     public static void registerOrUnregisterListener() {
-        boolean hasPlayers = parkourMapStatesGlobal.values().stream()
-                .anyMatch(state -> !state.getAllPlayers().isEmpty()) || !parkourMapStateIndividual.isEmpty();
+        boolean hasPlayersGlobal = parkourMapStatesGlobal.values().stream()
+                .anyMatch(state -> !state.getAllPlayers().isEmpty());
+        boolean hasPlayersIndividual = !parkourMapStateIndividual.isEmpty();
 
-        if (hasPlayers && !activeListener) {
-            plugin.getServer().getPluginManager().registerEvents(parkourListener, plugin);
-            activeListener = true;
-        } else if (!hasPlayers && activeListener) {
-            HandlerList.unregisterAll(parkourListener);
-            activeListener = false;
+        boolean hasPlayers = hasPlayersGlobal || hasPlayersIndividual;
+
+        if (hasPlayers) {
+            if (!activeListener) {
+                plugin.getServer().getPluginManager().registerEvents(parkourListener, plugin);
+                activeListener = true;
+            }
+        } else {
+            if (activeListener) {
+                HandlerList.unregisterAll(parkourListener);
+                activeListener = false;
+            }
         }
     }
 
@@ -515,37 +522,37 @@ public final class ParkourManager {
                 }
                 return false;
             }));
+        }else {
+            ParkourMapStateGlobal state = parkourMapStatesGlobal.values().stream()
+                    .filter(s -> s.getPlayersMap().containsKey(uuid))
+                    .findFirst()
+                    .orElse(null);
+            if (state == null) return;
+
+            state.removePlayer(uuid);
+
+            final String map = state.getName();
+            final Player player = Bukkit.getPlayer(uuid);
+            if (player != null) hideMap(player, map);
+
+            final ProgressTracker tracker = ProgressTrackerManager.get(map);
+            if (tracker != null) {
+                tracker.removePlayer(uuid);
+                if (getOnlinePlayersInMap(map).isEmpty()) {
+                    CheckpointBase.removeCheckpoints(map);
+                }
+                if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
+                    ProgressTrackerManager.remove(map);
+                }
+            }
+
+            GlobalTimerManager.getViewingMap(uuid).ifPresent(viewingMap -> {
+                GlobalTimerManager.removeViewer(uuid);
+                if (GlobalTimerManager.getViewersOf(viewingMap).isEmpty()) {
+                    stopGlobal(viewingMap);
+                }
+            });
         }
-        ParkourMapStateGlobal state = parkourMapStatesGlobal.values().stream()
-                .filter(s -> s.getPlayersMap().containsKey(uuid))
-                .findFirst()
-                .orElse(null);
-        if (state == null) return;
-
-        state.removePlayer(uuid);
-
-        final String map = state.getName();
-        final Player player = Bukkit.getPlayer(uuid);
-        if (player != null) hideMap(player, map);
-
-        final ProgressTracker tracker = ProgressTrackerManager.get(map);
-        if (tracker != null) {
-            tracker.removePlayer(uuid);
-            if (getOnlinePlayersInMap(map).isEmpty()) {
-                CheckpointBase.removeCheckpoints(map);
-            }
-            if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
-                ProgressTrackerManager.remove(map);
-            }
-        }
-
-        GlobalTimerManager.getViewingMap(uuid).ifPresent(viewingMap -> {
-            GlobalTimerManager.removeViewer(uuid);
-            if (GlobalTimerManager.getViewersOf(viewingMap).isEmpty()) {
-                stopGlobal(viewingMap);
-            }
-        });
-
         registerOrUnregisterListener();
     }
 
