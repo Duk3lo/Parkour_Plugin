@@ -69,6 +69,19 @@ public final class ParkourManager {
         return parkourMapStatesGlobal.get(name);
     }
 
+    public static ParkourMapStateIndividual getMapStateIndividual(UUID uuid){
+        return parkourMapStateIndividual.get(uuid);
+    }
+
+    public static @NotNull Set<UUID> getAllPlayers() {
+        Set<UUID> allPlayers = parkourMapStatesGlobal.values().stream()
+                .map(ParkourMapStateGlobal::getAllPlayers)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
+        allPlayers.addAll(parkourMapStateIndividual.keySet());
+        return allPlayers;
+    }
+
     public static List<String> getAllPlayerNamesInParkour() {
         return parkourMapStatesGlobal.values().stream()
                 .flatMap(state -> state.getAllPlayers().stream())
@@ -78,13 +91,11 @@ public final class ParkourManager {
                 .collect(Collectors.toList());
     }
 
-    public static void starParkourHere(final @NotNull Player player, final String map) {
+    public static void starParkourIndividual(final @NotNull Player player, final String map) {
         final UUID uuid = player.getUniqueId();
-        removePlayerParkour(uuid);
-        if (parkourMapStateIndividual.containsKey(uuid))return;
         ParkourMapStateIndividual state = parkourMapStateIndividual.computeIfAbsent(uuid, k->new ParkourMapStateIndividual(map));
         registerOrUnregisterListener();
-        final Location blockLocation = player.getLocation().clone().subtract(0, 1, 0).getBlock().getLocation();
+        final Location blockLocation = player.getLocation(); //.clone().subtract(0, 1, 0).getBlock().getLocation();
         CheckpointBase.loadMap(map);
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("join");
@@ -159,17 +170,6 @@ public final class ParkourManager {
             loadFrames(state.getAnimatedRichText(), state.getAllPlayers(), map, Type.GLOBAL);
         }
         showAllObjectsInMap(player, map);
-    }
-
-
-
-    public static @NotNull Set<UUID> getAllPlayers() {
-        Set<UUID> allPlayers = parkourMapStatesGlobal.values().stream()
-                .map(ParkourMapStateGlobal::getAllPlayers)
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet());
-        allPlayers.addAll(parkourMapStateIndividual.keySet());
-        return allPlayers;
     }
 
     public static void autoReconnectPlayersIfNecessary(final @NotNull Player player){
@@ -347,7 +347,11 @@ public final class ParkourManager {
 
         int delay = textAnimated.getUpdateDelaySeconds();
         final AtomicInteger index = new AtomicInteger(0);
-        MapAnimationKey key = new MapAnimationKey(map, type);
+        final MapAnimationKey key;
+        if (type == Type.INDIVIDUAL) {
+            UUID firstUuid = uuids.stream().findFirst().orElse(null);
+            key = new MapAnimationKey(map, type, firstUuid);
+        } else key = new MapAnimationKey(map, type);
 
         ScheduledTask taskFrames = Kit.getAsyncScheduler().runAtFixedRate(plugin, t -> {
             int i = index.getAndIncrement();
@@ -471,11 +475,6 @@ public final class ParkourManager {
             new ActionBar(formattedTime).send(player);
         }
         removePlayerParkour(uuid);
-        if (isIndividual) {
-            parkourMapStateIndividual.remove(uuid);
-        } else {
-            stateGlobal.getPlayersMap().remove(uuid);
-        }
     }
 
     private static ParkourMapStateGlobal getPlayerCurrentMapState(UUID uuid) {
@@ -518,12 +517,14 @@ public final class ParkourManager {
                     ProgressTrackerManager.remove(map);
                 }
             }
-            GlobalTimerManager.getViewingMap(uuid).ifPresent(viewingMap -> {
-                GlobalTimerManager.removeViewer(uuid);
-                if (GlobalTimerManager.getViewersOf(viewingMap).isEmpty()) {
-                    stopGlobal(viewingMap);
+            Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
+                MapAnimationKey key = entry.getKey();
+                if (key.getMapName().equals(map) && key.getMode()==Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
+                    entry.getValue().cancel();
+                    return true;
                 }
-            });
+                return false;
+            }));
             registerOrUnregisterListener();
             return;
         }
@@ -577,7 +578,7 @@ public final class ParkourManager {
         Gui.updateItemInLobbyInventories(map);
         Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
             MapAnimationKey key = entry.getKey();
-            if (key.getMapName().equals(map)) {
+            if (key.getMapName().equals(map) && key.getMode()==Type.GLOBAL) {
                 entry.getValue().cancel();
                 return true;
             }

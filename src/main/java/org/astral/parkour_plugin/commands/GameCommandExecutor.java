@@ -1,11 +1,17 @@
 package org.astral.parkour_plugin.commands;
 
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.gui.editor.generator.Generator;
 import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.gui.tools.DynamicTools;
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.parkour.ParkourManager;
+import org.astral.parkour_plugin.parkour.Type.ParkourMapStateGlobal;
+import org.astral.parkour_plugin.parkour.Type.ParkourMapStateIndividual;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -22,9 +28,9 @@ import java.util.stream.Collectors;
 public final class GameCommandExecutor implements CommandExecutor, TabCompleter {
 
     // ------------------------------------------ [ Parkour ]
-    private static final String start = "start_parkour";
+    private static final String startGlobal = "start_parkour_global";
+    private static final String startIndividual = "start_parkour_individual";
     private static final String exit = "exit";
-    private static final String start_here = "start_here";
     private static final String finish = "finish";
     private static final String openGlobalLobby = "open_global_lobby";
     private static final String stop = "pause";
@@ -47,6 +53,9 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     private static final Main plugin = Main.getInstance();
     private static final Generator generator = plugin.getGenerator();
 
+    // ------------------------------------------- [Confirm Dialogue]
+    private final Map<UUID, String> pendingJoin = new HashMap<>();
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
 
@@ -64,6 +73,26 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
 
         if (player != null) {
             final Location location = player.getLocation();
+            final UUID uuid = player.getUniqueId();
+
+            if (args[0].equalsIgnoreCase("confirmjoin")) {
+                String stored = pendingJoin.remove(uuid);
+                if (stored != null) {
+                    String[] parts = stored.split(";");
+                    String map = parts[0];
+                    String type =   parts[1];
+
+                    ParkourManager.removePlayerParkour(uuid);
+                    if (type.equalsIgnoreCase("Global")) {
+                        ParkourManager.startParkourGlobal(player, map);
+                    } else {
+                        ParkourManager.starParkourIndividual(player, map);
+                    }
+                } else {
+                    player.sendMessage("§cNo tienes ninguna solicitud pendiente.");
+                }
+                return true;
+            }
 
 
             //Generator
@@ -91,7 +120,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args[0].equalsIgnoreCase(command2)){
                 if (args.length == 2){
                     if (args[1].equalsIgnoreCase(generation_item)){
-                        //return true;
+                        return true;
                     }
                 }
                 return true;
@@ -110,24 +139,44 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 Gui.exitGui(player);
                 return true;
             }
-            if (args[0].equalsIgnoreCase(start) || args[0].equalsIgnoreCase(start_here)){
-                if (args.length >= 2){
-                    if (args.length == 3)player = Bukkit.getPlayer(args[2]);
+            if (args[0].equalsIgnoreCase(startGlobal) || args[0].equalsIgnoreCase(startIndividual)) {
+                if (args.length >= 2) {
+                    if (args.length == 3) player = Bukkit.getPlayer(args[2]);
                     if (player == null) {
-                        sender.sendMessage("No existe jugador: "+ args[2]);
+                        sender.sendMessage("No existe jugador: " + args[2]);
                         return true;
                     }
-                    if (Configuration.getMaps().contains(args[1])){
-                        if (Gui.isInEditMode(player)) Gui.exitGui(player);
-                        if (args[0].equalsIgnoreCase(start)) {
-                            ParkourManager.startParkourGlobal(player, args[1]);
-                        }else {
-                            ParkourManager.starParkourHere(player, args[1]);
-                        }
-                    }else {
-                        sender.sendMessage("No existe el mapa: "+ args[1]);
+                    String nameMap = args[1];
+                    if (!Configuration.getMaps().contains(nameMap)) {
+                        sender.sendMessage("No existe el mapa: " + nameMap);
+                        return true;
                     }
-                    return true;
+                    if (Gui.isInEditMode(player)) Gui.exitGui(player);
+                    String mapToJoin = args[1];
+
+                    if (args[0].equalsIgnoreCase(startGlobal)) {
+                        ParkourMapStateGlobal state = ParkourManager.getMapStateGlobal(nameMap);
+                        if (state != null && state.containsPlayer(uuid)) {
+                            player.sendMessage("§eYa estás en este Parkour Global");
+                            return true;
+                        }
+                        if (ParkourManager.getMapIfInParkour(uuid).isPresent()) {
+                            sendJoinConfirmation(player, nameMap, "Global");
+                            return true;
+                        }
+                        ParkourManager.startParkourGlobal(player, mapToJoin);
+                    } else {
+                        ParkourMapStateIndividual stateIndividual = ParkourManager.getMapStateIndividual(uuid);
+                        if (stateIndividual != null && stateIndividual.getName().equals(nameMap)) {
+                            player.sendMessage("§eYa estás en este Parkour Individual");
+                            return true;
+                        }
+                        if (ParkourManager.getMapIfInParkour(uuid).isPresent()) {
+                            sendJoinConfirmation(player, nameMap, "Individual");
+                            return true;
+                        }
+                        ParkourManager.starParkourIndividual(player, mapToJoin);
+                    }
                 }
                 return true;
             }
@@ -169,6 +218,32 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
         return false;
     }
 
+    private void sendJoinConfirmation(@NotNull Player player, String newMapName, String type) {
+        // Guardamos en formato "mapa;tipo"
+        pendingJoin.put(player.getUniqueId(), newMapName + ";" + type);
+
+        TextComponent message = new TextComponent("§eYa estás en otro parkour. ¿Quieres salir y unirte al §b" + type + " §a" + newMapName + "§e?");
+        message.addExtra("\n");
+
+        TextComponent yes = new TextComponent("§a[✔ Sí]");
+        yes.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder("Click para salir y unirte a " + type + " " + newMapName).create()));
+        yes.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/parkour confirmjoin"));
+
+        TextComponent space = new TextComponent("   ");
+
+        TextComponent no = new TextComponent("§c[✘ No]");
+        no.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder("Click para cancelar").create()));
+        no.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/parkour canceljoin"));
+
+        message.addExtra(yes);
+        message.addExtra(space);
+        message.addExtra(no);
+
+        player.spigot().sendMessage(message);
+    }
+
     public @NotNull @Unmodifiable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 1){
             String commandOpen = "";
@@ -176,7 +251,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 final Player player = ((Player) sender).getPlayer();
                 commandOpen = !Gui.isInEditMode(player)? command4 : command5;
             }
-            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, start, start_here ,exit, finish, openGlobalLobby));
+            return filterByPrefix(args[0], Arrays.asList(command1, command2, command3, commandOpen, startGlobal, startIndividual,exit, finish, openGlobalLobby));
 
         }
 
@@ -198,7 +273,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args.length == 3) return filterByPrefix(args[1], Configuration.getMaps());
          }
 
-        if (args[0].equalsIgnoreCase(start) || args[0].equalsIgnoreCase(start_here)){
+        if (args[0].equalsIgnoreCase(startGlobal) || args[0].equalsIgnoreCase(startIndividual)){
             if (args.length == 2) return Configuration.getMaps();
             if (args.length == 3) return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
         }
