@@ -53,10 +53,6 @@ public final class GlobalTimerManager {
         return data != null ? data.getTimer() : null;
     }
 
-    public static @NotNull List<String> getListTimers(){
-        return new ArrayList<>(timers.keySet());
-    }
-
     public static void addViewer(UUID uuid, @NotNull String map) {
         viewers.put(uuid, map);
     }

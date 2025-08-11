@@ -1,7 +1,9 @@
 package org.astral.parkour_plugin.parkour;
 
+import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.parkour.Type.Type;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
+import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -29,6 +31,17 @@ public final class ParkourListener implements Listener {
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
+        if (IndividualTimerManager.isInPause(player.getUniqueId()) || GlobalTimerManager.isInPause(name_map)) {
+            if (event.getFrom().getBlockX() != event.getTo().getBlockX() ||
+                    event.getFrom().getBlockY() != event.getTo().getBlockY() ||
+                    event.getFrom().getBlockZ() != event.getTo().getBlockZ()) {
+                Location fixed = event.getFrom().clone();
+                fixed.setYaw(event.getTo().getYaw());
+                fixed.setPitch(event.getTo().getPitch());
+                TeleportingApi.teleport(player, fixed);
+            }
+            return;
+        }
         final Location location = player.getLocation();
         Type type = ParkourManager.getTypePlayer(player, name_map);
         boolean canMove = true;

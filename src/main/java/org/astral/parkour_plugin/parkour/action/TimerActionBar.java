@@ -98,10 +98,7 @@ public final class TimerActionBar {
                         .map(Bukkit::getPlayer)
                         .anyMatch(p -> p != null && p.isOnline());
 
-                boolean allPaused = individualMapTask.keySet().stream()
-                        .allMatch(IndividualTimerManager::isInPause);
-
-                if (!someoneOnline || allPaused) {
+                if (!someoneOnline) {
                     scheduledTask.cancel();
                     individualActionBarTask = null;
                     return;
@@ -175,10 +172,7 @@ public final class TimerActionBar {
         if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
             globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
 
-                boolean allPaused = GlobalTimerManager.getListTimers().stream()
-                        .allMatch(GlobalTimerManager::isInPause);
-
-                if (!GlobalTimerManager.hasAnyTimerRunning() || allPaused) {
+                if (!GlobalTimerManager.hasAnyTimerRunning()) {
                     scheduledTask.cancel();
                     globalActionBarTask = null;
                     return;
