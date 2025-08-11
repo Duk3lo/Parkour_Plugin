@@ -98,7 +98,10 @@ public final class TimerActionBar {
                         .map(Bukkit::getPlayer)
                         .anyMatch(p -> p != null && p.isOnline());
 
-                if (!someoneOnline) {
+                boolean allPaused = individualMapTask.keySet().stream()
+                        .allMatch(IndividualTimerManager::isInPause);
+
+                if (!someoneOnline || allPaused) {
                     scheduledTask.cancel();
                     individualActionBarTask = null;
                     return;
@@ -108,11 +111,15 @@ public final class TimerActionBar {
                 while (iterator.hasNext()) {
                     Map.Entry<UUID, String> entry = iterator.next();
                     UUID uuid_game = entry.getKey();
-                        String format = entry.getValue();
+                    String format = entry.getValue();
                     Player p = Bukkit.getPlayer(uuid_game);
 
                     if (p == null || !p.isOnline() || !IndividualTimerManager.isRunning(uuid_game)) {
                         iterator.remove();
+                        continue;
+                    }
+
+                    if (IndividualTimerManager.isInPause(uuid_game)) {
                         continue;
                     }
 
@@ -124,7 +131,8 @@ public final class TimerActionBar {
 
                     String formatForDisplay = timeFinished ? format.replace("{millis}", "000") : format;
                     double progress = getProgress(timeLimit, isCountdown, timer);
-                    long remainingMillis = isCountdown ? timer.getRemainingMillis() : (timeLimit * 1000L - timer.getElapsedMillis());
+                    long remainingMillis = isCountdown ? timer.getRemainingMillis() :
+                            (timeLimit * 1000L - timer.getElapsedMillis());
 
                     String hexColor = getDynamicColor(progress);
                     if (remainingMillis <= 10000) {
@@ -156,15 +164,21 @@ public final class TimerActionBar {
         boolean isCountdown = mapStateGlobal.isCountdown();
         String mapName = mapStateGlobal.getName();
 
-        if (!GlobalTimerManager.isRunning(mapName)) {
+        if (GlobalTimerManager.isRunning(mapName)) {
+            GlobalTimerManager.resume(mapName, isCountdown, timeLimit);
+        }else {
             GlobalTimerManager.start(mapName, isCountdown, timeLimit);
         }
 
-        GlobalTimerManager.addViewer(uuid, mapName);
+        if (uuid != null) GlobalTimerManager.addViewer(uuid, mapName);
 
         if (globalActionBarTask == null || globalActionBarTask.isCancelled()) {
             globalActionBarTask = Kit.getAsyncScheduler().runAtFixedRate(plugin, scheduledTask -> {
-                if (!GlobalTimerManager.hasAnyTimerRunning()) {
+
+                boolean allPaused = GlobalTimerManager.getListTimers().stream()
+                        .allMatch(GlobalTimerManager::isInPause);
+
+                if (!GlobalTimerManager.hasAnyTimerRunning() || allPaused) {
                     scheduledTask.cancel();
                     globalActionBarTask = null;
                     return;
@@ -172,9 +186,15 @@ public final class TimerActionBar {
 
                 for (String map : GlobalTimerManager.getActiveMaps()) {
                     final Timer timer = GlobalTimerManager.get(map);
+                    final boolean isInPause = GlobalTimerManager.isInPause(map);
+
                     if (timer == null) continue;
                     ParkourMapStateGlobal stateGlobal = ParkourManager.getMapStateGlobal(map);
                     if (stateGlobal == null) continue;
+
+                    if (isInPause) {
+                        continue;
+                    }
 
                     boolean mapIsCountdown = stateGlobal.isCountdown();
                     int mapTimeLimit = stateGlobal.getTimeLimit();

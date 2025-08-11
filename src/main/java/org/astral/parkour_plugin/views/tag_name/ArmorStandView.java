@@ -129,6 +129,9 @@ public final class ArmorStandView implements ArmorStandApi {
 
     @Override
     public void hideHolograms(final @NotNull Player player, final String map, final Type type) {
+        if (!player.isOnline()) {
+            return;
+        }
         final UUID uuid = player.getUniqueId();
         final Map<Type, Set<UUID>> typeViewers = playersViewingMap.get(map);
         if (typeViewers != null) {

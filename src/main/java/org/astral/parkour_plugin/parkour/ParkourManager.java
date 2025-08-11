@@ -119,44 +119,52 @@ public final class ParkourManager {
     public static void pauseGlobal(String name) {
         ParkourMapStateGlobal mapStateGlobal = parkourMapStatesGlobal.get(name);
         if (mapStateGlobal!=null){
-            for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
-                MapAnimationKey key = entry.getKey();
-                if (key.getMapName().equals(name) && key.getMode() == Type.GLOBAL) {
-                    return;
+            if (!GlobalTimerManager.isInPause(name)) {
+                for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
+                    MapAnimationKey key = entry.getKey();
+                    if (key.getMapName().equals(name) && key.getMode() == Type.GLOBAL) {
+                        return;
+                    }
                 }
+                GlobalTimerManager.pause(name);
+                mapStateGlobal.setCanMove(false);
             }
-            GlobalTimerManager.pause(name);
-            mapStateGlobal.setCanMove(false);
         }
     }
 
     public static void resumeGlobal(String name) {
         ParkourMapStateGlobal mapStateGlobal = parkourMapStatesGlobal.get(name);
         if (mapStateGlobal!=null){
-            GlobalTimerManager.resume(name, mapStateGlobal.isCountdown(), mapStateGlobal.getTimeLimit());
-            mapStateGlobal.setCanMove(true);
+            if (GlobalTimerManager.isInPause(name)) {
+                TimerActionBar.startGlobalTimer(mapStateGlobal, null);
+                mapStateGlobal.setCanMove(true);
+            }
         }
     }
 
     public static void pauseIndividual(UUID uuid) {
         ParkourMapStateIndividual mapStateIndividual = parkourMapStateIndividual.get(uuid);
         if (mapStateIndividual != null){
-            for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
-                MapAnimationKey key = entry.getKey();
-                if (key.getMode() == Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
-                    return;
+            if (!IndividualTimerManager.isInPause(uuid)) {
+                for (Map.Entry<MapAnimationKey, ScheduledTask> entry : taskAnimation.entrySet()) {
+                    MapAnimationKey key = entry.getKey();
+                    if (key.getMode() == Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
+                        return;
+                    }
                 }
+                IndividualTimerManager.pause(uuid);
+                mapStateIndividual.setCanMove(false);
             }
-            IndividualTimerManager.pause(uuid);
-            mapStateIndividual.setCanMove(false);
         }
     }
 
     public static void resumeIndividual(UUID uuid) {
         ParkourMapStateIndividual mapStateIndividual = parkourMapStateIndividual.get(uuid);
         if (mapStateIndividual != null){
-            IndividualTimerManager.resume(uuid, mapStateIndividual.isCountdown(), mapStateIndividual.getTimeLimit());
-            mapStateIndividual.setCanMove(false);
+            if (IndividualTimerManager.isInPause(uuid)) {
+                TimerActionBar.starIndividualTimer(mapStateIndividual, uuid);
+                mapStateIndividual.setCanMove(true);
+            }
         }
     }
 
@@ -576,14 +584,17 @@ public final class ParkourManager {
             final String map = individualState.getName();
             final Player player = Bukkit.getPlayer(uuid);
             if (player != null) hideMap(player, map);
-            Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
-                MapAnimationKey key = entry.getKey();
-                if (key.getMapName().equals(map) && key.getMode()==Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
-                    entry.getValue().cancel();
-                    return true;
-                }
-                return false;
-            }));
+
+            if (plugin.isEnabled()) {
+                Kit.getAsyncScheduler().runNow(plugin, t -> taskAnimation.entrySet().removeIf(entry -> {
+                    MapAnimationKey key = entry.getKey();
+                    if (key.getMapName().equals(map) && key.getMode() == Type.INDIVIDUAL && key.getUuid().equals(uuid)) {
+                        entry.getValue().cancel();
+                        return true;
+                    }
+                    return false;
+                }));
+            }
         }else {
             ParkourMapStateGlobal state = parkourMapStatesGlobal.values().stream()
                     .filter(s -> s.getPlayersMap().containsKey(uuid))
@@ -634,15 +645,16 @@ public final class ParkourManager {
         }
 
         Gui.updateItemInLobbyInventories(map);
-        Kit.getAsyncScheduler().runNow(plugin, t-> taskAnimation.entrySet().removeIf(entry -> {
-            MapAnimationKey key = entry.getKey();
-            if (key.getMapName().equals(map) && key.getMode()==Type.GLOBAL) {
-                entry.getValue().cancel();
-                return true;
-            }
-            return false;
-        }));
-
+        if (plugin.isEnabled()) {
+            Kit.getAsyncScheduler().runNow(plugin, t -> taskAnimation.entrySet().removeIf(entry -> {
+                MapAnimationKey key = entry.getKey();
+                if (key.getMapName().equals(map) && key.getMode() == Type.GLOBAL) {
+                    entry.getValue().cancel();
+                    return true;
+                }
+                return false;
+            }));
+        }
     }
 
     public static @NotNull List<Location> getFinishPoints(final String map){

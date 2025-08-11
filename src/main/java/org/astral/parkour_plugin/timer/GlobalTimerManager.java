@@ -1,6 +1,5 @@
 package org.astral.parkour_plugin.timer;
 
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,14 +12,14 @@ public final class GlobalTimerManager {
 
     public static void start(String map, boolean countdownMode, int timeLimitSeconds) {
         Timer timer = new Timer(countdownMode, timeLimitSeconds, 0L);
-        timers.put(map, new TimerData(timer, 0L));
+        timers.put(map, new TimerData(timer, 0L, false));
     }
 
     public static void pause(String map) {
         TimerData data = timers.get(map);
         if (data == null) return;
         long elapsed = data.getTimer().getElapsedMillis();
-        timers.put(map, new TimerData(data.getTimer(), elapsed));
+        timers.put(map, new TimerData(data.getTimer(), elapsed, true));
     }
 
     public static void resume(String map, boolean countdownMode, int timeLimitSeconds) {
@@ -28,14 +27,18 @@ public final class GlobalTimerManager {
         if (data == null) return;
         long elapsed = data.getElapsedMillis();
         Timer resumedTimer = new Timer(countdownMode, timeLimitSeconds, elapsed);
-        timers.put(map, new TimerData(resumedTimer, elapsed));
+        timers.put(map, new TimerData(resumedTimer, elapsed, false));
+    }
+
+    public static boolean isInPause(String map) {
+        TimerData data = timers.get(map);
+        return data != null && data.isPause();
     }
 
     public static boolean isRunning(@NotNull String map) {
         return timers.containsKey(map);
     }
 
-    @Contract(pure = true)
     public static @NotNull Set<String> getActiveMaps() {
         return timers.keySet();
     }
@@ -48,6 +51,10 @@ public final class GlobalTimerManager {
     public static @Nullable Timer get(String map) {
         TimerData data = timers.get(map);
         return data != null ? data.getTimer() : null;
+    }
+
+    public static @NotNull List<String> getListTimers(){
+        return new ArrayList<>(timers.keySet());
     }
 
     public static void addViewer(UUID uuid, @NotNull String map) {
@@ -79,10 +86,12 @@ public final class GlobalTimerManager {
     private static class TimerData {
         private final Timer timer;
         private final long elapsedMillis;
+        private final boolean pause;
 
-        public TimerData(Timer timer, long elapsedMillis) {
+        public TimerData(Timer timer, long elapsedMillis, boolean pause) {
             this.timer = timer;
             this.elapsedMillis = elapsedMillis;
+            this.pause = pause;
         }
 
         public Timer getTimer() {
@@ -92,5 +101,7 @@ public final class GlobalTimerManager {
         public long getElapsedMillis() {
             return elapsedMillis;
         }
+
+        public boolean isPause() {return pause;}
     }
 }
