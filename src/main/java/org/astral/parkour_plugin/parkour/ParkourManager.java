@@ -655,6 +655,7 @@ public final class ParkourManager {
                 return false;
             }));
         }
+        registerOrUnregisterListener();
     }
 
     public static @NotNull List<Location> getFinishPoints(final String map){
