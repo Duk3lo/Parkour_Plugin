@@ -3,15 +3,19 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
+import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 import org.astral.parkour_plugin.config.maps.title.RichText;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,13 +42,60 @@ public final class Rules {
     public static final String spawnP = "spawn_";
     public static final String endP = "meta_";
 
+    //Maps
+    private final Map<ParkourItemType, ParkourItem> parkourItems = new HashMap<>();
+
     public Rules(final String MAP_FOLDER){
         this.MAP_FOLDER = MAP_FOLDER;
         try {
             yamlConfiguration = configuration.getYamlConfiguration(MAPS, this.MAP_FOLDER, RULES_YML);
+
         } catch (FileNotFoundException e) {
             plugin.getLogger().warning("YAML file not found for " + this.MAP_FOLDER + ".");
         }
+    }
+
+    // Get Items
+    public void loadItems() {
+        if (yamlConfiguration == null) return;
+        ConfigurationSection section = yamlConfiguration.getConfigurationSection("items");
+        if (section == null) return;
+
+        for (String key : section.getKeys(false)) {
+            ParkourItemType type;
+            try {
+                type = ParkourItemType.valueOf(key);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Ítem desconocido en YAML: " + key);
+                continue;
+            }
+
+            Material material = Material.valueOf(section.getString(key + ".material", "STONE"));
+            String displayName = section.getString(key + ".displayName", "§f" + key);
+            List<String> lore = yamlConfiguration.getStringList("items." + key + ".lore");
+            int slot = yamlConfiguration.getInt("items." + key + ".slot", 0);
+            int uses = yamlConfiguration.getInt("items." + key + ".uses", -1);
+            int jumps = yamlConfiguration.getInt("items." + key + ".jumps", 0);
+            double force = yamlConfiguration.getDouble("items." + key + ".force", 0);
+            double upward = yamlConfiguration.getDouble("items." + key + ".upward", 0);
+            int cooldown = yamlConfiguration.getInt("items." + key + ".cooldown", 0);
+            boolean giveToPlayer = section.getBoolean(key + ".give_to_player", true);
+
+            ParkourItem item = new ParkourItem(
+                    material, displayName, lore, slot, uses,
+                    jumps, force, upward, cooldown, giveToPlayer, type
+            );
+
+            parkourItems.put(type, item);
+        }
+    }
+
+    public @NotNull @UnmodifiableView Map<ParkourItemType, ParkourItem> getParkourItems() {
+        return Collections.unmodifiableMap(parkourItems);
+    }
+
+    public boolean keepInventory(){
+        return yamlConfiguration.getBoolean("keep_items", true);
     }
 
     // Auto Reconnect

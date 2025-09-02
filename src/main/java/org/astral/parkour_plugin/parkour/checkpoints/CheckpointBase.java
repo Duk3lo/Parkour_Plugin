@@ -5,7 +5,6 @@ import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -39,12 +38,12 @@ public final class CheckpointBase {
         return checkpoint;
     }
 
-    public static void addPlayerLastCheckpoint(final @NotNull Player player, final Checkpoint checkpoint){
-        actualCheckpoint.put(player.getUniqueId(), checkpoint);
+    public static void addPlayerLastCheckpoint(final UUID uuid, final Checkpoint checkpoint){
+        actualCheckpoint.put(uuid, checkpoint);
     }
 
-    public static Checkpoint getLastCheckpointPlayer(final @NotNull Player player){
-        return actualCheckpoint.get(player.getUniqueId());
+    public static Checkpoint getLastCheckpointPlayer(UUID uuid){
+        return actualCheckpoint.get(uuid);
     }
 
     public static List<Checkpoint> getCheckpoints(final String key){

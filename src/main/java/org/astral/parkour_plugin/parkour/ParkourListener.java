@@ -5,16 +5,22 @@ import org.astral.parkour_plugin.parkour.Type.Type;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public final class ParkourListener implements Listener {
 
@@ -27,7 +33,6 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerMove(final @NotNull PlayerMoveEvent event) {
         final Player player = event.getPlayer();
-        System.out.println("move");
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
@@ -65,7 +70,19 @@ public final class ParkourListener implements Listener {
 
         System.out.println(percent);
 
-        ParkourManager.saveCheckpointIfReached(player, name_map, location);
+        List<String> sortedPlayers = ProgressTrackerManager.getSortedPlayersByRadialProgress(
+                ParkourManager.getMapStateGlobal(name_map).getAllPlayers().stream()
+                        .map(Bukkit::getPlayer)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()),
+                ParkourManager.getSpawnPlayer(player.getUniqueId()),
+                ParkourManager.getFinishPoints(name_map)
+        );
+
+        System.out.println("Ranking en " + name_map + ": " + sortedPlayers);
+
+
+        ParkourManager.saveCheckpointIfReached(player.getUniqueId(), name_map, location, type);
         ParkourManager.teleportIf(player, name_map, location);
         ParkourManager.endParkourIfNecessary(player, name_map, location);
     }
@@ -73,7 +90,6 @@ public final class ParkourListener implements Listener {
     @EventHandler
     public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {
         final Player player = event.getPlayer();
-        System.out.println(player);
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
@@ -85,6 +101,17 @@ public final class ParkourListener implements Listener {
             if (type == Type.INDIVIDUAL) {
                 IndividualTimerManager.pause(player.getUniqueId());
             }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInteract(final @NotNull PlayerInteractEvent event) {
+        final Player player = event.getPlayer();
+        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
+        if (!playerInMap.isPresent()) return;
+        ItemStack item = event.getItem();
+        if (item != null){
+
         }
     }
 

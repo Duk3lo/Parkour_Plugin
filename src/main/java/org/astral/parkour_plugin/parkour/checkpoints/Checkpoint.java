@@ -1,5 +1,6 @@
 package org.astral.parkour_plugin.parkour.checkpoints;
 
+import org.astral.parkour_plugin.parkour.Type.Type;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,6 +13,7 @@ public final class Checkpoint {
 
     private double maxY;
     private double minY;
+    private Type type;
 
     public Checkpoint(final Location location) {
         this.locations = Collections.singleton(location);
@@ -47,5 +49,13 @@ public final class Checkpoint {
 
     public void setMinY(double minY) {
         this.minY = minY;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 }

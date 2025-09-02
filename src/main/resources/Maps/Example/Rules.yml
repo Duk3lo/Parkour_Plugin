@@ -68,3 +68,105 @@ spawns_points:
   []
 end_points:
   []
+keep_items: false
+items:
+  LAST_CHECKPOINT:
+    material: SLIME_BALL
+    displayName: "§aÚltimo Checkpoint"
+    lore:
+      - "§7Te lleva al"
+      - "§7último checkpoint."
+    slot: 0
+    cooldown: 0
+    uses: -1
+    give_to_player: true   # se entrega al jugador
+
+  BACK_CHECKPOINT:
+    material: REDSTONE
+    displayName: "§cCheckpoint Anterior"
+    lore:
+      - "§7Retrocede un checkpoint."
+    slot: 1
+    cooldown: 0
+    uses: -1
+    give_to_player: true
+
+  RESET:
+    material: BARRIER
+    displayName: "§cReiniciar Parkour"
+    lore:
+      - "§7Vuelve al inicio del mapa."
+    slot: 8
+    cooldown: 0
+    uses: -1
+    give_to_player: true
+
+  FINISH:
+    material: NETHER_STAR
+    displayName: "§eFinalizar Parkour"
+    lore:
+      - "§7Marca tu tiempo y"
+      - "§7termina la partida."
+    slot: 7
+    cooldown: 0
+    uses: 1
+    give_to_player: false   # no se entrega automáticamente
+
+  FEATHER_JUMP:
+    material: FEATHER
+    displayName: "§bSalto Extra"
+    lore:
+      - "§7Te permite hacer"
+      - "§7un salto adicional."
+    jumps: 1
+    cooldown: 3
+    uses: 5
+    slot: 2
+    give_to_player: true
+
+  ROCKET_BOOST:
+    material: FIREWORK
+    displayName: "§dCohete de Impulso"
+    lore:
+      - "§7Te lanza hacia adelante"
+      - "§7con gran velocidad."
+    force: 2.5
+    upward: 0.8
+    cooldown: 5
+    uses: 3
+    slot: 3
+    give_to_player: true
+
+  TELEPORT_LOBBY:
+    material: COMPASS
+    displayName: "§6Volver al Lobby"
+    lore:
+      - "§7Regresa al lobby"
+      - "§7de parkour."
+    slot: 4
+    cooldown: 0
+    uses: -1
+    give_to_player: true
+
+  HIDE_PLAYERS:
+    material: INK_SACK
+    data: 8
+    displayName: "§9Ocultar Jugadores"
+    lore:
+      - "§7Activa/desactiva"
+      - "§7la visibilidad de jugadores."
+    slot: 5
+    cooldown: 2
+    uses: -1
+    give_to_player: false   # no se entrega automáticamente
+
+  CHECKPOINT_SELECTOR:
+    material: BOOK
+    displayName: "§aSelector de Checkpoint"
+    lore:
+      - "§7Elige un checkpoint"
+      - "§7para teletransportarte."
+    slot: 6
+    cooldown: 0
+    uses: -1
+    give_to_player: true

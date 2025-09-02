@@ -128,8 +128,8 @@ public final class ArmorStandView implements ArmorStandApi {
 
 
     @Override
-    public void hideHolograms(final @NotNull Player player, final String map, final Type type) {
-        if (!player.isOnline()) {
+    public void hideHolograms(final Player player, final String map, final Type type) {
+        if (player==null) {
             return;
         }
         final UUID uuid = player.getUniqueId();

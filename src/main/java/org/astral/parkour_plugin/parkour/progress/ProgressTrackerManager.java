@@ -1,10 +1,14 @@
 package org.astral.parkour_plugin.parkour.progress;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ProgressTrackerManager {
     private static final Map<String, ProgressTracker> trackerByMap = new HashMap<>();
@@ -45,6 +49,17 @@ public final class ProgressTrackerManager {
             }
         }
         return maxProgress;
+    }
+
+    public static List<String> getSortedPlayersByRadialProgress(@NotNull Set<Player> players, Location start, List<Location> endPoints) {
+        return players.stream()
+                .sorted((p1, p2) -> {
+                    double progress1 = getMaxRadialProgress(start, endPoints, p1.getLocation());
+                    double progress2 = getMaxRadialProgress(start, endPoints, p2.getLocation());
+                    return Double.compare(progress2, progress1);
+                })
+                .map(Player::getName)
+                .collect(Collectors.toList());
     }
 
 }

@@ -227,7 +227,6 @@ public final class Gui {
             data.setEditing(true);
             SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP", "ENTITY_EXPERIENCE_ORB_PICKUP");
         }
-
         registerOrUnregisterEvents();
     }
 

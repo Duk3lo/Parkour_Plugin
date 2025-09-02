@@ -49,6 +49,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
 
     // ------------------------------------------- [ 1 ]
     private static final String generation_item = "block_generate";
+    private static final String here = "here";
 
     // ------------------------------------------- [Instances]
     private static final Main plugin = Main.getInstance();
@@ -82,11 +83,15 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                     String[] parts = stored.split(":");
                     String map = parts[0];
                     String type = parts[1];
+                    boolean animated = parts.length >= 3 && Boolean.parseBoolean(parts[2]);
+                    boolean isHere = parts.length >= 4 && Boolean.parseBoolean(parts[3]);
+
                     ParkourManager.removePlayerParkour(uuid);
+
                     if (type.equalsIgnoreCase("Global")) {
-                        ParkourManager.startParkourGlobal(player, map);
+                        ParkourManager.startParkourGlobal(player, map, animated);
                     } else {
-                        ParkourManager.starParkourIndividual(player, map);
+                        ParkourManager.starParkourIndividual(player, map, animated, isHere);
                     }
                 } else {
                     player.sendMessage("§cNo tienes ninguna solicitud pendiente.");
@@ -138,20 +143,47 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 Gui.exitGui(player);
                 return true;
             }
+
             if (args[0].equalsIgnoreCase(startGlobal) || args[0].equalsIgnoreCase(startIndividual)) {
                 if (args.length >= 2) {
-                    if (args.length == 3) player = Bukkit.getPlayer(args[2]);
-                    if (player == null) {
-                        sender.sendMessage("No existe jugador: " + args[2]);
-                        return true;
-                    }
                     String nameMap = args[1];
                     if (!Configuration.getMaps().contains(nameMap)) {
                         sender.sendMessage("No existe el mapa: " + nameMap);
                         return true;
                     }
-                    if (Gui.isInEditMode(player)) Gui.exitGui(player);
+                    boolean animated = args.length >= 3 && args[2].equalsIgnoreCase("title:a");
+
                     String mapToJoin = args[1];
+                        boolean isHere = false;
+
+                    if (args[0].equalsIgnoreCase(startGlobal)) {
+                        if (args.length >= 4) {
+                            player = Bukkit.getPlayer(args[3]);
+                            if (player == null) {
+                                sender.sendMessage("No existe jugador: " + args[3]);
+                                return true;
+                            }
+                        }
+                    } else {
+                        if (args.length >= 4 && args[3].equalsIgnoreCase(here)) {
+                            isHere = true;
+                            if (args.length >= 5) {
+                                player = Bukkit.getPlayer(args[4]);
+                                if (player == null) {
+                                    sender.sendMessage("No existe jugador: " + args[4]);
+                                    return true;
+                                }
+                            }
+                        } else if (args.length >= 4) {
+                            player = Bukkit.getPlayer(args[3]);
+                            if (player == null) {
+                                sender.sendMessage("No existe jugador: " + args[3]);
+                                return true;
+                            }
+                        }
+                    }
+
+                    if (Gui.isInEditMode(player)) Gui.exitGui(player);
 
                     if (args[0].equalsIgnoreCase(startGlobal)) {
                         ParkourMapStateGlobal state = ParkourManager.getMapStateGlobal(nameMap);
@@ -160,10 +192,10 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                             return true;
                         }
                         if (ParkourManager.getMapIfInParkour(uuid).isPresent()) {
-                            sendJoinConfirmation(player, nameMap, "Global");
+                            sendJoinConfirmation(player, nameMap, "Global", animated, isHere);
                             return true;
                         }
-                        ParkourManager.startParkourGlobal(player, mapToJoin);
+                        ParkourManager.startParkourGlobal(player, mapToJoin, animated);
                     } else {
                         ParkourMapStateIndividual stateIndividual = ParkourManager.getMapStateIndividual(uuid);
                         if (stateIndividual != null && stateIndividual.getName().equals(nameMap)) {
@@ -171,10 +203,10 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                             return true;
                         }
                         if (ParkourManager.getMapIfInParkour(uuid).isPresent()) {
-                            sendJoinConfirmation(player, nameMap, "Individual");
+                            sendJoinConfirmation(player, nameMap, "Individual:" + isHere, animated, isHere);
                             return true;
                         }
-                        ParkourManager.starParkourIndividual(player, mapToJoin);
+                        ParkourManager.starParkourIndividual(player, mapToJoin, animated, isHere);
                     }
                 }
                 return true;
@@ -264,15 +296,18 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
         return false;
     }
 
-    private void sendJoinConfirmation(@NotNull Player player, String newMapName, String type) {
-        pendingJoin.put(player.getUniqueId(), newMapName + ":" + type);
+    private void sendJoinConfirmation(@NotNull Player player, String newMapName, String type, boolean animated, boolean isHere) {
+        pendingJoin.put(player.getUniqueId(), newMapName + ":" + type + ":" + animated + ":" + isHere);
 
-        TextComponent message = new TextComponent("§eYa estás en otro parkour. ¿Quieres salir y unirte al §b" + type + " §a" + newMapName + "§e?");
+        TextComponent message = new TextComponent("§eYa estás en otro parkour. ¿Quieres salir y unirte al §b"
+                + type + " §a" + newMapName + "§e?");
         message.addExtra("\n");
 
         TextComponent yes = new TextComponent("§a[✔ Sí]");
         yes.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder("Click para salir y unirte a " + type + " " + newMapName).create()));
+                new ComponentBuilder("Click para salir y unirte a " + type + " " + newMapName
+                        + (animated ? " §d(con título animado)" : " §7(sin título animado)")
+                        + (isHere ? " §b(aquí)" : "")).create()));
         yes.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/parkour confirmjoin"));
 
         TextComponent space = new TextComponent("   ");
@@ -319,10 +354,32 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
             if (args.length == 3) return filterByPrefix(args[1], Configuration.getMaps());
          }
 
-        if (args[0].equalsIgnoreCase(startGlobal) || args[0].equalsIgnoreCase(startIndividual)){
-            if (args.length == 2) return Configuration.getMaps();
-            if (args.length == 3) return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
+        if (args[0].equalsIgnoreCase(startGlobal) || args[0].equalsIgnoreCase(startIndividual)) {
+            if (args.length == 2) {
+
+                return filterByPrefix(args[1], Configuration.getMaps());
+            }
+            if (args.length == 3) {
+
+                return filterByPrefix(args[2], Arrays.asList("title:a", "title:n"));
+            }
+            if (args.length == 4 && args[0].equalsIgnoreCase(startIndividual)) {
+
+                if (here.equalsIgnoreCase(args[3])) {
+                    return Collections.emptyList();
+                }
+                return filterByPrefix(args[3], Collections.singletonList(here));
+            }
+
+            if ((args.length == 4 && args[0].equalsIgnoreCase(startGlobal))
+                    || (args.length == 5 && args[0].equalsIgnoreCase(startIndividual))) {
+                List<String> suggestions = Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .collect(Collectors.toList());
+                return filterByPrefix(args[args.length - 1], suggestions);
+            }
         }
+
 
         if (args[0].equalsIgnoreCase(exit)) {
             if (args.length == 2) {

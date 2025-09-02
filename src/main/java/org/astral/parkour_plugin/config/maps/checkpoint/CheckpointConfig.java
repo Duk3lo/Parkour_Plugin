@@ -1,5 +1,6 @@
 package org.astral.parkour_plugin.config.maps.checkpoint;
 
+import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -110,6 +111,25 @@ public final class CheckpointConfig extends BaseCheckpoint {
                 comparator.getZ() == adjustedZ;
     }
 
+    public void setDefaultItems(){
+        for (ParkourItemType itemType : ParkourItemType.values()) {
+            final String name = itemType.name();
+            configurationSection.set(name+".apply_property", false);
+            configurationSection.set(name + ".cooldown", 3);
+            configurationSection.set(name + ".uses", -1);
+            configurationSection.set(name + ".removeItem", false);
+            configurationSection.set(name + ".addUses", 0);
+            configurationSection.set(name + ".accumulateUses", false);
+            if (itemType == ParkourItemType.FEATHER_JUMP) {
+                configurationSection.set(name + ".jumps", 1);
+            }
+            if (itemType == ParkourItemType.ROCKET_BOOST) {
+                configurationSection.set(name + ".force", 2.5);
+                configurationSection.set(name + ".upward", 0.8);
+            }
+        }
+    }
+
     public void setLocation(final @NotNull Location location) {
         validateConfigurationSection();
         final double x = (int) location.getX() + 0.5;
@@ -119,6 +139,7 @@ public final class CheckpointConfig extends BaseCheckpoint {
         configurationSection.set("x", x);
         configurationSection.set("y", y);
         configurationSection.set("z", z);
+        setDefaultItems();
         saveConfiguration();
     }
 

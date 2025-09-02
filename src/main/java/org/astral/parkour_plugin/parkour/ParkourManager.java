@@ -6,6 +6,9 @@ import org.astral.parkour_plugin.actiobar.ActionBar;
 import org.astral.parkour_plugin.compatibilizer.adapters.SoundApi;
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.compatibilizer.scheduler.Core.ScheduledTask;
+import org.astral.parkour_plugin.config.cache.InventoryCache;
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
+import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 import org.astral.parkour_plugin.config.maps.title.RichText;
@@ -26,9 +29,12 @@ import org.astral.parkour_plugin.title.Title;
 import org.astral.parkour_plugin.views.tag_name.ArmorStandApi;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -168,19 +174,33 @@ public final class ParkourManager {
         }
     }
 
-    public static void starParkourIndividual(final @NotNull Player player, final String map) {
+    public static void starParkourIndividual(final @NotNull Player player, final String map, boolean animated , boolean here) {
         final UUID uuid = player.getUniqueId();
         ParkourMapStateIndividual state = parkourMapStateIndividual.computeIfAbsent(uuid, k->new ParkourMapStateIndividual(map));
         registerOrUnregisterListener();
-        final Location blockLocation = player.getLocation(); //.clone().subtract(0, 1, 0).getBlock().getLocation();
+        Location locationOfStart;
+        if (here) locationOfStart = player.getLocation();
+        else locationOfStart = getRandomSpawn(map);
+        if (locationOfStart == null) {
+            player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + map + "§c, se usara la propia localizacion.");
+            locationOfStart = player.getLocation();
+        }
         CheckpointBase.loadMap(map);
+        teleportToSpawnOrWarn(player, map, locationOfStart);
         final Rules rules = new Rules(map);
         final Optional<RichText> optionalTitle = rules.getTitle("join");
         optionalTitle.ifPresent(title ->
                 new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
         rules.getMessage("join", player.getName()).ifPresent(player::sendMessage);
-        rules.getAnimatedTitle("star_countdown").ifPresent(state::setAnimatedRichText);
-        state.setData(new ParkourPlayerData(blockLocation));
+        if (animated){
+            rules.getAnimatedTitle("star_countdown").ifPresent(state::setAnimatedRichText);
+        }else {
+            rules.getTitle("start").ifPresent(t -> {
+                AnimatedRichText textRich = new AnimatedRichText(Collections.singletonList(t), 1);
+                state.setAnimatedRichText(textRich);
+            });
+        }
+        state.setData(new ParkourPlayerData(locationOfStart));
         state.setDisplayActionBarTimer(rules.isIndividualActionBarTimerDisplayEnabled());
         state.setTimeLimit(rules.getIndividualTimeLimit());
         state.setFormat(rules.getIndividualTimerFormat());
@@ -191,29 +211,29 @@ public final class ParkourManager {
         loadFrames(state.getAnimatedRichText(), Collections.singleton(uuid), map, Type.INDIVIDUAL);
         state.setInGame(true);
         showAllObjectsInMap(player, map);
+        addItemsParkourPlayer(player, map);
     }
 
-    public static void startParkourGlobal(@NotNull Player player, String map) {
-        ParkourMapStateGlobal state = parkourMapStatesGlobal.get(map);
-        if (state != null) {
-            if (state.isInGame()) {
+    public static void startParkourGlobal(@NotNull Player player, String map, boolean animated) {
+        if (parkourMapStatesGlobal.get(map) != null) {
+            if (parkourMapStatesGlobal.get(map).isInGame()) {
                 player.sendMessage("§cEste modo ya está en juego, no te puedes unir.");
                 return;
             }
-            if (!state.hasUnlimitedPlayers() && state.isFull()) {
+            if (!parkourMapStatesGlobal.get(map).hasUnlimitedPlayers() && parkourMapStatesGlobal.get(map).isFull()) {
                 player.sendMessage("§cEste modo ha alcanzado el número máximo de jugadores.");
                 return;
             }
         }
-        Location spawn = getRandomSpawn(map);
-        if (spawn == null) {
+        Location locationOfStart = getRandomSpawn(map);
+        if (locationOfStart == null) {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + map + "§c.");
             return;
         }
         CheckpointBase.loadMap(map);
-        teleportToSpawnOrWarn(player, map, spawn);
+        teleportToSpawnOrWarn(player, map, locationOfStart);
         Rules rules = new Rules(map);
-        state = parkourMapStatesGlobal.computeIfAbsent(map, k -> {
+        ParkourMapStateGlobal state = parkourMapStatesGlobal.computeIfAbsent(map, k -> {
             ParkourMapStateGlobal newState = new ParkourMapStateGlobal(
                     k,
                     rules.getWaitingLobbyMinPlayers(),
@@ -226,7 +246,7 @@ public final class ParkourManager {
             newState.setFormat(rules.getGlobalTimerFormat());
             return newState;
         });
-        state.addPlayer(player.getUniqueId(), new ParkourPlayerData(spawn));
+        state.addPlayer(player.getUniqueId(), new ParkourPlayerData(locationOfStart));
         registerOrUnregisterListener();
         rules.getTitle("join").ifPresent(title ->
                 new Title(title.getTitle(), title.getSubtitle(),
@@ -234,7 +254,15 @@ public final class ParkourManager {
                         .send(player)
         );
         rules.getMessage("join", player.getName()).ifPresent(player::sendMessage);
-        rules.getAnimatedTitle("star_countdown").ifPresent(state::setAnimatedRichText);
+
+        if (animated){
+            rules.getAnimatedTitle("star_countdown").ifPresent(state::setAnimatedRichText);
+        }else {
+            rules.getTitle("start").ifPresent(t -> {
+                AnimatedRichText textRich = new AnimatedRichText(Collections.singletonList(t), 1);
+                state.setAnimatedRichText(textRich);
+            });
+        }
         if (rules.isWaitingLobbyEnabled()) {
             state.setWaitingPlayers(true);
             state.setLimitTimeWait(rules.getWaitingLobbyMaxWaitTimeSeconds());
@@ -247,16 +275,45 @@ public final class ParkourManager {
             loadFrames(state.getAnimatedRichText(), state.getAllPlayers(), map, Type.GLOBAL);
         }
         showAllObjectsInMap(player, map);
+        addItemsParkourPlayer(player, map);
     }
 
-    public static void autoReconnectPlayersIfNecessary(final @NotNull Player player){
+    public static void addItemsParkourPlayer(final @NotNull Player player, final String map) {
+        final ItemStack[] itemStacks = player.getInventory().getContents();
+        InventoryCache.saveInventory(player.getUniqueId(), itemStacks);
+        PlayerInventory inventoryPlayer = player.getInventory();
+        Rules rules = new Rules(map);
+        if (!rules.keepInventory()) {
+            inventoryPlayer.clear();
+        }
+        rules.loadItems();
+        for (ParkourItemType parkourItemType : ParkourItemType.values()) {
+            ParkourItem parkourItem = rules.getParkourItems().get(parkourItemType);
+            if (parkourItem != null && parkourItem.isGiveToPlayer()) {
+                ItemStack item = parkourItem.toItemStack();
+                int slot = parkourItem.getSlot();
+                if (slot >= 0 && slot < inventoryPlayer.getSize()) {
+                    ItemStack current = inventoryPlayer.getItem(slot);
+                    if (current == null || current.getType() == Material.AIR) {
+                        inventoryPlayer.setItem(slot, item);
+                    } else {
+                        player.getWorld().dropItemNaturally(player.getLocation(), item);
+                    }
+                } else {
+                    inventoryPlayer.addItem(item);
+                }
+            }
+        }
+    }
+
+    public static void autoReconnectPlayersIfNecessary(final @NotNull Player player) {
         final Optional<String> playerInMap = getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
         final String name_map = playerInMap.get();
         if (isAutoReconnect(name_map)) {
             Type type = getTypePlayer(player, name_map);
             if (isInGameIndividual(player.getUniqueId())||isInGameGlobal(name_map)){
-                final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
+                final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player.getUniqueId());
                 if (checkpoint != null) {
                     teleportToCheckpoint(player, checkpoint);
                 } else {
@@ -271,9 +328,10 @@ public final class ParkourManager {
         }
     }
 
-    public static void saveCheckpointIfReached(final Player player, final String name_map, final Location location) {
+    public static void saveCheckpointIfReached(final UUID uuid, final String name_map, final Location location, final Type type) {
         final List<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(name_map);
         if (checkpoints == null || checkpoints.isEmpty()) return;
+        ProgressTracker tracker = ProgressTrackerManager.get(name_map);
         for (int i = 0; i < checkpoints.size(); i++) {
             final Checkpoint checkpoint = checkpoints.get(i);
             final Location checkpointLoc = checkpoint.getLocation();
@@ -281,19 +339,20 @@ public final class ParkourManager {
             finalCheckpoint.add(0,1,0);
 
             if (CheckpointBase.isEqualLocation(finalCheckpoint, location)) {
-                if (checkpoint.getPlayers().contains(player.getUniqueId())) return;
+                if (checkpoint.getPlayers().contains(uuid)) return;
 
-                checkpoint.getPlayers().add(player.getUniqueId());
-                CheckpointBase.addPlayerLastCheckpoint(player, checkpoint);
+                checkpoint.getPlayers().add(uuid);
+                checkpoint.setType(type);
+                CheckpointBase.addPlayerLastCheckpoint(uuid, checkpoint);
 
-                ProgressTracker tracker = ProgressTrackerManager.get(name_map);
-                tracker.updateCheckpoint(player, i);
-                double progress = tracker.getProgress(player.getUniqueId(), checkpoints);
-                double progressCompletion = tracker.getCheckpointCompletionPercentage(player.getUniqueId(), checkpoints);
+
+                tracker.updateCheckpoint(uuid, i);
+                double progress = tracker.getProgress(uuid, checkpoints);
+                double progressCompletion = tracker.getCheckpointCompletionPercentage(uuid, checkpoints);
+
                 System.out.println(progress);
                 System.out.println(progressCompletion);
 
-                // player.sendActionBar("§bProgreso: §a" + String.format("%.2f", progress) + "§f%");
                 return;
             }
         }
@@ -311,9 +370,9 @@ public final class ParkourManager {
         }
     }
 
-    public static void teleportIf(final Player player, final String name_map, final @NotNull Location location) {
+    public static void teleportIf(final @NotNull Player player, final String name_map, final @NotNull Location location) {
         final double currentY = location.getY();
-        final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player);
+        final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player.getUniqueId());
         if (checkpoint != null && (currentY < checkpoint.getMinY() || currentY > checkpoint.getMaxY())) {
             teleportToCheckpoint(player, checkpoint);
             return;
@@ -402,23 +461,20 @@ public final class ParkourManager {
     public static void loadFrames(@NotNull AnimatedRichText textAnimated, Set<UUID> uuids, String map, Type type) {
         int framesSize = textAnimated.getFrames().size();
         if (framesSize == 0) {
-            Kit.getAsyncScheduler().runDelayed(plugin, t -> {
-                for (UUID uuid : uuids) {
-                    Player player = Bukkit.getPlayer(uuid);
-                    if (player != null && player.isOnline()) {
-                        SoundApi.playSound(player, 1.0f, 1.0f,
-                                "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
-                        if (type == Type.GLOBAL) {
-                            TimerActionBar.startGlobalTimer(parkourMapStatesGlobal.get(map), uuid);
-                            parkourMapStatesGlobal.get(map).setCanMove(true);
-                        } else {
-                            TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(uuid), uuid);
-                            parkourMapStateIndividual.get(uuid).setCanMove(true);
-                        }
+            for (UUID uuid : uuids) {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null && player.isOnline()) {
+                    SoundApi.playSound(player, 1.0f, 1.0f,
+                            "FIREWORK_BLAST", "ENTITY_FIREWORK_ROCKET_BLAST");
+                    if (type == Type.GLOBAL) {
+                        TimerActionBar.startGlobalTimer(parkourMapStatesGlobal.get(map), uuid);
+                        parkourMapStatesGlobal.get(map).setCanMove(true);
+                    } else {
+                        TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(uuid), uuid);
+                        parkourMapStateIndividual.get(uuid).setCanMove(true);
                     }
                 }
-            }, 1, TimeUnit.SECONDS);
-
+            }
             return;
         }
 
@@ -606,7 +662,16 @@ public final class ParkourManager {
 
             final String map = state.getName();
             final Player player = Bukkit.getPlayer(uuid);
-            if (player != null) hideMap(player, map);
+            if (player != null) {
+                hideMap(player, map);
+                if (InventoryCache.hasInventory(uuid)) {
+                    ItemStack[] saved = InventoryCache.getInventory(uuid);
+                    player.getInventory().clear();
+                    if (saved != null) {
+                        player.getInventory().setContents(saved);
+                    }
+                }
+            }
 
             final ProgressTracker tracker = ProgressTrackerManager.get(map);
             if (tracker != null) {
@@ -614,7 +679,7 @@ public final class ParkourManager {
                 if (getOnlinePlayersInMap(map).isEmpty()) {
                     CheckpointBase.removeCheckpoints(map);
                 }
-                if (tracker.getSortedByProgress(Collections.emptyList()).isEmpty()) {
+                if (tracker.getSortedByProgressCheckpoint(Collections.emptyList()).isEmpty()) {
                     ProgressTrackerManager.remove(map);
                 }
             }

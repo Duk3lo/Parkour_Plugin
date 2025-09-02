@@ -1,18 +1,21 @@
 package org.astral.parkour_plugin.parkour.progress;
 
 
+import org.astral.parkour_plugin.parkour.Type.Type;
 import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class ProgressTracker {
 
     private final Map<UUID, Integer> playerCheckpointMap = new HashMap<>();
 
-    public void updateCheckpoint(@NotNull Player player, int index) {
-        playerCheckpointMap.put(player.getUniqueId(), index);
+    public void updateCheckpoint(UUID uuid, int index) {
+        playerCheckpointMap.put(uuid, index);
     }
 
     public void removePlayer(@NotNull UUID uuid) {
@@ -39,9 +42,20 @@ public final class ProgressTracker {
         return ((double) checkpointsCompleted / allCheckpoints.size()) * 100.0;
     }
 
-    public @NotNull List<UUID> getSortedByProgress(List<Checkpoint> checkpoints) {
-        List<UUID> uuids = new ArrayList<>(playerCheckpointMap.keySet());
-        uuids.sort(Comparator.comparingDouble(uuid -> -getProgress(uuid, checkpoints)));
-        return uuids;
+    public @NotNull List<String> getSortedByProgressCheckpoint(@NotNull List<Checkpoint> checkpoints) {
+        List<Checkpoint> globalCheckpoints = checkpoints.stream()
+                .filter(cp -> cp.getType() == Type.GLOBAL)
+                .collect(Collectors.toList());
+
+        return playerCheckpointMap.keySet().stream()
+                .filter(uuid -> globalCheckpoints.stream().anyMatch(cp -> cp.getPlayers().contains(uuid)))
+                .sorted(Comparator.comparingDouble(uuid -> -getProgress(uuid, globalCheckpoints)))
+                .map(uuid -> {
+                    Player onlinePlayer = Bukkit.getPlayer(uuid);
+                    return onlinePlayer != null
+                            ? onlinePlayer.getName()
+                            : Bukkit.getOfflinePlayer(uuid).getName();
+                })
+                .collect(Collectors.toList());
     }
 }
