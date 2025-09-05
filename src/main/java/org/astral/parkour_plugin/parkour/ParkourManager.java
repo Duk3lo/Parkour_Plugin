@@ -211,7 +211,7 @@ public final class ParkourManager {
         loadFrames(state.getAnimatedRichText(), Collections.singleton(uuid), map, Type.INDIVIDUAL);
         state.setInGame(true);
         showAllObjectsInMap(player, map);
-        addItemsParkourPlayer(player, map);
+        addItemsParkourPlayer(player, map, Type.INDIVIDUAL);
     }
 
     public static void startParkourGlobal(@NotNull Player player, String map, boolean animated) {
@@ -275,10 +275,10 @@ public final class ParkourManager {
             loadFrames(state.getAnimatedRichText(), state.getAllPlayers(), map, Type.GLOBAL);
         }
         showAllObjectsInMap(player, map);
-        addItemsParkourPlayer(player, map);
+        addItemsParkourPlayer(player, map, Type.GLOBAL);
     }
 
-    public static void addItemsParkourPlayer(final @NotNull Player player, final String map) {
+    public static void addItemsParkourPlayer(final @NotNull Player player, final String map, Type type) {
         final ItemStack[] itemStacks = player.getInventory().getContents();
         InventoryCache.saveInventory(player.getUniqueId(), itemStacks);
         PlayerInventory inventoryPlayer = player.getInventory();
@@ -287,6 +287,7 @@ public final class ParkourManager {
             inventoryPlayer.clear();
         }
         rules.loadItems();
+
         for (ParkourItemType parkourItemType : ParkourItemType.values()) {
             ParkourItem parkourItem = rules.getParkourItems().get(parkourItemType);
             if (parkourItem != null && parkourItem.isGiveToPlayer()) {
@@ -303,6 +304,16 @@ public final class ParkourManager {
                     inventoryPlayer.addItem(item);
                 }
             }
+        }
+        if (type == Type.INDIVIDUAL) {
+            parkourMapStateIndividual
+                    .get(player.getUniqueId())
+                    .setItemTypeParkourItemMap(new HashSet<>(rules.getParkourItems().values()));
+        }
+        if (type == Type.GLOBAL) {
+            parkourMapStatesGlobal
+                    .get(map)
+                    .setItemTypeParkourItemMap(new HashSet<>(rules.getParkourItems().values()));
         }
     }
 
@@ -788,7 +799,7 @@ public final class ParkourManager {
         return true;
     }
 
-    public static Type getTypePlayer(final @NotNull Player player, final @NotNull String nameMap) {
+    public static Type getTypePlayer(final @NotNull Player player, final String nameMap) {
         final UUID uuid = player.getUniqueId();
         ParkourMapStateIndividual individualState = parkourMapStateIndividual.get(uuid);
         if (individualState != null && individualState.isInGame()
@@ -800,5 +811,53 @@ public final class ParkourManager {
             return Type.GLOBAL;
         }
         return Type.DEFAULT;
+    }
+
+    public static Set<ParkourItem> getItemStacks(final @NotNull Player player, final String nameMap) {
+        final UUID uuid = player.getUniqueId();
+        Type type = getTypePlayer(player, nameMap);
+
+        if (type == Type.INDIVIDUAL) {
+            ParkourMapStateIndividual individualState = parkourMapStateIndividual.get(uuid);
+            if (individualState != null) {
+                return individualState.getItemTypeParkourItemMap();
+            }
+        } else if (type == Type.GLOBAL) {
+            ParkourMapStateGlobal stateGlobal = parkourMapStatesGlobal.get(nameMap);
+            if (stateGlobal != null) {
+                return stateGlobal.getItemTypeParkourItemMap();
+            }
+        }
+
+        return new HashSet<>();
+    }
+
+    public static void teleportSpawn(final @NotNull Player player, final String nameMap) {
+        final UUID uuid = player.getUniqueId();
+        Type type = getTypePlayer(player, nameMap);
+
+        if (type == Type.INDIVIDUAL) {
+            ParkourMapStateIndividual individualState = parkourMapStateIndividual.get(uuid);
+            if (individualState != null && individualState.getData() != null) {
+                Location spawn = individualState.getData().getSpawnLocation();
+                if (spawn != null) {
+                    teleportToSpawnOrWarn(player, nameMap, spawn);
+                }
+            }
+        } else if (type == Type.GLOBAL) {
+            ParkourMapStateGlobal globalState = parkourMapStatesGlobal.get(nameMap);
+            Location spawn = globalState.getPlayerData(uuid).getSpawnLocation();
+            if (spawn != null) {
+                teleportToSpawnOrWarn(player, nameMap, spawn);
+            }
+        }
+    }
+
+    public static void nextCheckpoint(final Player player, final String nameMap){
+
+    }
+
+    public static void backCheckpoint(final Player player, final String nameMap){
+
     }
 }

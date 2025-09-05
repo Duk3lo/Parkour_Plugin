@@ -17,22 +17,23 @@ public final class CheckpointBase {
     private static final Map<String, List<Checkpoint>> checkpointMap = new HashMap<>();
     private static final Map<UUID, Checkpoint> actualCheckpoint = new HashMap<>();
 
-    public static void loadMap(final String map){
+    public static void loadMap(final String map) {
         final CheckpointConfig checkpointConfig = new CheckpointConfig(map);
-        for (final String key : checkpointConfig.keys()){
+        byte id = 0;
+        for (final String key : checkpointConfig.keys()) {
             try {
                 checkpointConfig.getCheckpoint(key);
-            }catch (IOException e) {
-                plugin.getLogger().warning("No se pudo encontrar el checkpoint: "+ key);
+            } catch (IOException e) {
+                plugin.getLogger().warning("No se pudo encontrar el checkpoint: " + key);
             }
-            final Checkpoint checkpoint = createCheckpoint(checkpointConfig);
+            final Checkpoint checkpoint = createCheckpoint(checkpointConfig, id++);
             checkpointMap.computeIfAbsent(map, k -> new ArrayList<>()).add(checkpoint);
         }
     }
 
-    public static @NotNull Checkpoint createCheckpoint(final @NotNull CheckpointConfig checkpointConfig){
+    public static @NotNull Checkpoint createCheckpoint(final @NotNull CheckpointConfig checkpointConfig, final byte id) {
         final Location location = checkpointConfig.getLocation();
-        Checkpoint checkpoint = new Checkpoint(location);
+        Checkpoint checkpoint = new Checkpoint(location, id);
         checkpoint.setMaxY(checkpointConfig.getMaxFallY());
         checkpoint.setMinY(checkpointConfig.getMinFallY());
         return checkpoint;

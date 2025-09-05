@@ -1,9 +1,10 @@
 package org.astral.parkour_plugin.parkour.Type;
 
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 import org.astral.parkour_plugin.parkour.ParkourPlayerData;
 
-import java.util.Collections;
+import java.util.*;
 
 public final class ParkourMapStateIndividual {
     private final String name;
@@ -16,7 +17,7 @@ public final class ParkourMapStateIndividual {
     private String format;
     private boolean displayActionBarTimer;
     private boolean isTimerEnable;
-
+    private Set<ParkourItem> itemTypeParkourItemMap;
 
     public ParkourMapStateIndividual(String name){
         this.name = name;
@@ -28,6 +29,7 @@ public final class ParkourMapStateIndividual {
         format = "{minutes}:{seconds}:{millis}";
         displayActionBarTimer = false;
         isTimerEnable = true;
+        itemTypeParkourItemMap = new HashSet<>();
     }
 
     public String getName() {
@@ -104,5 +106,13 @@ public final class ParkourMapStateIndividual {
 
     public void setTimerEnable(boolean timerEnable) {
         isTimerEnable = timerEnable;
+    }
+
+    public Set<ParkourItem> getItemTypeParkourItemMap() {
+        return itemTypeParkourItemMap;
+    }
+
+    public void setItemTypeParkourItemMap(Set<ParkourItem> itemTypeParkourItemMap) {
+        this.itemTypeParkourItemMap = itemTypeParkourItemMap;
     }
 }

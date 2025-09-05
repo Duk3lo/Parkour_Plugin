@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.parkour.Type;
 
 
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
 import org.astral.parkour_plugin.gui.Gui;
 import org.astral.parkour_plugin.gui.tools.LobbyStatus;
@@ -29,6 +30,8 @@ public final class ParkourMapStateGlobal {
     private String format;
     private boolean displayActionBarTimer;
     private boolean isTimerEnable;
+    private Set<ParkourItem> itemTypeParkourItemMap;
+
 
     private int timerWaiting = 0;
 
@@ -49,6 +52,7 @@ public final class ParkourMapStateGlobal {
         format = "{minutes}:{seconds}:{millis}";
         displayActionBarTimer = true;
         isTimerEnable = true;
+        itemTypeParkourItemMap = new HashSet<>();
         updateLobbyItemGlobal();
     }
 
@@ -250,5 +254,13 @@ public final class ParkourMapStateGlobal {
 
     public void setTimerEnable(boolean timerEnable) {
         isTimerEnable = timerEnable;
+    }
+
+    public Set<ParkourItem> getItemTypeParkourItemMap() {
+        return itemTypeParkourItemMap;
+    }
+
+    public void setItemTypeParkourItemMap(Set<ParkourItem> itemTypeParkourItemMap) {
+        this.itemTypeParkourItemMap = itemTypeParkourItemMap;
     }
 }

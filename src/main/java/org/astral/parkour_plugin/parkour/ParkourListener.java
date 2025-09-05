@@ -1,6 +1,7 @@
 package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.parkour.Type.Type;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
@@ -17,9 +18,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class ParkourListener implements Listener {
@@ -109,9 +108,22 @@ public final class ParkourListener implements Listener {
         final Player player = event.getPlayer();
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
         if (!playerInMap.isPresent()) return;
-        ItemStack item = event.getItem();
-        if (item != null){
 
+        final ItemStack item = event.getItem();
+        if (item == null) return;
+
+        final String name_map = playerInMap.get();
+        Set<ParkourItem> items = ParkourManager.getItemStacks(player, name_map);
+        for (ParkourItem parkourItem : items) {
+            if (item.isSimilar(parkourItem.toItemStack())) {
+                switch (parkourItem.getParkourItemType()){
+                    case RESET:
+                        ParkourManager.teleportSpawn(player, name_map);
+                        break;
+                }
+                event.setCancelled(true);
+                break;
+            }
         }
     }
 
