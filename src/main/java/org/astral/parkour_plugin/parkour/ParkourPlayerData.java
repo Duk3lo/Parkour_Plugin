@@ -1,13 +1,12 @@
 package org.astral.parkour_plugin.parkour;
 
 
-import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.bukkit.Location;
 
 public final class ParkourPlayerData {
 
     private final Location spawnLocation;
-    private Checkpoint checkpoint;
+    private byte getCheckpointId;
 
     public ParkourPlayerData(Location spawnLocation) {
         this.spawnLocation = spawnLocation;
@@ -18,11 +17,11 @@ public final class ParkourPlayerData {
     }
 
 
-    public Checkpoint getCheckpoint() {
-        return checkpoint;
+    public byte getGetCheckpointId() {
+        return getCheckpointId;
     }
 
-    public void setCheckpoint(Checkpoint checkpoint) {
-        this.checkpoint = checkpoint;
+    public void setGetCheckpointId(byte getCheckpointId) {
+        this.getCheckpointId = getCheckpointId;
     }
 }

@@ -16,6 +16,7 @@ public final class CheckpointConfig extends BaseCheckpoint {
     public static final Double MAX_Y = 255.00;
     public static final String CheckpointStructureName = BaseCheckpoint.CheckpointStructure;
 
+
     public CheckpointConfig(final String MAP_FOLDER) {
         super(MAP_FOLDER);
     }
@@ -111,23 +112,24 @@ public final class CheckpointConfig extends BaseCheckpoint {
                 comparator.getZ() == adjustedZ;
     }
 
-    public void setDefaultItems(){
-        for (ParkourItemType itemType : ParkourItemType.values()) {
-            final String name = itemType.name();
-            configurationSection.set(name+".apply_property", false);
-            configurationSection.set(name + ".cooldown", 3);
-            configurationSection.set(name + ".uses", -1);
-            configurationSection.set(name + ".removeItem", false);
-            configurationSection.set(name + ".addUses", 0);
-            configurationSection.set(name + ".accumulateUses", false);
-            if (itemType == ParkourItemType.FEATHER_JUMP) {
-                configurationSection.set(name + ".jumps", 1);
-            }
-            if (itemType == ParkourItemType.ROCKET_BOOST) {
-                configurationSection.set(name + ".force", 2.5);
-                configurationSection.set(name + ".upward", 0.8);
-            }
+    public void setDefaultItems() {
+        List<String> checkpoints = keys();
+        if (checkpoints.isEmpty()) return;
+        String firstCheckpoint = checkpoints.get(0);
+        if (!configurationSection.getName().equals(firstCheckpoint)) {
+            return;
         }
+        final String name = "items." + ParkourItemType.LAST_CHECKPOINT.name();
+        // Defaults
+        configurationSection.set(name + ".modifyItem", false);
+        configurationSection.set(name + ".removeItem", false);
+        configurationSection.set(name + ".slot", 0);
+        configurationSection.set(name + ".material", "EMERALD");
+        configurationSection.set(name + ".displayName", "§aCheckpoint Especial");
+        configurationSection.set(name + ".lore", Arrays.asList("§7Este checkpoint tiene", "§7propiedades personalizadas."));
+        configurationSection.set(name + ".cooldown", 0);
+        configurationSection.set(name + ".uses", -1);
+        configurationSection.set(name + ".accumulateUses", false);
     }
 
     public void setLocation(final @NotNull Location location) {

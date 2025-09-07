@@ -19,7 +19,7 @@ public final class CheckpointBase {
 
     public static void loadMap(final String map) {
         final CheckpointConfig checkpointConfig = new CheckpointConfig(map);
-        byte id = 0;
+        byte id = 1;
         for (final String key : checkpointConfig.keys()) {
             try {
                 checkpointConfig.getCheckpoint(key);

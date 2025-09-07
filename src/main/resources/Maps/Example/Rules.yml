@@ -71,7 +71,7 @@ end_points:
 keep_items: false
 items:
   LAST_CHECKPOINT:
-    material: SLIME_BALL
+    material: CACTUS
     displayName: "§aÚltimo Checkpoint"
     lore:
       - "§7Te lleva al"
@@ -91,12 +91,32 @@ items:
     uses: -1
     give_to_player: true
 
+  NEXT_CHECKPOINT:
+    material: SLIME_BALL
+    displayName: "§aCheckpoint Siguiente"
+    lore:
+      - "§7Avanza un checkpoint."
+    slot: 2
+    cooldown: 0
+    uses: -1
+    give_to_player: true
+
+  GOBACK_CHECKPOINT:
+    material: TRIPWIRE_HOOK
+    displayName: "§cReinicia el Checkpoint"
+    lore:
+      - "§7Reinicia el checkpoint."
+    slot: 3
+    cooldown: 0
+    uses: -1
+    give_to_player: true
+
   RESET:
     material: BARRIER
     displayName: "§cReiniciar Parkour"
     lore:
       - "§7Vuelve al inicio del mapa."
-    slot: 8
+    slot: 4
     cooldown: 0
     uses: -1
     give_to_player: true
@@ -107,10 +127,10 @@ items:
     lore:
       - "§7Marca tu tiempo y"
       - "§7termina la partida."
-    slot: 7
+    slot: 5
     cooldown: 0
     uses: 1
-    give_to_player: false   # no se entrega automáticamente
+    give_to_player: true   # no se entrega automáticamente
 
   FEATHER_JUMP:
     material: FEATHER
@@ -121,7 +141,7 @@ items:
     jumps: 1
     cooldown: 3
     uses: 5
-    slot: 2
+    slot: 6
     give_to_player: true
 
   ROCKET_BOOST:
@@ -134,7 +154,7 @@ items:
     upward: 0.8
     cooldown: 5
     uses: 3
-    slot: 3
+    slot: 7
     give_to_player: true
 
   TELEPORT_LOBBY:
@@ -143,7 +163,7 @@ items:
     lore:
       - "§7Regresa al lobby"
       - "§7de parkour."
-    slot: 4
+    slot: 8
     cooldown: 0
     uses: -1
     give_to_player: true
@@ -155,10 +175,10 @@ items:
     lore:
       - "§7Activa/desactiva"
       - "§7la visibilidad de jugadores."
-    slot: 5
+    slot: 9
     cooldown: 2
     uses: -1
-    give_to_player: false   # no se entrega automáticamente
+    give_to_player: true   # no se entrega automáticamente
 
   CHECKPOINT_SELECTOR:
     material: BOOK
@@ -166,7 +186,7 @@ items:
     lore:
       - "§7Elige un checkpoint"
       - "§7para teletransportarte."
-    slot: 6
+    slot: 10
     cooldown: 0
     uses: -1
     give_to_player: true

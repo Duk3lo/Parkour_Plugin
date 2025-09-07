@@ -355,7 +355,11 @@ public final class ParkourManager {
                 checkpoint.getPlayers().add(uuid);
                 checkpoint.setType(type);
                 CheckpointBase.addPlayerLastCheckpoint(uuid, checkpoint);
-
+                if (type == Type.GLOBAL){
+                    parkourMapStatesGlobal.get(name_map).getPlayerData(uuid).setGetCheckpointId(checkpoint.getId());
+                }else if (type == Type.INDIVIDUAL){
+                    parkourMapStateIndividual.get(uuid).getData().setGetCheckpointId(checkpoint.getId());
+                }
 
                 tracker.updateCheckpoint(uuid, i);
                 double progress = tracker.getProgress(uuid, checkpoints);
@@ -846,18 +850,113 @@ public final class ParkourManager {
             }
         } else if (type == Type.GLOBAL) {
             ParkourMapStateGlobal globalState = parkourMapStatesGlobal.get(nameMap);
-            Location spawn = globalState.getPlayerData(uuid).getSpawnLocation();
-            if (spawn != null) {
-                teleportToSpawnOrWarn(player, nameMap, spawn);
+            if (globalState != null && globalState.getPlayerData(uuid) != null) {
+                Location spawn = globalState.getPlayerData(uuid).getSpawnLocation();
+                if (spawn != null) {
+                    teleportToSpawnOrWarn(player, nameMap, spawn);
+                }
             }
         }
     }
 
-    public static void nextCheckpoint(final Player player, final String nameMap){
+    public static void nextCheckpoint(final @NotNull Player player, final String nameMap) {
+        final UUID uuid = player.getUniqueId();
+        Type type = getTypePlayer(player, nameMap);
+
+        byte currentId;
+        if (type == Type.INDIVIDUAL) {
+            ParkourMapStateIndividual individual = parkourMapStateIndividual.get(uuid);
+            if (individual == null || individual.getData() == null) return;
+            currentId = individual.getData().getGetCheckpointId();
+        } else if (type == Type.GLOBAL) {
+            ParkourMapStateGlobal global = parkourMapStatesGlobal.get(nameMap);
+            if (global == null || global.getPlayerData(uuid) == null) return;
+            currentId = global.getPlayerData(uuid).getGetCheckpointId();
+        } else return;
+
+        Checkpoint next = searchingCheckpoint(player, currentId, true, nameMap);
+        if (next != null) {
+            player.sendMessage("Siguiente checkpoint: " + next.getId());
+            teleportToCheckpoint(player, next);
+            if (type == Type.INDIVIDUAL) {
+                parkourMapStateIndividual.get(uuid).getData().setGetCheckpointId(next.getId());
+            } else {
+                parkourMapStatesGlobal.get(nameMap).getPlayerData(uuid).setGetCheckpointId(next.getId());
+            }
+        }
+    }
+
+    public static void backCheckpoint(final @NotNull Player player, final String nameMap) {
+        final UUID uuid = player.getUniqueId();
+        Type type = getTypePlayer(player, nameMap);
+
+        byte currentId;
+        if (type == Type.INDIVIDUAL) {
+            ParkourMapStateIndividual individual = parkourMapStateIndividual.get(uuid);
+            if (individual == null || individual.getData() == null) return;
+            currentId = individual.getData().getGetCheckpointId();
+        } else if (type == Type.GLOBAL) {
+            ParkourMapStateGlobal global = parkourMapStatesGlobal.get(nameMap);
+            if (global == null || global.getPlayerData(uuid) == null) return;
+            currentId = global.getPlayerData(uuid).getGetCheckpointId();
+        } else return;
+
+        Checkpoint back = searchingCheckpoint(player, currentId, false, nameMap);
+        if (back != null) {
+            player.sendMessage("Checkpoint anterior: " + back.getId());
+            teleportToCheckpoint(player, back);
+            if (type == Type.INDIVIDUAL) {
+                parkourMapStateIndividual.get(uuid).getData().setGetCheckpointId(back.getId());
+            } else {
+                parkourMapStatesGlobal.get(nameMap).getPlayerData(uuid).setGetCheckpointId(back.getId());
+            }
+        }
+    }
+
+    private static @Nullable Checkpoint searchingCheckpoint(Player player, byte id, boolean next, String mapName) {
+        List<Checkpoint> checkpoints = CheckpointBase.getCheckpoints(mapName);
+        if (checkpoints == null || checkpoints.isEmpty()) {
+            player.sendMessage("No hay checkpoints en este mapa.");
+            return null;
+        }
+
+        int size = checkpoints.size();
+        int currentIndex = -1;
+
+        // Buscar índice actual
+        for (int i = 0; i < size; i++) {
+            if (checkpoints.get(i).getId() == id) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            player.sendMessage("Checkpoint actual no encontrado.");
+            return null;
+        }
+
+        // Buscamos el siguiente o anterior checkpoint válido
+        for (int i = 1; i < size; i++) {
+            int nextIndex;
+            if (next) {
+                nextIndex = (currentIndex + i) % size; // circular
+            } else {
+                nextIndex = (currentIndex - i + size) % size; // circular
+            }
+
+            Checkpoint checkpoint = checkpoints.get(nextIndex);
+            if (checkpoint.getPlayers().contains(player.getUniqueId())) {
+                return checkpoint;
+            }
+        }
+
+        player.sendMessage("No hay más checkpoints a los que puedas ir.");
+        return null;
+    }
+
+    private static void loadItemsCheckpoint(Player player, Checkpoint checkpoint){
 
     }
 
-    public static void backCheckpoint(final Player player, final String nameMap){
-
-    }
 }

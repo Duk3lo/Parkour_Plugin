@@ -1,5 +1,7 @@
 package org.astral.parkour_plugin.parkour.checkpoints;
 
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
+import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.parkour.Type.Type;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,7 @@ public final class Checkpoint {
     private double minY;
     private Type type;
     private final byte id;
+    private final Map<ParkourItemType, ParkourItem> itemMap = new HashMap<>();
 
     public Checkpoint(final Location location, final byte id) {
         this.locations = Collections.singleton(location);
@@ -64,5 +67,9 @@ public final class Checkpoint {
 
     public byte getId() {
         return id;
+    }
+
+    public Map<ParkourItemType, ParkourItem> getItemMap() {
+        return itemMap;
     }
 }
