@@ -83,9 +83,10 @@ public final class Rules {
 
             ParkourItem item = new ParkourItem(
                     material, displayName, lore, slot, uses,
-                    jumps, force, upward, cooldown, giveToPlayer, type
+                    jumps, force, upward, cooldown, type
             );
 
+            item.setGiveToPlayer(giveToPlayer);
             parkourItems.put(type, item);
         }
     }

@@ -1,8 +1,11 @@
 package org.astral.parkour_plugin.config.maps.checkpoint;
 
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
+import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
@@ -121,7 +124,6 @@ public final class CheckpointConfig extends BaseCheckpoint {
         }
         final String name = "items." + ParkourItemType.LAST_CHECKPOINT.name();
         // Defaults
-        configurationSection.set(name + ".modifyItem", false);
         configurationSection.set(name + ".removeItem", false);
         configurationSection.set(name + ".slot", 0);
         configurationSection.set(name + ".material", "EMERALD");
@@ -130,6 +132,87 @@ public final class CheckpointConfig extends BaseCheckpoint {
         configurationSection.set(name + ".cooldown", 0);
         configurationSection.set(name + ".uses", -1);
         configurationSection.set(name + ".accumulateUses", false);
+    }
+
+    public @NotNull Map<ParkourItemType, ParkourItem> getItems(Map<ParkourItemType, ParkourItem> reference) {
+        validateConfigurationSection();
+        ConfigurationSection section = yamlConfiguration.getConfigurationSection("items");
+        Map<ParkourItemType, ParkourItem> items = new HashMap<>();
+
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                try {
+                    ParkourItemType type = ParkourItemType.valueOf(key.toUpperCase());
+
+                    if (!items.containsKey(type)) {
+                        ConfigurationSection itemSection = section.getConfigurationSection(key);
+                        if (itemSection != null) {
+                            ParkourItem parkourItem = reference.get(type);
+
+                            Material defaultMaterial = Material.STONE;
+                            String defaultDisplayName = "§fItem";
+                            List<String> defaultLore = Collections.singletonList("§7Sin descripción");
+                            int defaultSlot = 0;
+                            int defaultUses = -1;
+                            int defaultJumps = 0;
+                            double defaultForce = 0.0;
+                            double defaultUpward = 0.0;
+                            int defaultCooldown = 0;
+
+                            Material material = Material.matchMaterial(
+                                    itemSection.getString("material",
+                                            (parkourItem != null && parkourItem.getMaterial() != null)
+                                                    ? parkourItem.getMaterial().name()
+                                                    : defaultMaterial.name())
+                            );
+                            String displayName = itemSection.getString("displayName",
+                                    parkourItem != null ? parkourItem.getDisplayName() : defaultDisplayName);
+
+                            List<String> lore = itemSection.isList("lore")
+                                    ? itemSection.getStringList("lore")
+                                    : (parkourItem != null ? parkourItem.getLore() : defaultLore);
+
+                            int slot = itemSection.getInt("slot",
+                                    parkourItem != null ? parkourItem.getSlot() : defaultSlot);
+
+                            int uses = itemSection.getInt("uses",
+                                    parkourItem != null ? parkourItem.getUses() : defaultUses);
+
+                            int jumps = itemSection.getInt("jumps",
+                                    parkourItem != null ? parkourItem.getJumps() : defaultJumps);
+
+                            double force = itemSection.getDouble("force",
+                                    parkourItem != null ? parkourItem.getForce() : defaultForce);
+
+                            double upward = itemSection.getDouble("upward",
+                                    parkourItem != null ? parkourItem.getUpward() : defaultUpward);
+
+                            int cooldown = itemSection.getInt("cooldown",
+                                    parkourItem != null ? parkourItem.getCooldown() : defaultCooldown);
+
+                            ParkourItem item = new ParkourItem(
+                                    material,
+                                    displayName,
+                                    lore,
+                                    slot,
+                                    uses,
+                                    jumps,
+                                    force,
+                                    upward,
+                                    cooldown,
+                                    type
+                            );
+
+                            item.setGiveToPlayer(itemSection.getBoolean("removeItem", false));
+                            items.put(type, item);
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Ítem no reconocido en enum: " + key);
+                }
+            }
+        }
+        return items;
     }
 
     public void setLocation(final @NotNull Location location) {

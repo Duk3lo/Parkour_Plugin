@@ -2,6 +2,8 @@ package org.astral.parkour_plugin.parkour.checkpoints;
 
 import org.astral.parkour_plugin.Main;
 import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
+import org.astral.parkour_plugin.config.maps.items.ParkourItem;
+import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -16,6 +18,11 @@ public final class CheckpointBase {
 
     private static final Map<String, List<Checkpoint>> checkpointMap = new HashMap<>();
     private static final Map<UUID, Checkpoint> actualCheckpoint = new HashMap<>();
+    private static final Map<String, Map<ParkourItemType, ParkourItem>> itemsRef = new HashMap<>();
+
+    public static void setItemsRef(String map, Map<ParkourItemType, ParkourItem> ref){
+        itemsRef.computeIfAbsent(map, k->ref);
+    }
 
     public static void loadMap(final String map) {
         final CheckpointConfig checkpointConfig = new CheckpointConfig(map);
@@ -26,16 +33,18 @@ public final class CheckpointBase {
             } catch (IOException e) {
                 plugin.getLogger().warning("No se pudo encontrar el checkpoint: " + key);
             }
-            final Checkpoint checkpoint = createCheckpoint(checkpointConfig, id++);
+            final Checkpoint checkpoint = createCheckpoint(checkpointConfig, id++, map);
             checkpointMap.computeIfAbsent(map, k -> new ArrayList<>()).add(checkpoint);
         }
     }
 
-    public static @NotNull Checkpoint createCheckpoint(final @NotNull CheckpointConfig checkpointConfig, final byte id) {
+    public static @NotNull Checkpoint createCheckpoint(final @NotNull CheckpointConfig checkpointConfig, final byte id, String map) {
         final Location location = checkpointConfig.getLocation();
         Checkpoint checkpoint = new Checkpoint(location, id);
+        Map<ParkourItemType, ParkourItem> itemsAlm = checkpointConfig.getItems(itemsRef.get(map));
         checkpoint.setMaxY(checkpointConfig.getMaxFallY());
         checkpoint.setMinY(checkpointConfig.getMinFallY());
+        checkpoint.setItemMap(itemsAlm);
         return checkpoint;
     }
 

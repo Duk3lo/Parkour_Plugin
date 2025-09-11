@@ -18,12 +18,12 @@ public final class ParkourItem {
     private final int jumps;        // saltos extra
     private final double force;     // fuerza del impulso
     private final double upward;    // fuerza vertical
-    private final boolean giveToPlayer; // si se entrega al jugador
     private final ParkourItemType parkourItemType;
+    private boolean giveToPlayer;
 
     public ParkourItem(Material material, String displayName, List<String> lore,
                        int slot, int uses, int jumps, double force, double upward,
-                       int cooldown, boolean giveToPlayer, ParkourItemType parkourItemType) {
+                       int cooldown, ParkourItemType parkourItemType) {
         this.material = material;
         this.displayName = displayName;
         this.lore = lore;
@@ -33,7 +33,7 @@ public final class ParkourItem {
         this.force = force;
         this.upward = upward;
         this.cooldown = cooldown;
-        this.giveToPlayer = giveToPlayer;
+
         this.parkourItemType = parkourItemType;
     }
 
@@ -73,10 +73,6 @@ public final class ParkourItem {
         return upward;
     }
 
-    public boolean isGiveToPlayer() {
-        return giveToPlayer;
-    }
-
     public @NotNull ItemStack toItemStack() {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
@@ -91,4 +87,13 @@ public final class ParkourItem {
     public ParkourItemType getParkourItemType() {
         return parkourItemType;
     }
+
+    public boolean isGiveToPlayer() {
+        return giveToPlayer;
+    }
+
+    public void setGiveToPlayer(boolean giveToPlayer) {
+        this.giveToPlayer = giveToPlayer;
+    }
+
 }

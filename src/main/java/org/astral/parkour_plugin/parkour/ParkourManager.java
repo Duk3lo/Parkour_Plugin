@@ -287,7 +287,7 @@ public final class ParkourManager {
             inventoryPlayer.clear();
         }
         rules.loadItems();
-
+        CheckpointBase.setItemsRef(map, rules.getParkourItems());
         for (ParkourItemType parkourItemType : ParkourItemType.values()) {
             ParkourItem parkourItem = rules.getParkourItems().get(parkourItemType);
             if (parkourItem != null && parkourItem.isGiveToPlayer()) {

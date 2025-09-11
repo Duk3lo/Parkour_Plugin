@@ -17,7 +17,7 @@ public final class Checkpoint {
     private double minY;
     private Type type;
     private final byte id;
-    private final Map<ParkourItemType, ParkourItem> itemMap = new HashMap<>();
+    private Map<ParkourItemType, ParkourItem> itemMap;
 
     public Checkpoint(final Location location, final byte id) {
         this.locations = Collections.singleton(location);
@@ -69,7 +69,12 @@ public final class Checkpoint {
         return id;
     }
 
+
     public Map<ParkourItemType, ParkourItem> getItemMap() {
         return itemMap;
+    }
+
+    public void setItemMap(Map<ParkourItemType, ParkourItem> itemMap) {
+        this.itemMap = itemMap;
     }
 }
