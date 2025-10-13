@@ -19,10 +19,12 @@ public final class ParkourItem {
     private final double force;     // fuerza del impulso
     private final double upward;    // fuerza vertical
     private final ParkourItemType parkourItemType;
+    private final boolean infiniteUses;
     private boolean giveToPlayer;
+    private boolean accumulateUses;
 
     public ParkourItem(Material material, String displayName, List<String> lore,
-                       int slot, int uses, int jumps, double force, double upward,
+                       int slot, int uses, boolean infiniteUses , int jumps, double force, double upward,
                        int cooldown, ParkourItemType parkourItemType) {
         this.material = material;
         this.displayName = displayName;
@@ -33,8 +35,11 @@ public final class ParkourItem {
         this.force = force;
         this.upward = upward;
         this.cooldown = cooldown;
-
         this.parkourItemType = parkourItemType;
+        this.infiniteUses = infiniteUses;
+        giveToPlayer = false;
+        accumulateUses = false;
+
     }
 
     public Material getMaterial() {
@@ -94,6 +99,18 @@ public final class ParkourItem {
 
     public void setGiveToPlayer(boolean giveToPlayer) {
         this.giveToPlayer = giveToPlayer;
+    }
+
+    public boolean isAccumulateUses() {
+        return accumulateUses;
+    }
+
+    public void setAccumulateUses(boolean accumulateUses) {
+        this.accumulateUses = accumulateUses;
+    }
+
+    public boolean isInfiniteUses() {
+        return infiniteUses;
     }
 
 }

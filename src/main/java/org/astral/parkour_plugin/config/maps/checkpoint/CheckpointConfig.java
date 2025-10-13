@@ -2,7 +2,6 @@ package org.astral.parkour_plugin.config.maps.checkpoint;
 
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
-import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,6 +85,15 @@ public final class CheckpointConfig extends BaseCheckpoint {
         return positions;
     }
 
+    public boolean isCachedItems() {
+        validateConfigurationSection();
+        ConfigurationSection itemsSection = configurationSection.getConfigurationSection("items");
+        if (itemsSection == null) {
+            return false;
+        }
+        return itemsSection.getBoolean("conserve_cached_items", false);
+    }
+
     // SETTERS
     public void setMinFallY(final double min_fall_y) {
         validateConfigurationSection();
@@ -122,16 +130,19 @@ public final class CheckpointConfig extends BaseCheckpoint {
         if (!configurationSection.getName().equals(firstCheckpoint)) {
             return;
         }
-        final String name = "items." + ParkourItemType.LAST_CHECKPOINT.name();
+        final String name = "items";
+        configurationSection.set(name+".conserve_cached_items",true);
+        final String local = name+ "." + ParkourItemType.LAST_CHECKPOINT.name();
         // Defaults
-        configurationSection.set(name + ".removeItem", false);
-        configurationSection.set(name + ".slot", 0);
-        configurationSection.set(name + ".material", "EMERALD");
-        configurationSection.set(name + ".displayName", "§aCheckpoint Especial");
-        configurationSection.set(name + ".lore", Arrays.asList("§7Este checkpoint tiene", "§7propiedades personalizadas."));
-        configurationSection.set(name + ".cooldown", 0);
-        configurationSection.set(name + ".uses", -1);
-        configurationSection.set(name + ".accumulateUses", false);
+        configurationSection.set(local + ".removeItem", false);
+        configurationSection.set(local + ".slot", 0);
+        configurationSection.set(local + ".material", "EMERALD");
+        configurationSection.set(local + ".displayName", "§aCheckpoint Especial");
+        configurationSection.set(local + ".lore", Arrays.asList("§7Este checkpoint tiene", "§7propiedades personalizadas."));
+        configurationSection.set(local + ".cooldown", 0);
+        configurationSection.set(local + ".uses", -1);
+        configurationSection.set(local + ".accumulateUses", false);
+        configurationSection.set(local + ".infiniteUses", false);
     }
 
     public @NotNull Map<ParkourItemType, ParkourItem> getItems(Map<ParkourItemType, ParkourItem> reference) {
@@ -158,6 +169,8 @@ public final class CheckpointConfig extends BaseCheckpoint {
                             double defaultForce = 0.0;
                             double defaultUpward = 0.0;
                             int defaultCooldown = 0;
+                            boolean defaultAccumulate = false;
+                            boolean defaultInfiniteUses = false;
 
                             Material material = Material.matchMaterial(
                                     itemSection.getString("material",
@@ -190,20 +203,27 @@ public final class CheckpointConfig extends BaseCheckpoint {
                             int cooldown = itemSection.getInt("cooldown",
                                     parkourItem != null ? parkourItem.getCooldown() : defaultCooldown);
 
+                            boolean accumulateUses = itemSection.getBoolean("accumulateUses",
+                                    parkourItem != null ? parkourItem.isAccumulateUses() : defaultAccumulate);
+
+                            boolean infiniteUses = itemSection.getBoolean("infiniteUses",
+                                    parkourItem != null ? parkourItem.isInfiniteUses() : defaultInfiniteUses);
+
                             ParkourItem item = new ParkourItem(
                                     material,
                                     displayName,
                                     lore,
                                     slot,
                                     uses,
+                                    infiniteUses,
                                     jumps,
                                     force,
                                     upward,
                                     cooldown,
                                     type
                             );
-
                             item.setGiveToPlayer(itemSection.getBoolean("removeItem", false));
+                            item.setAccumulateUses(accumulateUses);
                             items.put(type, item);
                         }
                     }

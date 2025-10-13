@@ -78,7 +78,8 @@ items:
       - "§7último checkpoint."
     slot: 0
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true   # se entrega al jugador
 
   BACK_CHECKPOINT:
@@ -88,7 +89,8 @@ items:
       - "§7Retrocede un checkpoint."
     slot: 1
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true
 
   NEXT_CHECKPOINT:
@@ -98,7 +100,8 @@ items:
       - "§7Avanza un checkpoint."
     slot: 2
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true
 
   GOBACK_CHECKPOINT:
@@ -108,7 +111,8 @@ items:
       - "§7Reinicia el checkpoint."
     slot: 3
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true
 
   RESET:
@@ -118,7 +122,8 @@ items:
       - "§7Vuelve al inicio del mapa."
     slot: 4
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true
 
   FINISH:
@@ -130,6 +135,7 @@ items:
     slot: 5
     cooldown: 0
     uses: 1
+    infiniteUses: false
     give_to_player: true   # no se entrega automáticamente
 
   FEATHER_JUMP:
@@ -141,6 +147,7 @@ items:
     jumps: 1
     cooldown: 3
     uses: 5
+    infiniteUses: false
     slot: 6
     give_to_player: true
 
@@ -154,6 +161,7 @@ items:
     upward: 0.8
     cooldown: 5
     uses: 3
+    infiniteUses: false
     slot: 7
     give_to_player: true
 
@@ -165,7 +173,8 @@ items:
       - "§7de parkour."
     slot: 8
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: true
     give_to_player: true
 
   HIDE_PLAYERS:
@@ -177,7 +186,8 @@ items:
       - "§7la visibilidad de jugadores."
     slot: 9
     cooldown: 2
-    uses: -1
+    uses: 1
+    infiniteUses: false
     give_to_player: true   # no se entrega automáticamente
 
   CHECKPOINT_SELECTOR:
@@ -188,5 +198,6 @@ items:
       - "§7para teletransportarte."
     slot: 10
     cooldown: 0
-    uses: -1
+    uses: 1
+    infiniteUses: false
     give_to_player: true

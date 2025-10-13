@@ -4,6 +4,7 @@ import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.parkour.Type.Type;
 import org.bukkit.Location;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -17,11 +18,15 @@ public final class Checkpoint {
     private double minY;
     private Type type;
     private final byte id;
+    private boolean cachedItems;
     private Map<ParkourItemType, ParkourItem> itemMap;
+    private Map<ParkourItemType, ItemCache> cacheItem;
+
 
     public Checkpoint(final Location location, final byte id) {
         this.locations = Collections.singleton(location);
         this.id = id;
+        this.cachedItems = false;
     }
 
     public Checkpoint(final Set<Location> locations, final byte id) {
@@ -76,5 +81,45 @@ public final class Checkpoint {
 
     public void setItemMap(Map<ParkourItemType, ParkourItem> itemMap) {
         this.itemMap = itemMap;
+    }
+
+    public Map<ParkourItemType, ItemCache> getCacheItem() {
+        return cacheItem;
+    }
+
+    public void setCacheItem(Map<ParkourItemType, ItemCache> cacheItem) {
+        this.cacheItem = cacheItem;
+    }
+
+    public boolean isCachedItems() {
+        return cachedItems;
+    }
+
+    public void setCachedItems(boolean cachedItems) {
+        this.cachedItems = cachedItems;
+    }
+
+    public static class ItemCache {
+        private final ItemStack itemStack;
+        private final ParkourItem parkourItem;
+        private final int count;
+
+        public ItemCache(ItemStack itemStack, ParkourItem parkourItem, int count) {
+            this.itemStack = itemStack;
+            this.parkourItem = parkourItem;
+            this.count = count;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public ItemStack getItemStack() {
+            return itemStack;
+        }
+
+        public ParkourItem getParkourItem() {
+            return parkourItem;
+        }
     }
 }

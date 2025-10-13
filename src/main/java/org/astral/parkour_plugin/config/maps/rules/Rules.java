@@ -3,6 +3,7 @@ package org.astral.parkour_plugin.config.maps.rules;
 import org.astral.parkour_plugin.compatibilizer.adapters.LimitsWorldApi;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.Main;
+import org.astral.parkour_plugin.config.maps.items.DefaultItems;
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;
@@ -59,7 +60,11 @@ public final class Rules {
     public void loadItems() {
         if (yamlConfiguration == null) return;
         ConfigurationSection section = yamlConfiguration.getConfigurationSection("items");
-        if (section == null) return;
+
+        if (section == null) {
+            parkourItems.putAll(DefaultItems.getDefaults());
+            return;
+        }
 
         for (String key : section.getKeys(false)) {
             ParkourItemType type;
@@ -70,24 +75,45 @@ public final class Rules {
                 continue;
             }
 
-            Material material = Material.valueOf(section.getString(key + ".material", "STONE"));
-            String displayName = section.getString(key + ".displayName", "§f" + key);
-            List<String> lore = yamlConfiguration.getStringList("items." + key + ".lore");
-            int slot = yamlConfiguration.getInt("items." + key + ".slot", 0);
-            int uses = yamlConfiguration.getInt("items." + key + ".uses", -1);
-            int jumps = yamlConfiguration.getInt("items." + key + ".jumps", 0);
-            double force = yamlConfiguration.getDouble("items." + key + ".force", 0);
-            double upward = yamlConfiguration.getDouble("items." + key + ".upward", 0);
-            int cooldown = yamlConfiguration.getInt("items." + key + ".cooldown", 0);
-            boolean giveToPlayer = section.getBoolean(key + ".give_to_player", true);
+            ParkourItem defaultItem = DefaultItems.getDefault(type); // fallback
+
+            Material material = Material.matchMaterial(section.getString(key + ".material",
+                    defaultItem != null ? defaultItem.getMaterial().name() : "STONE"));
+
+            String displayName = section.getString(key + ".displayName",
+                    defaultItem != null ? defaultItem.getDisplayName() : "§f" + key);
+
+            List<String> lore = section.isList(key + ".lore")
+                    ? section.getStringList(key + ".lore")
+                    : (defaultItem != null ? defaultItem.getLore() : Collections.emptyList());
+
+            int slot = section.getInt(key + ".slot", defaultItem != null ? defaultItem.getSlot() : 0);
+            int uses = section.getInt(key + ".uses", defaultItem != null ? defaultItem.getUses() : -1);
+            int jumps = section.getInt(key + ".jumps", defaultItem != null ? defaultItem.getJumps() : 0);
+            double force = section.getDouble(key + ".force", defaultItem != null ? defaultItem.getForce() : 0);
+            double upward = section.getDouble(key + ".upward", defaultItem != null ? defaultItem.getUpward() : 0);
+            int cooldown = section.getInt(key + ".cooldown", defaultItem != null ? defaultItem.getCooldown() : 0);
+            boolean giveToPlayer = section.getBoolean(key + ".give_to_player",
+                    defaultItem != null && defaultItem.isGiveToPlayer());
+            boolean infiniteUses = section.getBoolean(key + ".infiniteUses",
+                    defaultItem != null && defaultItem.isInfiniteUses());
 
             ParkourItem item = new ParkourItem(
-                    material, displayName, lore, slot, uses,
+                    material, displayName, lore, slot, uses, infiniteUses,
                     jumps, force, upward, cooldown, type
             );
-
             item.setGiveToPlayer(giveToPlayer);
+
             parkourItems.put(type, item);
+        }
+
+        for (ParkourItemType type : ParkourItemType.values()) {
+            if (!parkourItems.containsKey(type)) {
+                ParkourItem defaultItem = DefaultItems.getDefault(type);
+                if (defaultItem != null) {
+                    parkourItems.put(type, defaultItem);
+                }
+            }
         }
     }
 

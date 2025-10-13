@@ -45,6 +45,7 @@ public final class CheckpointBase {
         checkpoint.setMaxY(checkpointConfig.getMaxFallY());
         checkpoint.setMinY(checkpointConfig.getMinFallY());
         checkpoint.setItemMap(itemsAlm);
+        checkpoint.setCachedItems(checkpointConfig.isCachedItems());
         return checkpoint;
     }
 

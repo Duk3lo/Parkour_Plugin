@@ -31,8 +31,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
@@ -74,6 +76,38 @@ public final class ParkourManager {
             if (activeListener) {
                 HandlerList.unregisterAll(parkourListener);
                 activeListener = false;
+            }
+        }
+    }
+
+    private static boolean activeCacheListener = false;
+    private static final Listener cachedListener = new Listener() {
+        @EventHandler
+        public void onPlayerJoin(final @NotNull PlayerJoinEvent event) {
+            final Player player = event.getPlayer();
+            final UUID uuid = player.getUniqueId();
+            if (InventoryCache.hasInventory(uuid)) {
+                ItemStack[] items = InventoryCache.getInventory(uuid);
+                if (items != null) {
+                    player.getInventory().setContents(items);
+                    InventoryCache.removeInventory(uuid);
+                }
+            }
+            registerOrUnregisterCachedParkour();
+        }
+    };
+
+    public static void registerOrUnregisterCachedParkour() {
+        boolean haveAnyInventory = !InventoryCache.getAllPlayerInventories().isEmpty();
+        if (haveAnyInventory) {
+            if (!activeCacheListener) {
+                plugin.getServer().getPluginManager().registerEvents(cachedListener, plugin);
+                activeCacheListener = true;
+            }
+        } else {
+            if (activeCacheListener) {
+                HandlerList.unregisterAll(cachedListener);
+                activeCacheListener = false;
             }
         }
     }
@@ -323,7 +357,10 @@ public final class ParkourManager {
         final String name_map = playerInMap.get();
         if (isAutoReconnect(name_map)) {
             Type type = getTypePlayer(player, name_map);
-            if (isInGameIndividual(player.getUniqueId())||isInGameGlobal(name_map)){
+            System.out.println(isInGameIndividual(player.getUniqueId()));
+            System.out.println(isInGameGlobal(name_map));
+            //if (isInGameIndividual(player.getUniqueId())||isInGameGlobal(name_map)){
+
                 final Checkpoint checkpoint = CheckpointBase.getLastCheckpointPlayer(player.getUniqueId());
                 if (checkpoint != null) {
                     teleportToCheckpoint(player, checkpoint);
@@ -335,7 +372,7 @@ public final class ParkourManager {
                     TimerActionBar.starIndividualTimer(parkourMapStateIndividual.get(player.getUniqueId()), player.getUniqueId());
                 }
                 showAllObjectsInMap(player, name_map);
-            }
+            //}
         }
     }
 
@@ -348,13 +385,28 @@ public final class ParkourManager {
             final Location checkpointLoc = checkpoint.getLocation();
             final Location finalCheckpoint = checkpointLoc.clone();
             finalCheckpoint.add(0,1,0);
-
             if (CheckpointBase.isEqualLocation(finalCheckpoint, location)) {
                 if (checkpoint.getPlayers().contains(uuid)) return;
-
                 checkpoint.getPlayers().add(uuid);
                 checkpoint.setType(type);
                 CheckpointBase.addPlayerLastCheckpoint(uuid, checkpoint);
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null) {
+                    if (checkpoint.isCachedItems()) {
+                        Map<ParkourItemType, Checkpoint.ItemCache> cacheMap = new EnumMap<>(ParkourItemType.class);
+                        for (ItemStack stack : player.getInventory().getContents()) {
+                            if (stack == null || stack.getType() == Material.AIR) continue;
+                            ParkourItem parkourItem = getParkourItem(stack, player);
+                            if (parkourItem != null) {
+                                ParkourItemType typeItem = parkourItem.getParkourItemType();
+                                int amount = Math.max(1, stack.getAmount());
+                                cacheMap.put(typeItem, new Checkpoint.ItemCache(stack.clone(), parkourItem, amount));
+                            }
+                        }
+                        checkpoint.setCacheItem(cacheMap);
+                    }
+                    loadItemsCheckpoint(player, checkpoint);
+                }
                 if (type == Type.GLOBAL){
                     parkourMapStatesGlobal.get(name_map).getPlayerData(uuid).setGetCheckpointId(checkpoint.getId());
                 }else if (type == Type.INDIVIDUAL){
@@ -574,6 +626,7 @@ public final class ParkourManager {
 
 
     public static void showAllObjectsInMap(final Player player, final String map){
+
         for (org.astral.parkour_plugin.views.Type type : org.astral.parkour_plugin.views.Type.values()){
             hologram.showHolograms(player, map, type);
         }
@@ -654,7 +707,17 @@ public final class ParkourManager {
         if (individualState != null) {
             final String map = individualState.getName();
             final Player player = Bukkit.getPlayer(uuid);
-            if (player != null) hideMap(player, map);
+            if (player != null) {
+                hideMap(player, map);
+                if (InventoryCache.hasInventory(uuid)) {
+                    ItemStack[] saved = InventoryCache.getInventory(uuid);
+                    player.getInventory().clear();
+                    if (saved != null) {
+                        player.getInventory().setContents(saved);
+                        InventoryCache.removeInventory(uuid);
+                    }
+                }
+            }
 
             if (plugin.isEnabled()) {
                 Kit.getAsyncScheduler().runNow(plugin, t -> taskAnimation.entrySet().removeIf(entry -> {
@@ -671,7 +734,10 @@ public final class ParkourManager {
                     .filter(s -> s.getPlayersMap().containsKey(uuid))
                     .findFirst()
                     .orElse(null);
+
             if (state == null) return;
+
+
 
             state.removePlayer(uuid);
 
@@ -684,6 +750,7 @@ public final class ParkourManager {
                     player.getInventory().clear();
                     if (saved != null) {
                         player.getInventory().setContents(saved);
+                        InventoryCache.removeInventory(uuid);
                     }
                 }
             }
@@ -707,6 +774,7 @@ public final class ParkourManager {
             });
         }
         registerOrUnregisterListener();
+        registerOrUnregisterCachedParkour();
     }
 
     public static void stopGlobal(final String map) {
@@ -718,6 +786,15 @@ public final class ParkourManager {
                 Player p = Bukkit.getPlayer(uuid_game);
                 hideMap(p, map);
                 if (p != null && p.isOnline()) {
+                    hideMap(p, map);
+                    if (InventoryCache.hasInventory(p.getUniqueId())) {
+                        ItemStack[] saved = InventoryCache.getInventory(p.getUniqueId());
+                        p.getInventory().clear();
+                        if (saved != null) {
+                            p.getInventory().setContents(saved);
+                            InventoryCache.removeInventory(p.getUniqueId());
+                        }
+                    }
                     p.sendMessage("§c¡Se ha finalizado el Parkour!");
                 }
             }
@@ -735,7 +812,9 @@ public final class ParkourManager {
                 return false;
             }));
         }
+
         registerOrUnregisterListener();
+        registerOrUnregisterCachedParkour();
     }
 
     public static @NotNull List<Location> getFinishPoints(final String map){
@@ -878,6 +957,7 @@ public final class ParkourManager {
         if (next != null) {
             player.sendMessage("Siguiente checkpoint: " + next.getId());
             teleportToCheckpoint(player, next);
+            loadItemsCheckpoint(player, next);
             if (type == Type.INDIVIDUAL) {
                 parkourMapStateIndividual.get(uuid).getData().setGetCheckpointId(next.getId());
             } else {
@@ -905,6 +985,7 @@ public final class ParkourManager {
         if (back != null) {
             player.sendMessage("Checkpoint anterior: " + back.getId());
             teleportToCheckpoint(player, back);
+            loadItemsCheckpoint(player, back);
             if (type == Type.INDIVIDUAL) {
                 parkourMapStateIndividual.get(uuid).getData().setGetCheckpointId(back.getId());
             } else {
@@ -955,8 +1036,95 @@ public final class ParkourManager {
         return null;
     }
 
-    private static void loadItemsCheckpoint(Player player, Checkpoint checkpoint){
+    private static void loadItemsCheckpoint(@NotNull Player player, @NotNull Checkpoint checkpoint) {
+        if (CheckpointBase.getLastCheckpointPlayer(player.getUniqueId()).equals(checkpoint)) {
+            Map<ParkourItemType, Checkpoint.ItemCache> cacheItems = checkpoint.getCacheItem();
+            if (cacheItems != null && !cacheItems.isEmpty()) {
+                for (Checkpoint.ItemCache cache : cacheItems.values()) {
+                    ItemStack stack = cache.getItemStack().clone();
+                    int amount = cache.getCount();
+                    if (amount <= 0) {
+                        amount = 1;
+                    }
+                    stack.setAmount(amount);
+                    player.getInventory().addItem(stack);
+                }
+            }
+        }
+        if (checkpoint.getItemMap().isEmpty()) {
+            return;
+        }
 
+        getMapIfInParkour(player.getUniqueId())
+                .ifPresent(map -> {
+                    Rules rules = new Rules(map);
+                    Map<ParkourItemType, ParkourItem> finalItems = new EnumMap<>(rules.getParkourItems());
+                    if (!checkpoint.getItemMap().isEmpty()) {
+                        finalItems.putAll(checkpoint.getItemMap());
+                    }
+                    List<ParkourItem> parkourItems = new ArrayList<>(finalItems.values());
+                    for (ParkourItem parkourItem : parkourItems) {
+                        ItemStack newStack = parkourItem.toItemStack();
+                        if (!parkourItem.isGiveToPlayer()) {
+                            for (int i = 0; i < player.getInventory().getSize(); i++) {
+                                ItemStack invItem = player.getInventory().getItem(i);
+                                if (invItem != null && newStack.isSimilar(invItem)) {
+                                    player.getInventory().setItem(i, null);
+                                }
+                            }
+                            continue;
+                        }
+                        boolean updated = false;
+                        for (int i = 0; i < player.getInventory().getSize(); i++) {
+                            ItemStack invItem = player.getInventory().getItem(i);
+                            if (invItem == null) continue;
+
+                            if (invItem.getType() == parkourItem.getMaterial()) {
+                                ItemStack updatedStack = parkourItem.toItemStack();
+
+                                if (parkourItem.isAccumulateUses()) {
+                                    updatedStack.setAmount(invItem.getAmount() + newStack.getAmount());
+                                } else {
+                                    updatedStack.setAmount(newStack.getAmount());
+                                }
+
+                                player.getInventory().setItem(i, updatedStack);
+                                updated = true;
+                                break;
+                            }
+                        }
+                        if (!updated) {
+                            player.getInventory().addItem(newStack);
+                        }
+                    }
+                });
+    }
+
+    public static ParkourItem getParkourItem(@NotNull ItemStack itemStack, @NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        return getMapIfInParkour(uuid).map(map -> {
+            Type type = getTypePlayer(player, map);
+            Set<ParkourItem> parkourItems = new HashSet<>();
+            if (type == Type.INDIVIDUAL) {
+                parkourItems.addAll(parkourMapStateIndividual.get(uuid).getItemTypeParkourItemMap());
+            } else if (type == Type.GLOBAL) {
+                parkourItems.addAll(parkourMapStatesGlobal.get(map).getItemTypeParkourItemMap());
+            }
+            for (Checkpoint checkpoint : CheckpointBase.getCheckpoints(map)) {
+                if (checkpoint.getItemMap() != null) {
+                    parkourItems.addAll(checkpoint.getItemMap().values());
+                }
+            }
+            for (ParkourItem parkourItem : parkourItems) {
+                ItemStack parkourStack = parkourItem.toItemStack();
+
+                if (parkourStack.isSimilar(itemStack) ||
+                        (itemStack.hasItemMeta() && parkourItem.getDisplayName().equals(itemStack.getItemMeta().getDisplayName()))) {
+                    return parkourItem;
+                }
+            }
+            return null;
+        }).orElse(null);
     }
 
 }

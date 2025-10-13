@@ -404,7 +404,7 @@ public final class Gui {
         }
         checkpointConfig.setLocation(location);
         checkpointConfig.setMinFallY(CheckpointConfig.MIN_Y);
-        checkpointConfig.setAllMaxFallY(CheckpointConfig.MAX_Y);
+        checkpointConfig.setMaxFallY(CheckpointConfig.MAX_Y);
         HOLOGRAM_API.addHologram(name_map, checkpoint, checkpointConfig.getLocation(), Type.CHECKPOINT);
         updateCheckpoints(name_map);
     }

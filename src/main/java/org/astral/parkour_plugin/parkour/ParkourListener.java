@@ -87,23 +87,6 @@ public final class ParkourListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {
-        final Player player = event.getPlayer();
-        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
-        if (!playerInMap.isPresent()) return;
-        final String name_map = playerInMap.get();
-        if (!ParkourManager.isAutoReconnect(name_map)) {
-            ParkourManager.removePlayerParkour(player.getUniqueId());
-        } else {
-            Type type = ParkourManager.getTypePlayer(player, name_map);
-            ParkourManager.hideMap(player, name_map);
-            if (type == Type.INDIVIDUAL) {
-                IndividualTimerManager.pause(player.getUniqueId());
-            }
-        }
-    }
-
-    @EventHandler
     public void onPlayerInteract(final @NotNull PlayerInteractEvent event) {
         final Player player = event.getPlayer();
         final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
@@ -130,6 +113,23 @@ public final class ParkourListener implements Listener {
                 }
                 event.setCancelled(true);
                 break;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(final @NotNull PlayerQuitEvent event) {
+        final Player player = event.getPlayer();
+        final Optional<String> playerInMap = ParkourManager.getMapIfInParkour(player.getUniqueId());
+        if (!playerInMap.isPresent()) return;
+        final String name_map = playerInMap.get();
+        if (!ParkourManager.isAutoReconnect(name_map)) {
+            ParkourManager.removePlayerParkour(player.getUniqueId());
+        } else {
+            Type type = ParkourManager.getTypePlayer(player, name_map);
+            ParkourManager.hideMap(player, name_map);
+            if (type == Type.INDIVIDUAL) {
+                IndividualTimerManager.pause(player.getUniqueId());
             }
         }
     }
