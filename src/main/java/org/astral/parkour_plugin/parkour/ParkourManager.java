@@ -938,7 +938,7 @@ public final class ParkourManager {
         }
     }
 
-    public static void nextCheckpoint(final @NotNull Player player, final String nameMap) {
+    public static void goNextCheckpoint(final @NotNull Player player, final String nameMap) {
         final UUID uuid = player.getUniqueId();
         Type type = getTypePlayer(player, nameMap);
 
@@ -966,7 +966,7 @@ public final class ParkourManager {
         }
     }
 
-    public static void backCheckpoint(final @NotNull Player player, final String nameMap) {
+    public static void goBackCheckpoint(final @NotNull Player player, final String nameMap) {
         final UUID uuid = player.getUniqueId();
         Type type = getTypePlayer(player, nameMap);
 

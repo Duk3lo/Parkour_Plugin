@@ -104,10 +104,10 @@ public final class ParkourListener implements Listener {
                         ParkourManager.teleportSpawn(player, name_map);
                         break;
                     case BACK_CHECKPOINT:
-                        ParkourManager.backCheckpoint(player, name_map);
+                        ParkourManager.goBackCheckpoint(player, name_map);
                         break;
                     case NEXT_CHECKPOINT:
-                        ParkourManager.nextCheckpoint(player, name_map);
+                        ParkourManager.goNextCheckpoint(player, name_map);
                         break;
 
                 }
