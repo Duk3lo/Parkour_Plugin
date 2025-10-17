@@ -1066,10 +1066,17 @@ public final class ParkourManager {
                     for (ParkourItem parkourItem : parkourItems) {
                         ItemStack newStack = parkourItem.toItemStack();
                         if (!parkourItem.isGiveToPlayer()) {
+                            ArrayList<ParkourItem> allItems = getAllParkourItems(player);
                             for (int i = 0; i < player.getInventory().getSize(); i++) {
                                 ItemStack invItem = player.getInventory().getItem(i);
-                                if (invItem != null && newStack.isSimilar(invItem)) {
-                                    player.getInventory().setItem(i, null);
+                                if (invItem == null) continue;
+                                for (ParkourItem pItem : allItems) {
+                                    ItemStack pStack = pItem.toItemStack();
+                                    if (invItem.isSimilar(pStack)
+                                            || (invItem.hasItemMeta() && pItem.getDisplayName().equals(invItem.getItemMeta().getDisplayName()))) {
+                                        player.getInventory().setItem(i, null);
+                                        break;
+                                    }
                                 }
                             }
                             continue;
@@ -1125,6 +1132,26 @@ public final class ParkourManager {
             }
             return null;
         }).orElse(null);
+    }
+
+    public static @NotNull ArrayList<ParkourItem> getAllParkourItems(@NotNull Player player) {
+        final UUID uuid = player.getUniqueId();
+        return getMapIfInParkour(uuid).map(map -> {
+            Set<ParkourItem> parkourItems = new HashSet<>();
+            Type type = getTypePlayer(player, map);
+            if (type == Type.INDIVIDUAL && parkourMapStateIndividual.containsKey(uuid)) {
+                parkourItems.addAll(parkourMapStateIndividual.get(uuid).getItemTypeParkourItemMap());
+            } else if (type == Type.GLOBAL && parkourMapStatesGlobal.containsKey(map)) {
+                parkourItems.addAll(parkourMapStatesGlobal.get(map).getItemTypeParkourItemMap());
+            }
+            for (Checkpoint checkpoint : CheckpointBase.getCheckpoints(map)) {
+                Map<ParkourItemType, ParkourItem> itemMap = checkpoint.getItemMap();
+                if (itemMap != null) {
+                    parkourItems.addAll(itemMap.values());
+                }
+            }
+            return new ArrayList<>(parkourItems);
+        }).orElseGet(ArrayList::new);
     }
 
 }
