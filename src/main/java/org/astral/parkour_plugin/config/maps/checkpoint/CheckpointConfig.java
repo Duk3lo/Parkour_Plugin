@@ -147,15 +147,14 @@ public final class CheckpointConfig extends BaseCheckpoint {
 
     public @NotNull Map<ParkourItemType, ParkourItem> getItems(Map<ParkourItemType, ParkourItem> reference) {
         validateConfigurationSection();
-        ConfigurationSection section = yamlConfiguration.getConfigurationSection("items");
+        ConfigurationSection section = configurationSection.getConfigurationSection("items");
         Map<ParkourItemType, ParkourItem> items = new HashMap<>();
-
         if (section != null) {
             for (String key : section.getKeys(false)) {
                 try {
                     ParkourItemType type = ParkourItemType.valueOf(key.toUpperCase());
-
                     if (!items.containsKey(type)) {
+
                         ConfigurationSection itemSection = section.getConfigurationSection(key);
                         if (itemSection != null) {
                             ParkourItem parkourItem = reference.get(type);

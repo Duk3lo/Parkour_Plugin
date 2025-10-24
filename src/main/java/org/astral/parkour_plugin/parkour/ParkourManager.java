@@ -219,9 +219,12 @@ public final class ParkourManager {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + map + "§c, se usara la propia localizacion.");
             locationOfStart = player.getLocation();
         }
-        CheckpointBase.loadMap(map);
+
         teleportToSpawnOrWarn(player, map, locationOfStart);
         final Rules rules = new Rules(map);
+        rules.loadItems();
+        CheckpointBase.setItemsRef(map, rules.getParkourItems());
+        CheckpointBase.loadMap(map);
         final Optional<RichText> optionalTitle = rules.getTitle("join");
         optionalTitle.ifPresent(title ->
                 new Title(title.getTitle(), title.getSubtitle(), title.getFadeIn(), title.getStay(), title.getFadeOut()).send(player));
@@ -245,7 +248,7 @@ public final class ParkourManager {
         loadFrames(state.getAnimatedRichText(), Collections.singleton(uuid), map, Type.INDIVIDUAL);
         state.setInGame(true);
         showAllObjectsInMap(player, map);
-        addItemsParkourPlayer(player, map, Type.INDIVIDUAL);
+        addItemsParkourPlayer(player, map, Type.INDIVIDUAL, rules);
     }
 
     public static void startParkourGlobal(@NotNull Player player, String map, boolean animated) {
@@ -264,9 +267,12 @@ public final class ParkourManager {
             player.sendMessage("§cNo se pudo encontrar ningún punto de aparición para el mapa §b" + map + "§c.");
             return;
         }
-        CheckpointBase.loadMap(map);
+
         teleportToSpawnOrWarn(player, map, locationOfStart);
         Rules rules = new Rules(map);
+        rules.loadItems();
+        CheckpointBase.setItemsRef(map, rules.getParkourItems());
+        CheckpointBase.loadMap(map);
         ParkourMapStateGlobal state = parkourMapStatesGlobal.computeIfAbsent(map, k -> {
             ParkourMapStateGlobal newState = new ParkourMapStateGlobal(
                     k,
@@ -309,19 +315,18 @@ public final class ParkourManager {
             loadFrames(state.getAnimatedRichText(), state.getAllPlayers(), map, Type.GLOBAL);
         }
         showAllObjectsInMap(player, map);
-        addItemsParkourPlayer(player, map, Type.GLOBAL);
+        addItemsParkourPlayer(player, map, Type.GLOBAL, rules);
     }
 
-    public static void addItemsParkourPlayer(final @NotNull Player player, final String map, Type type) {
+    public static void addItemsParkourPlayer(final @NotNull Player player, final String map, Type type, @NotNull Rules rules) {
         final ItemStack[] itemStacks = player.getInventory().getContents();
         InventoryCache.saveInventory(player.getUniqueId(), itemStacks);
         PlayerInventory inventoryPlayer = player.getInventory();
-        Rules rules = new Rules(map);
+
         if (!rules.keepInventory()) {
             inventoryPlayer.clear();
         }
-        rules.loadItems();
-        CheckpointBase.setItemsRef(map, rules.getParkourItems());
+        //CheckpointBase.setItemsRef(map, rules.getParkourItems());
         for (ParkourItemType parkourItemType : ParkourItemType.values()) {
             ParkourItem parkourItem = rules.getParkourItems().get(parkourItemType);
             if (parkourItem != null && parkourItem.isGiveToPlayer()) {
@@ -792,6 +797,7 @@ public final class ParkourManager {
                         p.getInventory().clear();
                         if (saved != null) {
                             p.getInventory().setContents(saved);
+                            removePlayerParkour(uuid_game);
                             InventoryCache.removeInventory(p.getUniqueId());
                         }
                     }
@@ -1058,7 +1064,8 @@ public final class ParkourManager {
         getMapIfInParkour(player.getUniqueId())
                 .ifPresent(map -> {
                     Rules rules = new Rules(map);
-                    Map<ParkourItemType, ParkourItem> finalItems = new EnumMap<>(rules.getParkourItems());
+                    Map<ParkourItemType, ParkourItem> finalItems = new EnumMap<>(ParkourItemType.class);
+                    finalItems.putAll(rules.getParkourItems());
                     if (!checkpoint.getItemMap().isEmpty()) {
                         finalItems.putAll(checkpoint.getItemMap());
                     }
@@ -1066,6 +1073,7 @@ public final class ParkourManager {
                     for (ParkourItem parkourItem : parkourItems) {
                         ItemStack newStack = parkourItem.toItemStack();
                         if (!parkourItem.isGiveToPlayer()) {
+                            System.out.println("Print Testing");
                             ArrayList<ParkourItem> allItems = getAllParkourItems(player);
                             for (int i = 0; i < player.getInventory().getSize(); i++) {
                                 ItemStack invItem = player.getInventory().getItem(i);
