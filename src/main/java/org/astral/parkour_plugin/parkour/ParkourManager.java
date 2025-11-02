@@ -358,7 +358,7 @@ public final class ParkourManager {
 
     public static void autoReconnectPlayersIfNecessary(final @NotNull Player player) {
         final Optional<String> playerInMap = getMapIfInParkour(player.getUniqueId());
-        if (!playerInMap.isPresent()) return;
+        if (playerInMap.isEmpty()) return;
         final String name_map = playerInMap.get();
         if (isAutoReconnect(name_map)) {
             Type type = getTypePlayer(player, name_map);

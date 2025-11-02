@@ -15,8 +15,12 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
-    maven { url "https://repo.dmulloy2.net/repository/public/" }
+    maven {
+        name = "dmulloy2"
+        url = "https://repo.dmulloy2.net/repository/public/"
+    }
 }
+
 
 dependencies {
     compileOnly 'com.destroystokyo.paper:paper-api:1.12-R0.1-SNAPSHOT'
