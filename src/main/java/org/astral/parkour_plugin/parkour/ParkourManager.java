@@ -1072,43 +1072,44 @@ public final class ParkourManager {
                     List<ParkourItem> parkourItems = new ArrayList<>(finalItems.values());
                     for (ParkourItem parkourItem : parkourItems) {
                         ItemStack newStack = parkourItem.toItemStack();
-                        if (!parkourItem.isGiveToPlayer()) {
-                            System.out.println("Print Testing");
-                            ArrayList<ParkourItem> allItems = getAllParkourItems(player);
-                            for (int i = 0; i < player.getInventory().getSize(); i++) {
-                                ItemStack invItem = player.getInventory().getItem(i);
-                                if (invItem == null) continue;
-                                for (ParkourItem pItem : allItems) {
-                                    ItemStack pStack = pItem.toItemStack();
-                                    if (invItem.isSimilar(pStack)
-                                            || (invItem.hasItemMeta() && pItem.getDisplayName().equals(invItem.getItemMeta().getDisplayName()))) {
-                                        player.getInventory().setItem(i, null);
-                                        break;
-                                    }
-                                }
-                            }
-                            continue;
-                        }
-                        boolean updated = false;
+                        boolean removeItem = parkourItem.isGiveToPlayer();
+
+                        ArrayList<ParkourItem> sameTypeItems = removeItem
+                                ? getAllParkourItems(player).stream()
+                                .filter(item -> item.getParkourItemType().equals(parkourItem.getParkourItemType()))
+                                .collect(Collectors.toCollection(ArrayList::new))
+                                : null;
+
                         for (int i = 0; i < player.getInventory().getSize(); i++) {
                             ItemStack invItem = player.getInventory().getItem(i);
                             if (invItem == null) continue;
+
+                            if (removeItem) {
+                                boolean match = sameTypeItems.stream()
+                                        .map(ParkourItem::toItemStack)
+                                        .anyMatch(invItem::isSimilar);
+
+                                if (match) {
+                                    player.getInventory().setItem(i, null);
+                                    continue;
+                                }
+                            }
+
 
                             if (invItem.getType() == parkourItem.getMaterial()) {
                                 ItemStack updatedStack = parkourItem.toItemStack();
 
                                 if (parkourItem.isAccumulateUses()) {
-                                    updatedStack.setAmount(invItem.getAmount() + newStack.getAmount());
+                                    updatedStack.setAmount(invItem.getAmount() + parkourItem.getUses());
                                 } else {
-                                    updatedStack.setAmount(newStack.getAmount());
+                                    updatedStack.setAmount(parkourItem.getUses());
                                 }
-
                                 player.getInventory().setItem(i, updatedStack);
-                                updated = true;
+                                newStack = null;
                                 break;
                             }
                         }
-                        if (!updated) {
+                        if (newStack != null && !removeItem) {
                             player.getInventory().addItem(newStack);
                         }
                     }

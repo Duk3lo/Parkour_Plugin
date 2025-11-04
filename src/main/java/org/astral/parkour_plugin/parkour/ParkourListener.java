@@ -67,7 +67,7 @@ public final class ParkourListener implements Listener {
                 ParkourManager.getFinishPoints(name_map),
                 location);
 
-        System.out.println(percent);
+        //System.out.println(percent);
 
         List<String> sortedPlayers = ProgressTrackerManager.getSortedPlayersByRadialProgress(
                 ParkourManager.getMapStateGlobal(name_map).getAllPlayers().stream()
@@ -78,7 +78,7 @@ public final class ParkourListener implements Listener {
                 ParkourManager.getFinishPoints(name_map)
         );
 
-        System.out.println("Ranking en " + name_map + ": " + sortedPlayers);
+        //System.out.println("Ranking en " + name_map + ": " + sortedPlayers);
 
 
         ParkourManager.saveCheckpointIfReached(player.getUniqueId(), name_map, location, type);
