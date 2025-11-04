@@ -1097,7 +1097,7 @@ public final class ParkourManager {
                             } else {
                                 updatedStack.setAmount(parkourItem.getUses());
                             }
-                            player.getInventory().addItem(updatedStack);
+                            player.getInventory().setItem(parkourItem.getSlot(), updatedStack);
                         }
                     }
                     player.updateInventory();
