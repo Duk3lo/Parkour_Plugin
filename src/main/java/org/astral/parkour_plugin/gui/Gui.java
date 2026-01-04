@@ -91,6 +91,11 @@ public final class Gui {
     private static final byte ITEMS_PER_PAGE_LOBBY = 52;
 
 
+    //-----------------------------------------------------------------------[ITEMS  LOBBY]
+    //-------------------------------------------------------------------------------------
+    public static final String itemsInventoryMenu = "Selecciona el Mapa";
+    public static final String orderInventoryItems = "Ordenar Items";
+
     //----------------------------------------------------------------------------[Events]
     //------------------------------------------------------------------------------------
     private static void registerOrUnregisterEvents(){
@@ -101,6 +106,34 @@ public final class Gui {
             }
             isActiveListener = true;
         }
+    }
+
+    //---------------------------------------------------------------------------------[ITEMS]
+    //----------------------------------------------------------------------------------------
+
+    public static void loadInventoryOfItems(@NotNull Player player){
+        final UUID uuid = player.getUniqueId();
+        exitGui(Bukkit.getPlayer(uuid));
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        registerOrUnregisterEvents();
+        Inventory inventory = Bukkit.createInventory(player, 54, itemsInventoryMenu);
+        List<ItemStack> items = new ArrayList<>(DynamicTools.SELECTS_MAPS_ITEMS);
+        int initialPage = 0;
+        data.setPage(initialPage);
+        data.setMenu(itemsInventoryMenu);
+        showPage(inventory, initialPage, items);
+        player.openInventory(inventory);
+
+    }
+
+    public static void loadInventoryItemsEdit(@NotNull Player player, String map){
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        data.setMenu(orderInventoryItems);
+        Inventory topInventory = player.getOpenInventory().getTopInventory();
+        topInventory.clear();
+        //topInventory.setItem();
+        SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
     //----------------------------------------------------------------------[SELECTOR LOBBY'S]
@@ -223,14 +256,14 @@ public final class Gui {
             final ItemStack[] itemStacks = player.getInventory().getContents();
             data.setPlayerInventories(itemStacks);
             InventoryCache.saveInventory(uuid, itemStacks);
-            loadMainInventory(player);
+            loadMainInventoryEdit(player);
             data.setEditing(true);
             SoundApi.playSound(player, 1.0f, 2.0f, "ORB_PICKUP", "ENTITY_EXPERIENCE_ORB_PICKUP");
         }
         registerOrUnregisterEvents();
     }
 
-    public static void loadMainInventory(final @NotNull Player player) {
+    public static void loadMainInventoryEdit(final @NotNull Player player) {
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
 
@@ -483,7 +516,7 @@ public final class Gui {
                     for (Type type : Type.values()) {
                         HOLOGRAM_API.hideHolograms(player, name_map, type);
                     }
-                    loadMainInventory(player);
+                    loadMainInventoryEdit(player);
                     SoundApi.playSound(player, 1.0f, 1.0f, "ITEM_BREAK", "ENTITY_ITEM_BREAK");
                 }
 
@@ -993,7 +1026,7 @@ public final class Gui {
 
         switch (menu_player) {
             case menuOfMap:
-                loadMainInventory(player);
+                loadMainInventoryEdit(player);
                 data.setMapPlayer(null);
                 if (name_map != null && !name_map.isEmpty()) {
                     HOLOGRAM_API.hideHolograms(player, name_map, Type.CHECKPOINT);

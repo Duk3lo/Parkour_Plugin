@@ -38,6 +38,9 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
     private static final String pause = "pause";
     private static final String resume = "resume";
 
+    // ------------------------------------------- [Items Parkour]
+    private static final String item_inventory = "item_inventory";
+
     // ------------------------------------------- [ Editable ]
     // ------------------------------------------- [ 0 ]
     private static final String generate = "generate";
@@ -57,6 +60,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
 
     // ------------------------------------------- [Confirm Dialogue]
     private final Map<UUID, String> pendingJoin = new HashMap<>();
+
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
@@ -118,6 +122,10 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 DynamicTools.SELECTS_MAPS_ITEMS.add(DynamicTools.createItemMap(name_map));
                 Gui.refreshAllMaps();
                 return true;
+            }
+
+            if (args[0].equalsIgnoreCase(item_inventory)){
+                Gui.loadInventoryOfItems(player);
             }
 
 
@@ -332,7 +340,7 @@ public final class GameCommandExecutor implements CommandExecutor, TabCompleter 
                 final Player player = ((Player) sender).getPlayer();
                 commandEditMode = !Gui.isInEditMode(player)? editMode : exitEditMode;
             }
-            return filterByPrefix(args[0], Arrays.asList(generate, tools, help, commandEditMode, startGlobal, startIndividual,exit, finish, openGlobalLobby, pause ,stop, resume));
+            return filterByPrefix(args[0], Arrays.asList(item_inventory, generate, tools, help, commandEditMode, startGlobal, startIndividual,exit, finish, openGlobalLobby, pause ,stop, resume));
 
         }
 

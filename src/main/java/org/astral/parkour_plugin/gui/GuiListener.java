@@ -52,8 +52,9 @@ public final class GuiListener implements Listener {
         final Block block = event.getClickedBlock();
 
         final ItemStack item = event.getItem();
+        final String menuPlayer = Gui.getMenu(player);
 
-        if ((Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal))&& item != null) {
+        if ((Gui.isInEditMode(player) || menuPlayer.equals(Gui.lobbyMenuSelectorGlobal))&& item != null) {
 
             if (item.isSimilar(Tools.EXIT_ITEM.getItem())) Gui.exitGui(player);
 
@@ -133,7 +134,8 @@ public final class GuiListener implements Listener {
                 Gui.previousPages(player);
 
             if (isDynamicToolMaps(item)) {
-                Gui.setMapPlayer(player, DynamicTools.getName(item));
+                final String map = DynamicTools.getName(item);
+                Gui.setMapPlayer(player, map);
                 Gui.loadEditInventoryMap(player);
             }
 
@@ -188,7 +190,7 @@ public final class GuiListener implements Listener {
         final String inventoryName = event.getView().getTitle();
         final Player player = ((Player) event.getWhoClicked()).getPlayer();
 
-        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)){
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal) || Gui.getMenu(player).equals(Gui.itemsInventoryMenu)){
 
             if (item != null){
                 if (item.isSimilar(Tools.NEXT_PAGE_ITEM.getItem())){
@@ -196,6 +198,12 @@ public final class GuiListener implements Listener {
                 }
                 if (item.isSimilar(Tools.PREVIOUS_PAGE_ITEM.getItem())){
                     Gui.previousPages(player);
+                }
+
+                if (isDynamicToolMaps(item)){
+                    final String mapName = DynamicTools.getName(item);
+                    Gui.loadInventoryItemsEdit(player, mapName);
+                    event.setCancelled(true);
                 }
             }
 
@@ -214,7 +222,10 @@ public final class GuiListener implements Listener {
                 } else {
                     event.setCancelled(true);
                 }
-                if ((event.getAction().equals(InventoryAction.HOTBAR_MOVE_AND_READD) || event.getAction().equals(InventoryAction.HOTBAR_SWAP) || event.getAction().equals(InventoryAction.PICKUP_HALF) || event.getAction().equals(InventoryAction.DROP_ALL_CURSOR)))
+                if ((event.getAction().equals(InventoryAction.HOTBAR_MOVE_AND_READD)
+                        || event.getAction().equals(InventoryAction.HOTBAR_SWAP)
+                        || event.getAction().equals(InventoryAction.PICKUP_HALF)
+                        || event.getAction().equals(InventoryAction.DROP_ALL_CURSOR)))
                     event.setCancelled(true);
 
                 if (item != null) {
@@ -237,6 +248,8 @@ public final class GuiListener implements Listener {
                         Gui.exitGui(player);
                         event.setCancelled(true);
                     }
+
+
                 } else event.setCancelled(true);
             }else event.setCancelled(true);
 
@@ -260,9 +273,11 @@ public final class GuiListener implements Listener {
     public void onInventoryClose(final @NotNull InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player) {
             final Player player = (Player) event.getPlayer();
-            if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal)) {
+            final String menu = Gui.getMenu(player);
+            if (Gui.isInEditMode(player) || menu.equals(Gui.lobbyMenuSelectorGlobal)||menu.equals(Gui.itemsInventoryMenu)
+            || menu.equals(Gui.orderInventoryItems)) {
                 final String inventoryName = event.getView().getTitle();
-                if (inventoryName.equals(Gui.lobbyMenuSelectorGlobal)){
+                if (inventoryName.equals(Gui.lobbyMenuSelectorGlobal) || inventoryName.equals(Gui.itemsInventoryMenu)){
                     Gui.closeInventoryGlobal(player);
                 }
                 player.getItemOnCursor();
