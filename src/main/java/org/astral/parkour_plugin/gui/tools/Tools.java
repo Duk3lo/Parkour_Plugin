@@ -69,6 +69,10 @@ public enum Tools {
     MARK_SPAWN_ITEM(Material.BLAZE_ROD, ChatColor.GOLD+"Marca el Spawn de los jugadores", null),
 
     MARK_FINISH_ITEM(Material.BLAZE_ROD, ChatColor.WHITE+"Marca la meta final", null),
+
+    GLOBAL(Material.SEA_LANTERN, ChatColor.BLUE+"Global", Collections.singletonList(ChatColor.WHITE + "Ingresas al los items Globales")),
+
+    INDIVIDUAL(Material.EMERALD, ChatColor.BLUE+"Individual", Collections.singletonList(ChatColor.WHITE + "Ingresas al los items Individuales"))
     ;
 
     private final ItemStack item;

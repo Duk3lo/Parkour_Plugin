@@ -190,7 +190,7 @@ public final class GuiListener implements Listener {
         final String inventoryName = event.getView().getTitle();
         final Player player = ((Player) event.getWhoClicked()).getPlayer();
 
-        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal) || Gui.getMenu(player).equals(Gui.itemsInventoryMenu)){
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal) || inventoryName.equals(Gui.itemsInventoryMenu) || inventoryName.equals(Gui.SelectItemType)){
 
             if (item != null){
                 if (item.isSimilar(Tools.NEXT_PAGE_ITEM.getItem())){
@@ -203,6 +203,10 @@ public final class GuiListener implements Listener {
                 if (isDynamicToolMaps(item)){
                     final String mapName = DynamicTools.getName(item);
                     Gui.loadInventoryItemsEdit(player, mapName);
+                    event.setCancelled(true);
+                }
+                if (item.isSimilar(Tools.GLOBAL.getItem()) || item.isSimilar(Tools.INDIVIDUAL.getItem())){
+                    Gui.loadItems(player, DynamicTools.getName(item).startsWith(DynamicTools.getName(Tools.GLOBAL.getItem())));
                     event.setCancelled(true);
                 }
             }
@@ -275,7 +279,7 @@ public final class GuiListener implements Listener {
             final Player player = (Player) event.getPlayer();
             final String menu = Gui.getMenu(player);
             if (Gui.isInEditMode(player) || menu.equals(Gui.lobbyMenuSelectorGlobal)||menu.equals(Gui.itemsInventoryMenu)
-            || menu.equals(Gui.orderInventoryItems)) {
+            || menu.equals(Gui.SelectItemType)) {
                 final String inventoryName = event.getView().getTitle();
                 if (inventoryName.equals(Gui.lobbyMenuSelectorGlobal) || inventoryName.equals(Gui.itemsInventoryMenu)){
                     Gui.closeInventoryGlobal(player);

@@ -94,7 +94,7 @@ public final class Gui {
     //-----------------------------------------------------------------------[ITEMS  LOBBY]
     //-------------------------------------------------------------------------------------
     public static final String itemsInventoryMenu = "Selecciona el Mapa";
-    public static final String orderInventoryItems = "Ordenar Items";
+    public static final String SelectItemType = "Seleccion de Modo";
 
     //----------------------------------------------------------------------------[Events]
     //------------------------------------------------------------------------------------
@@ -129,11 +129,20 @@ public final class Gui {
     public static void loadInventoryItemsEdit(@NotNull Player player, String map){
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
-        data.setMenu(orderInventoryItems);
+        data.setMenu(SelectItemType);
         Inventory topInventory = player.getOpenInventory().getTopInventory();
         topInventory.clear();
-        //topInventory.setItem();
+        topInventory.setItem(21, Tools.GLOBAL.getItem());
+        topInventory.setItem(23, Tools.INDIVIDUAL.getItem());
+        topInventory.setItem(53, Tools.BACK_ITEM.getItem());
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
+    }
+
+    public static void loadItems(@NotNull Player player, boolean global){
+        Inventory topInventory = player.getOpenInventory().getTopInventory();
+
+        topInventory.setItem(53, Tools.BACK_ITEM.getItem());
+        SoundApi.playSound(player, 1.0f, 2.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
     //----------------------------------------------------------------------[SELECTOR LOBBY'S]
@@ -1038,6 +1047,7 @@ public final class Gui {
             case spawnAndFinishMenu:
                 loadEditInventoryMap(player);
                 break;
+            case
             default:
                 player.sendMessage("Valor inesperado para menu_player: " + menu_player);
                 break;
