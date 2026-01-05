@@ -1047,7 +1047,7 @@ public final class Gui {
             case spawnAndFinishMenu:
                 loadEditInventoryMap(player);
                 break;
-            case
+
             default:
                 player.sendMessage("Valor inesperado para menu_player: " + menu_player);
                 break;
