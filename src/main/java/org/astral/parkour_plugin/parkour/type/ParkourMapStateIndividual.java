@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.parkour.Type;
+package org.astral.parkour_plugin.parkour.type;
 
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.title.AnimatedRichText;

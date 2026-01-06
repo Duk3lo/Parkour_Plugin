@@ -4,7 +4,7 @@ import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.parkour.ParkourManager;
-import org.astral.parkour_plugin.parkour.Type.ParkourMapStateGlobal;
+import org.astral.parkour_plugin.parkour.type.ParkourMapStateGlobal;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public final class DynamicTools {
 
     public static final List<ItemStack> SELECTS_MAPS_ITEMS = new ArrayList<>();
+    public static final List<ItemStack> PARKOUR_ITEM = new ArrayList<>();
     public static final Map<String, List<ItemStack>> CHECKPOINTS_MAPS_ITEMS = new HashMap<>();
     public static final Map<String, List<ItemStack>> SPAWN_LOCATIONS = new HashMap<>();
     public static final Map<String, List<ItemStack>> FINISH_LOCATION = new HashMap<>();
@@ -49,6 +50,10 @@ public final class DynamicTools {
         for (final String name : sortMapNames(Configuration.getMaps())) {
             SELECTS_MAPS_ITEMS.add(createItemMap(name));
         }
+    }
+
+    public static void refreshItemRace(){
+        PARKOUR_ITEM.clear();
     }
 
     public static void refreshLobbyItems() {

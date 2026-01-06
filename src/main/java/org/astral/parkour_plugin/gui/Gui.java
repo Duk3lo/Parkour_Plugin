@@ -130,6 +130,7 @@ public final class Gui {
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
         data.setMenu(SelectItemType);
+        data.setMapPlayer(map);
         Inventory topInventory = player.getOpenInventory().getTopInventory();
         topInventory.clear();
         topInventory.setItem(21, Tools.GLOBAL.getItem());
@@ -140,7 +141,6 @@ public final class Gui {
 
     public static void loadItems(@NotNull Player player, boolean global){
         Inventory topInventory = player.getOpenInventory().getTopInventory();
-
         topInventory.setItem(53, Tools.BACK_ITEM.getItem());
         SoundApi.playSound(player, 1.0f, 2.0f, "CLICK", "UI_BUTTON_CLICK");
     }

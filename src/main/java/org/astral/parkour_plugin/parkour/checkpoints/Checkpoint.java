@@ -2,7 +2,7 @@ package org.astral.parkour_plugin.parkour.checkpoints;
 
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;
 import org.astral.parkour_plugin.config.maps.items.ParkourItemType;
-import org.astral.parkour_plugin.parkour.Type.Type;
+import org.astral.parkour_plugin.parkour.type.Type;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
