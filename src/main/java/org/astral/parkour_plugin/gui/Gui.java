@@ -93,8 +93,11 @@ public final class Gui {
 
     //-----------------------------------------------------------------------[ITEMS  LOBBY]
     //-------------------------------------------------------------------------------------
+    private static final byte INDEX_ITEMS_CHECKPOINT_ITEMS = 47;
+    private static final byte ITEMS_PER_PAGE_CHECKPOINT_ITEMS = 4;
     public static final String itemsInventoryMenu = "Selecciona el Mapa";
     public static final String SelectItemType = "Seleccion de Modo";
+    public static final String generalItems = "Items - Generales";
 
     //----------------------------------------------------------------------------[Events]
     //------------------------------------------------------------------------------------
@@ -126,23 +129,35 @@ public final class Gui {
 
     }
 
-    public static void loadInventoryItemsEdit(@NotNull Player player, String map){
+    public static void loadInventoryItemsEdit(@NotNull Player player, String map) {
         final UUID uuid = player.getUniqueId();
         PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
         data.setMenu(SelectItemType);
         data.setMapPlayer(map);
-        Inventory topInventory = player.getOpenInventory().getTopInventory();
-        topInventory.clear();
-        topInventory.setItem(21, Tools.GLOBAL.getItem());
-        topInventory.setItem(23, Tools.INDIVIDUAL.getItem());
-        topInventory.setItem(53, Tools.BACK_ITEM.getItem());
+        Inventory inventory = Bukkit.createInventory(player, 54, SelectItemType);
+        inventory.setItem(21, Tools.GLOBAL.getItem());
+        inventory.setItem(23, Tools.INDIVIDUAL.getItem());
+        inventory.setItem(53, Tools.BACK_ITEM.getItem());
+        player.closeInventory();
+        player.openInventory(inventory);
+
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
     public static void loadItems(@NotNull Player player, boolean global){
-        Inventory topInventory = player.getOpenInventory().getTopInventory();
-        topInventory.setItem(53, Tools.BACK_ITEM.getItem());
+        final UUID uuid = player.getUniqueId();
+        PlayerDataGui data = DatGui.computeIfAbsent(uuid, k -> new PlayerDataGui());
+        data.setMenu(generalItems);
+        Inventory inventory = Bukkit.createInventory(player, 54, generalItems);
+        inventory.setItem(53, Tools.BACK_ITEM.getItem());
+        player.closeInventory();
+        player.openInventory(inventory);
+        String name_map = data.getMapPlayer();
+        showPage(inventory, 0, DynamicTools.CHECKPOINTS_MAPS_ITEMS.get(name_map), INDEX_ITEMS_CHECKPOINT_ITEMS, ITEMS_PER_PAGE_CHECKPOINT_ITEMS);
         SoundApi.playSound(player, 1.0f, 2.0f, "CLICK", "UI_BUTTON_CLICK");
+    }
+
+    public static void loadItemPerCheckpoint(@NotNull Player player){
     }
 
     //----------------------------------------------------------------------[SELECTOR LOBBY'S]
@@ -691,9 +706,11 @@ public final class Gui {
         player.getInventory().setItem(1, Tools.LIST_CHECKPOINT_MENU.getItem());
         player.getInventory().setItem(2, Tools.SPAWN_AND_FINISH_MENU.getItem());
         player.getInventory().setItem(3, Tools.CHANGE_ITEM_POSITION.getItem());
+        player.getInventory().setItem(4, Tools.ITEMS.getItem());
         player.getInventory().setItem(6, Tools.REMOVE_MAP.getItem());
         player.getInventory().setItem(7, Tools.OPEN_INVENTORY_ITEM.getItem());
         player.getInventory().setItem(8, Tools.BACK_ITEM.getItem());
+
 
         final int v = 27;
         if (StateTools.DISTANCE_BLOCK.getSlot() != v) StateTools.DISTANCE_BLOCK.setSlot(v);
@@ -897,6 +914,9 @@ public final class Gui {
             case lobbyMenuSelectorGlobal:
                 nextInventoryPage(player, new ArrayList<>(DynamicTools.LOBBY_STATE.values()));
                 break;
+            case generalItems:
+
+                break;
             default:
                 player.sendMessage("Menú no reconocido: " + name_menu);
                 break;
@@ -938,21 +958,25 @@ public final class Gui {
         SoundApi.playSound(player, 1.0f, 1.0f, "CLICK", "UI_BUTTON_CLICK");
     }
 
-    private static void showPage(final @NotNull Player player, final int page, @NotNull final List<ItemStack> items, final int Index, final int items_for_page) {
+    private static void showPage(final @NotNull Player player, final int page, @NotNull final List<ItemStack> items, final int Index, final int items_for_page){
+        showPage(player.getInventory(), page, items, Index,  items_for_page);
+    }
+
+    private static void showPage(final @NotNull Inventory inventory, final int page, @NotNull final List<ItemStack> items, final int Index, final int items_for_page) {
         for (int i = Index; i < Index + items_for_page; i++) {
-            player.getInventory().setItem(i, null);
+            inventory.setItem(i, null);
         }
         int slotIndex = Index;
         int startIndex = page * items_for_page;
         int endIndex = Math.min(startIndex + items_for_page, items.size());
         for (int i = startIndex; i < endIndex; i++) {
-            player.getInventory().setItem(slotIndex, items.get(i));
+            inventory.setItem(slotIndex, items.get(i));
             slotIndex++;
         }
-        if (page > 0) player.getInventory().setItem(Index-1, Tools.PREVIOUS_PAGE_ITEM.getItem());
-        else player.getInventory().setItem(Index-1, null);
-        if (endIndex < items.size()) player.getInventory().setItem(Index+items_for_page, Tools.NEXT_PAGE_ITEM.getItem());
-        else player.getInventory().setItem(Index+items_for_page, null);
+        if (page > 0) inventory.setItem(Index-1, Tools.PREVIOUS_PAGE_ITEM.getItem());
+        else inventory.setItem(Index-1, null);
+        if (endIndex < items.size()) inventory.setItem(Index+items_for_page, Tools.NEXT_PAGE_ITEM.getItem());
+        else inventory.setItem(Index+items_for_page, null);
     }
 
     private static void nextPage(final @NotNull Player player, final @NotNull List<ItemStack> itemsSize, final int slotIndex, final int items_for_page) {

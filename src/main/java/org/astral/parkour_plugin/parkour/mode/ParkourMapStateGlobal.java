@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.parkour.type;
+package org.astral.parkour_plugin.parkour.mode;
 
 
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;

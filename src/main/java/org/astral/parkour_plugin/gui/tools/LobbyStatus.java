@@ -3,7 +3,7 @@ package org.astral.parkour_plugin.gui.tools;
 import org.astral.parkour_plugin.compatibilizer.ApiCompatibility;
 import org.astral.parkour_plugin.compatibilizer.adapters.MaterialApi;
 import org.astral.parkour_plugin.parkour.ParkourManager;
-import org.astral.parkour_plugin.parkour.type.ParkourMapStateGlobal;
+import org.astral.parkour_plugin.parkour.mode.ParkourMapStateGlobal;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

@@ -72,7 +72,9 @@ public enum Tools {
 
     GLOBAL(Material.SEA_LANTERN, ChatColor.BLUE+"Global", Collections.singletonList(ChatColor.WHITE + "Ingresas al los items Globales")),
 
-    INDIVIDUAL(Material.EMERALD, ChatColor.BLUE+"Individual", Collections.singletonList(ChatColor.WHITE + "Ingresas al los items Individuales"))
+    INDIVIDUAL(Material.EMERALD, ChatColor.BLUE+"Individual", Collections.singletonList(ChatColor.WHITE + "Ingresas al los items Individuales")),
+
+    ITEMS(Material.GOLD_HOE, ChatColor.BLUE+"Items", Collections.singletonList(ChatColor.WHITE + "Ingresas al los Items")),
     ;
 
     private final ItemStack item;

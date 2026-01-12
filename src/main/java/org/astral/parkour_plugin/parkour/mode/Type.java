@@ -1,4 +1,4 @@
-package org.astral.parkour_plugin.parkour.type;
+package org.astral.parkour_plugin.parkour.mode;
 
 public enum Type {
     GLOBAL,

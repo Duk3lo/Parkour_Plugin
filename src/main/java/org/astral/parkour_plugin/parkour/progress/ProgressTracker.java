@@ -1,7 +1,7 @@
 package org.astral.parkour_plugin.parkour.progress;
 
 
-import org.astral.parkour_plugin.parkour.type.Type;
+import org.astral.parkour_plugin.parkour.mode.Type;
 import org.astral.parkour_plugin.parkour.checkpoints.Checkpoint;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

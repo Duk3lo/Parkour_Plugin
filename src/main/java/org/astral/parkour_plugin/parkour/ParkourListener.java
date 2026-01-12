@@ -2,7 +2,7 @@ package org.astral.parkour_plugin.parkour;
 
 import org.astral.parkour_plugin.compatibilizer.adapters.TeleportingApi;
 import org.astral.parkour_plugin.config.maps.items.ParkourItem;
-import org.astral.parkour_plugin.parkour.type.Type;
+import org.astral.parkour_plugin.parkour.mode.Type;
 import org.astral.parkour_plugin.parkour.progress.ProgressTrackerManager;
 import org.astral.parkour_plugin.timer.GlobalTimerManager;
 import org.astral.parkour_plugin.timer.IndividualTimerManager;

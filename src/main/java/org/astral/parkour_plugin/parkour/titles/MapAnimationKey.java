@@ -1,6 +1,6 @@
 package org.astral.parkour_plugin.parkour.titles;
 
-import org.astral.parkour_plugin.parkour.type.Type;
+import org.astral.parkour_plugin.parkour.mode.Type;
 
 import java.util.UUID;
 

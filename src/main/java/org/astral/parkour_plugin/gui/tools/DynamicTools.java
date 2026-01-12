@@ -4,7 +4,7 @@ import org.astral.parkour_plugin.config.maps.checkpoint.CheckpointConfig;
 import org.astral.parkour_plugin.config.maps.rules.Rules;
 import org.astral.parkour_plugin.config.Configuration;
 import org.astral.parkour_plugin.parkour.ParkourManager;
-import org.astral.parkour_plugin.parkour.type.ParkourMapStateGlobal;
+import org.astral.parkour_plugin.parkour.mode.ParkourMapStateGlobal;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;

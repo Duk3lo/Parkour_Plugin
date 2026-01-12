@@ -112,6 +112,10 @@ public final class GuiListener implements Listener {
                 Gui.goToCheckpoint(player, item);
             }
 
+            if (item.isSimilar(Tools.ITEMS.getItem())){
+                Gui.loadInventoryItemsEdit(player, nameMap);
+            }
+
             if (isDynamicToolSpawnPoints(item, nameMap)){
                 Gui.gotoSpawnPoint(player, item);
             }
@@ -131,6 +135,7 @@ public final class GuiListener implements Listener {
                 Gui.nextPages(player);
 
             if (item.isSimilar(Tools.PREVIOUS_PAGE_ITEM.getItem()))
+
                 Gui.previousPages(player);
 
             if (isDynamicToolMaps(item)) {
@@ -190,7 +195,7 @@ public final class GuiListener implements Listener {
         final String inventoryName = event.getView().getTitle();
         final Player player = ((Player) event.getWhoClicked()).getPlayer();
 
-        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal) || inventoryName.equals(Gui.itemsInventoryMenu) || inventoryName.equals(Gui.SelectItemType)){
+        if (Gui.isInEditMode(player) || Gui.getMenu(player).equals(Gui.lobbyMenuSelectorGlobal) || inventoryName.equals(Gui.itemsInventoryMenu) || inventoryName.equals(Gui.SelectItemType) || inventoryName.equals(Gui.generalItems)) {
 
             if (item != null){
                 if (item.isSimilar(Tools.NEXT_PAGE_ITEM.getItem())){
